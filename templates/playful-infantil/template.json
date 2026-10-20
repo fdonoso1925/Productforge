@@ -1,0 +1,8 @@
+{
+  "id": "playful-infantil",
+  "name": "Playful / Infantil",
+  "description": "Colores vivos y formas redondeadas; educación infantil.",
+  "palette": {"primary": "#F97316", "secondary": "#0EA5E9", "accent": "#A3E635", "background": "#FFFFFF", "surface": "#FFF7ED", "text": "#1F2937", "muted": "#6B7280", "on_primary": "#FFFFFF", "tip": "#0EA5E9", "warning": "#F43F5E", "exercise": "#22C55E"},
+  "fonts": {"heading": {"family": "Baloo 2", "weights": [800]}, "body": {"family": "Nunito", "weights": [400, 700]}},
+  "style": {"cover": "full-bleed", "callout": "pill", "radius": "24px", "heading_case": "none", "paper": "plain", "decoration": "dots"}
+}

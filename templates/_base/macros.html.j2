@@ -1,0 +1,29 @@
+{% macro callout(c, labels) -%}
+<div class="callout callout-{{ c.kind }}">
+  <div class="callout-title">{{ labels[c.kind] }}{% if c.title %}: {{ c.title }}{% endif %}</div>
+  <div>{{ c.text }}</div>
+</div>
+{%- endmacro %}
+
+{% macro paragraphs(items, cls='') -%}
+{% for text in items %}<p{% if cls %} class="{{ cls }}"{% endif %}>{{ text }}</p>{% endfor %}
+{%- endmacro %}
+
+{% macro bullets(items) -%}
+{% if items %}<ul>{% for i in items %}<li>{{ i }}</li>{% endfor %}</ul>{% endif %}
+{%- endmacro %}
+
+{% macro steps(items) -%}
+{% if items %}<ol class="steps">{% for i in items %}<li>{{ i }}</li>{% endfor %}</ol>{% endif %}
+{%- endmacro %}
+
+{% macro write_lines(n) -%}
+<div class="write">{% for _ in range(n) %}<div class="write-line"></div>{% endfor %}</div>
+{%- endmacro %}
+
+{% macro toc(entries, labels) -%}
+<section class="toc">
+  <h1>{{ labels.toc }}</h1>
+  <ol>{% for e in entries %}<li><a href="#{{ e.id }}">{{ e.title }}</a></li>{% endfor %}</ol>
+</section>
+{%- endmacro %}

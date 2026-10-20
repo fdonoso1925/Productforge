@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="{{ ctx.market }}">
+<head>
+<meta charset="utf-8">
+<title>{{ cover.title }}</title>
+<style>{% include "base.css.j2" %}</style>
+</head>
+<body>
+{% include "cover.html.j2" %}
+{% block body %}{% endblock %}
+</body>
+</html>

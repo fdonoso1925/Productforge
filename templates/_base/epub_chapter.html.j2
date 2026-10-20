@@ -1,0 +1,23 @@
+{% from "macros.html.j2" import callout, paragraphs, bullets, steps %}
+{% set L = ctx.labels %}
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+<head><title>{{ heading }}</title><link rel="stylesheet" type="text/css" href="style/book.css"/></head>
+<body>
+{% if label %}<p class="chapter-label">{{ label }}</p>{% endif %}
+<h1>{{ heading }}</h1>
+{% if chapter %}
+  <p class="summary">{{ chapter.summary }}</p>
+  {% for s in chapter.sections %}
+  <h2>{{ s.heading }}</h2>
+  {{ paragraphs(s.paragraphs) }}
+  {{ bullets(s.bullets) }}
+  {% if s.steps %}<h3>{{ L.steps }}</h3>{{ steps(s.steps) }}{% endif %}
+  {% if s.example %}<div class="example"><p class="example-label">{{ L.example }}</p><p>{{ s.example }}</p></div>{% endif %}
+  {% for co in s.callouts %}{{ callout(co, L) }}{% endfor %}
+  {% endfor %}
+{% else %}
+  {{ paragraphs(texts) }}
+  {% if next_steps %}<h2>{{ L.next_steps }}</h2>{{ steps(next_steps) }}{% endif %}
+{% endif %}
+</body>
+</html>

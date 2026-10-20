@@ -1,0 +1,37 @@
+{% extends "_layout.html.j2" %}
+{% from "macros.html.j2" import callout, paragraphs, bullets, steps, toc %}
+{% set L = ctx.labels %}
+{% block body %}
+{% set entries = [{'id': 'intro', 'title': L.introduction}] %}
+{% for ch in c.chapters %}{% set _ = entries.append({'id': 'ch-' ~ loop.index, 'title': L.chapter ~ ' ' ~ loop.index ~ ' · ' ~ ch.title}) %}{% endfor %}
+{% set _ = entries.append({'id': 'end', 'title': L.conclusion}) %}
+{{ toc(entries, L) }}
+
+<section id="intro">
+  <h1>{{ L.introduction }}</h1>
+  {{ paragraphs(c.introduction, 'lead') }}
+</section>
+
+{% for ch in c.chapters %}
+<section class="chapter" id="ch-{{ loop.index }}">
+  <div class="chapter-label">{{ L.chapter }} {{ loop.index }}</div>
+  <h1>{{ ch.title }}</h1>
+  <p class="summary">{{ ch.summary }}</p>
+  {% for s in ch.sections %}
+  <h2>{{ s.heading }}</h2>
+  {{ paragraphs(s.paragraphs) }}
+  {{ bullets(s.bullets) }}
+  {% if s.steps %}<h3>{{ L.steps }}</h3>{{ steps(s.steps) }}{% endif %}
+  {% if s.example %}<div class="example"><div class="example-label">{{ L.example }}</div>{{ s.example }}</div>{% endif %}
+  {% for co in s.callouts %}{{ callout(co, L) }}{% endfor %}
+  {% endfor %}
+</section>
+{% endfor %}
+
+<section class="chapter" id="end">
+  <h1>{{ L.conclusion }}</h1>
+  {{ paragraphs(c.conclusion) }}
+  <h2>{{ L.next_steps }}</h2>
+  {{ steps(c.next_steps) }}
+</section>
+{% endblock %}

@@ -1,0 +1,8 @@
+{
+  "id": "fitness-energia",
+  "name": "Fitness Energía",
+  "description": "Alto contraste y diagonales; ideal para fitness.",
+  "palette": {"primary": "#111111", "secondary": "#E11D48", "accent": "#CCFF00", "background": "#FFFFFF", "surface": "#F4F4F5", "text": "#111111", "muted": "#52525B", "on_primary": "#CCFF00", "tip": "#111111", "warning": "#E11D48", "exercise": "#65A30D"},
+  "fonts": {"heading": {"family": "Oswald", "weights": [700]}, "body": {"family": "Inter", "weights": [400, 700]}},
+  "style": {"cover": "full-bleed", "callout": "boxed", "radius": "0px", "heading_case": "uppercase", "paper": "plain", "decoration": "diagonal"}
+}

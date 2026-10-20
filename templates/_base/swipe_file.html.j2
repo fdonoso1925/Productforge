@@ -1,0 +1,19 @@
+{% extends "_layout.html.j2" %}
+{% set L = ctx.labels %}
+{% block body %}
+<section>
+  <h1>{{ L.how_to_use }}</h1>
+  <p class="lead">{{ c.introduction }}</p>
+</section>
+{% for cat in c.categories %}
+<section class="chapter">
+  <h1>{{ cat.name }}</h1>
+  <p class="summary"><b>{{ L.when_to_use }}:</b> {{ cat.when_to_use }}</p>
+  {% for e in cat.entries %}
+  <h3>{{ loop.index }}. {{ e.label }}</h3>
+  <div class="copy">{{ e.text }}</div>
+  {% if e.notes %}<p class="check-detail"><b>{{ L.notes }}:</b> {{ e.notes }}</p>{% endif %}
+  {% endfor %}
+</section>
+{% endfor %}
+{% endblock %}

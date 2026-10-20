@@ -1,0 +1,25 @@
+{% extends "_layout.html.j2" %}
+{% from "macros.html.j2" import bullets, steps %}
+{% set L = ctx.labels %}
+{% block body %}
+<section>
+  <h1>{{ c.title }}</h1>
+  <p class="lead">{{ c.overview }}</p>
+  {% for ph in c.phases %}
+  <div class="card">
+    <span class="badge">{{ L.phase }} {{ loop.index }}</span>
+    <h2>{{ ph.name }}</h2>
+    <div class="meta"><span><b>{{ L.duration }}:</b> {{ ph.duration }}</span></div>
+    <p><b>{{ L.objective }}:</b> {{ ph.objective }}</p>
+    <h3>{{ L.steps }}</h3>
+    {{ steps(ph.steps) }}
+    <div class="cols">
+      <div><h3>{{ L.deliverables }}</h3>{{ bullets(ph.deliverables) }}</div>
+      <div><h3>{{ L.mistakes }}</h3>{{ bullets(ph.common_mistakes) }}</div>
+    </div>
+  </div>
+  {% endfor %}
+  <h2>{{ L.success_metrics }}</h2>
+  {{ bullets(c.success_metrics) }}
+</section>
+{% endblock %}

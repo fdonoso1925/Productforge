@@ -1,0 +1,8 @@
+{
+  "id": "dark-elegante",
+  "name": "Dark Elegante",
+  "description": "Fondo oscuro con acentos dorados.",
+  "palette": {"primary": "#D4AF37", "secondary": "#E9D8A6", "accent": "#D4AF37", "background": "#121212", "surface": "#1E1E1E", "text": "#EDE9E0", "muted": "#A8A29E", "on_primary": "#121212", "tip": "#D4AF37", "warning": "#E07A5F", "exercise": "#81B29A"},
+  "fonts": {"heading": {"family": "Cormorant Garamond", "weights": [700]}, "body": {"family": "Inter", "weights": [400, 700]}},
+  "style": {"cover": "centered", "callout": "left-bar", "radius": "4px", "heading_case": "uppercase", "paper": "dark", "decoration": "rule"}
+}

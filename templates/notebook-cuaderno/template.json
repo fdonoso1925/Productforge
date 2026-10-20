@@ -1,0 +1,8 @@
+{
+  "id": "notebook-cuaderno",
+  "name": "Notebook / Cuaderno",
+  "description": "Papel rayado y look manuscrito; workbooks y planners.",
+  "palette": {"primary": "#1E3A8A", "secondary": "#B91C1C", "accent": "#FDE68A", "background": "#FFFEF7", "surface": "#FEF9C3", "text": "#1F2937", "muted": "#6B7280", "on_primary": "#FFFFFF", "tip": "#1E3A8A", "warning": "#B91C1C", "exercise": "#047857"},
+  "fonts": {"heading": {"family": "Caveat", "weights": [700]}, "body": {"family": "Nunito", "weights": [400, 700]}},
+  "style": {"cover": "notebook", "callout": "sticky", "radius": "2px", "heading_case": "none", "paper": "lined", "decoration": "none"}
+}

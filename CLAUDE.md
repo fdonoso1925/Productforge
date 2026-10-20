@@ -12,7 +12,13 @@ Spec completo: `prompt-app-productos-digitales.md`. Plan, modelo de datos y deci
 - `backend/`: FastAPI, Python 3.12, uv, Pydantic. Deploy: Railway (Dockerfile).
 - `supabase/`: migraciones SQL, seed, config local. Postgres + Auth + Storage, RLS en todas las tablas.
 - `prompts/<mercado>/`: prompts versionados (`VERSION`), escritos nativos en pt-BR y es-LATAM. Ver `prompts/README.md`.
-- `templates/`: plantillas visuales como datos (Fase 3).
+- `templates/<id>/template.json`: plantillas visuales como datos (paleta, fuentes, estilo) + `preview.png`. HTML/Jinja2 compartidos en `templates/_base/` (una plantilla puede reemplazar cualquiera con un archivo del mismo nombre o agregar `style.css`). Fuentes OFL en `templates/_fonts/`.
+
+### Generadores de archivos (`backend/app/generators/`)
+
+- `base.py`: `FileGenerator` (`generate(content, template, ctx) -> list[FileArtifact]`), `REGISTRY` y `@register`. Un módulo por familia: `pdf.py` (guía, checklist, blueprint, planner, swipe file), `epub.py`, `sheet.py` (XLSX con fórmulas + CSV), `maps.py` (SVG/PNG/PDF + XMind/OPML/FreeMind/Markmap/Mermaid/draw.io), `office.py` (DOCX/PPTX), `commercial.py` (ficha `.md`/`.docx`).
+- `render.py`: HTML → PDF (WeasyPrint) y PDF → PNG (pdfium). En Windows carga las DLL de Pango desde `C:\msys64\ucrt64\bin` (MSYS2 + `mingw-w64-ucrt-x86_64-pango`).
+- `samples.py`: contenido de ejemplo por formato (tests y miniaturas).
 
 ### Motor de contenido (`backend/app/content/`)
 
@@ -41,6 +47,8 @@ uv run ruff check . && uv run ruff format .
 uv run pytest -m "not integration"         # unit
 uv run pytest -m integration               # RLS contra Supabase local (exporta SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY)
 uv run pip-audit
+uv run python -m app.templates_engine.fonts      # baja las fuentes de templates/*/template.json
+uv run python -m app.templates_engine.previews   # regenera templates/*/preview.png
 
 # Frontend
 cd frontend

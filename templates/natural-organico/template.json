@@ -1,0 +1,8 @@
+{
+  "id": "natural-organico",
+  "name": "Natural / Orgánico",
+  "description": "Tonos tierra y verdes; salud, nutrición y mascotas.",
+  "palette": {"primary": "#3F6212", "secondary": "#92400E", "accent": "#CA8A04", "background": "#FBF8F1", "surface": "#EFEADB", "text": "#2D2A22", "muted": "#7A7466", "on_primary": "#FBF8F1", "tip": "#3F6212", "warning": "#B45309", "exercise": "#92400E"},
+  "fonts": {"heading": {"family": "Lora", "weights": [700]}, "body": {"family": "Nunito", "weights": [400, 700]}},
+  "style": {"cover": "split", "callout": "boxed", "radius": "10px", "heading_case": "none", "paper": "plain", "decoration": "blob"}
+}

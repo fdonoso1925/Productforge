@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     claude_effort: str = "high"
 
     prompts_dir: Path = BACKEND_DIR.parent / "prompts"
+    templates_dir: Path = BACKEND_DIR.parent / "templates"
 
     @field_validator("allowed_emails", "cors_origins", mode="before")
     @classmethod

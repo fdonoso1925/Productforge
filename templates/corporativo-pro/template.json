@@ -1,0 +1,8 @@
+{
+  "id": "corporativo-pro",
+  "name": "Corporativo Pro",
+  "description": "Azul y gris, sobrio; ideal para finanzas y negocios.",
+  "palette": {"primary": "#0B3B66", "secondary": "#1D6FB8", "accent": "#16A34A", "background": "#FFFFFF", "surface": "#EEF3F8", "text": "#0F1E2E", "muted": "#5B6B7C", "on_primary": "#FFFFFF", "tip": "#1D6FB8", "warning": "#C2410C", "exercise": "#16A34A"},
+  "fonts": {"heading": {"family": "IBM Plex Sans", "weights": [700]}, "body": {"family": "IBM Plex Sans", "weights": [400, 700]}},
+  "style": {"cover": "band", "callout": "left-bar", "radius": "2px", "heading_case": "none", "paper": "plain", "decoration": "rule"}
+}

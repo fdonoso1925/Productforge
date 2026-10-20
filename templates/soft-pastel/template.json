@@ -1,0 +1,8 @@
+{
+  "id": "soft-pastel",
+  "name": "Soft Pastel",
+  "description": "Tonos suaves para maternidad, bienestar y relaciones.",
+  "palette": {"primary": "#B46A8C", "secondary": "#8C7BB8", "accent": "#F2B5A7", "background": "#FFFBFA", "surface": "#FCEFF1", "text": "#4A3B44", "muted": "#8E7F88", "on_primary": "#FFFFFF", "tip": "#8C7BB8", "warning": "#D9826C", "exercise": "#6FA39B"},
+  "fonts": {"heading": {"family": "Quicksand", "weights": [700]}, "body": {"family": "Nunito", "weights": [400, 700]}},
+  "style": {"cover": "centered", "callout": "pill", "radius": "18px", "heading_case": "none", "paper": "plain", "decoration": "blob"}
+}

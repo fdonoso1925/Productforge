@@ -1,0 +1,26 @@
+{% extends "_layout.html.j2" %}
+{% from "macros.html.j2" import write_lines %}
+{% set L = ctx.labels %}
+{% block body %}
+<section>
+  <h1>{{ L.how_to_use }}</h1>
+  <p class="lead">{{ c.introduction }}</p>
+</section>
+{% for d in c.days %}
+<section class="card"{% if loop.first %} style="break-before: page;"{% endif %}>
+  <span class="badge">{{ L.day }} {{ d.day }}</span>
+  <h2>{{ d.focus }}</h2>
+  <h3>{{ L.tasks }}</h3>
+  {% for task in d.tasks %}<div class="check-item"><div class="box"></div><div>{{ task }}</div></div>{% endfor %}
+  <div class="callout callout-tip"><div class="callout-title">{{ L.tip }}</div><div>{{ d.tip }}</div></div>
+  <h3>{{ L.reflection }}: {{ d.reflection_question }}</h3>
+  {{ write_lines(2) }}
+</section>
+{% if d.day % 7 == 0 and c.weekly_review_questions %}
+<section class="card">
+  <h2>{{ L.weekly_review }}</h2>
+  {% for q in c.weekly_review_questions %}<h3>{{ q }}</h3>{{ write_lines(2) }}{% endfor %}
+</section>
+{% endif %}
+{% endfor %}
+{% endblock %}

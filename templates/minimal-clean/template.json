@@ -1,0 +1,8 @@
+{
+  "id": "minimal-clean",
+  "name": "Minimal Clean",
+  "description": "Blanco, tipografía sans y mucho aire.",
+  "palette": {"primary": "#111827", "secondary": "#4B5563", "accent": "#2563EB", "background": "#FFFFFF", "surface": "#F3F4F6", "text": "#111827", "muted": "#6B7280", "on_primary": "#FFFFFF", "tip": "#2563EB", "warning": "#D97706", "exercise": "#059669"},
+  "fonts": {"heading": {"family": "Inter", "weights": [700]}, "body": {"family": "Inter", "weights": [400, 700]}},
+  "style": {"cover": "centered", "callout": "left-bar", "radius": "6px", "heading_case": "none", "paper": "plain", "decoration": "none"}
+}

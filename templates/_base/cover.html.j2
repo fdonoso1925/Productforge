@@ -1,0 +1,44 @@
+{# Portada: título, subtítulo, promesa y mockup simple. Variantes según style.cover. #}
+{% set s = t.style.cover %}
+{% set p = t.palette %}
+{% macro mockup(left, top) -%}
+<div class="mockup" style="left: {{ left }}; top: {{ top }}; transform: rotate(-4deg);">
+  <div class="mockup-back"></div>
+  <div class="mockup-book"{% if s in ["full-bleed", "split"] %} style="background: {{ p.secondary }}; border-left-color: {{ p.accent }}; color: {{ p.on_primary }};"{% endif %}>{{ cover.title }}{% if cover.product_name != cover.title %}<small>{{ cover.product_name }}</small>{% endif %}</div>
+</div>
+{%- endmacro %}
+<section class="cover" style="background: {% if s == 'full-bleed' %}{{ p.primary }}{% elif s == 'centered' %}{{ p.surface }}{% else %}{{ p.background }}{% endif %};
+  color: {% if s == 'full-bleed' %}{{ p.on_primary }}{% else %}{{ p.text }}{% endif %};">
+  {% if t.style.decoration == 'blob' %}
+  <div class="deco" style="right: -40mm; top: -30mm; width: 140mm; height: 140mm; border-radius: 70mm; background: {{ p.accent }}55;"></div>
+  <div class="deco" style="left: -30mm; bottom: -40mm; width: 110mm; height: 110mm; border-radius: 55mm; background: {{ p.secondary }}33;"></div>
+  {% elif t.style.decoration == 'dots' %}
+  <div class="deco" style="left: 0; top: 0; width: 210mm; height: 297mm; background-image: radial-gradient({{ p.accent }} 1.4mm, transparent 1.6mm); background-size: 12mm 12mm; opacity: 0.35;"></div>
+  {% elif t.style.decoration == 'diagonal' %}
+  <div class="deco" style="left: -20mm; top: 180mm; width: 260mm; height: 40mm; background: {{ p.accent }}; transform: rotate(-12deg);"></div>
+  {% endif %}
+
+  {% if s == 'split' %}
+  <div class="deco" style="left: 0; top: 0; width: 84mm; height: 297mm; background: {{ p.primary }};"></div>
+  {{ mockup('8mm', '100mm') }}
+  <div class="cover-inner" style="left: 96mm; top: 70mm;">
+  {% elif s == 'band' %}
+  <div class="deco" style="left: 0; top: 0; width: 210mm; height: 120mm; background: {{ p.primary }};"></div>
+  <div class="cover-inner" style="top: 34mm; color: {{ p.on_primary }};">
+  {% elif s == 'notebook' %}
+  <div class="deco" style="left: 0; top: 0; width: 210mm; height: 297mm; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 8.4mm, #C7D2FE 8.4mm, #C7D2FE 8.6mm);"></div>
+  <div class="deco" style="left: 26mm; top: 0; width: 0.8mm; height: 297mm; background: #FCA5A5;"></div>
+  <div class="deco" style="left: 70mm; top: 34mm; width: 70mm; height: 14mm; background: {{ p.accent }}CC; transform: rotate(-3deg);"></div>
+  <div class="cover-inner" style="left: 36mm; top: 62mm;">
+  {% else %}
+  <div class="cover-inner" style="top: 48mm;">
+  {% endif %}
+    {% if cover.product_name and cover.product_name != cover.title %}<div class="cover-kicker">{{ cover.product_name }}</div>{% endif %}
+    <div class="cover-title" style="color: {% if s in ['full-bleed', 'band'] %}{{ p.on_primary }}{% else %}{{ p.primary }}{% endif %};">{{ cover.title }}</div>
+    <div class="cover-subtitle">{{ cover.subtitle }}</div>
+    {% if cover.promise %}
+    <div class="cover-promise" style="background: {% if s == 'full-bleed' %}{{ p.accent }}; color: {{ p.primary }}{% else %}{{ p.primary }}; color: {{ p.on_primary }}{% endif %};">{{ cover.promise }}</div>
+    {% endif %}
+  </div>
+  {% if s in ['centered', 'full-bleed', 'notebook'] %}{{ mockup('70mm', '150mm') }}{% elif s == 'band' %}{{ mockup('120mm', '150mm') }}{% endif %}
+</section>

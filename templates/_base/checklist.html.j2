@@ -1,0 +1,26 @@
+{% extends "_layout.html.j2" %}
+{% from "macros.html.j2" import write_lines %}
+{% set L = ctx.labels %}
+{% block body %}
+<section>
+  <h1>{{ L.how_to_use }}</h1>
+  <p class="lead">{{ c.introduction }}</p>
+  {% for g in c.groups %}
+  <div class="check-group">
+    <h2>{{ g.title }}</h2>
+    {% for i in g.items %}
+    <div class="check-item"><div class="box"></div><div>{{ i.text }}{% if i.detail %}<div class="check-detail">{{ i.detail }}</div>{% endif %}</div></div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</section>
+{% if c.writing_prompts %}
+<section class="chapter">
+  <h1>{{ L.reflection }}</h1>
+  {% for w in c.writing_prompts %}
+  <h3>{{ w.question }}</h3>
+  {{ write_lines(w.lines) }}
+  {% endfor %}
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,8 @@
+{
+  "id": "bold-moderno",
+  "name": "Bold Moderno",
+  "description": "Bloques de color fuerte y títulos grandes.",
+  "palette": {"primary": "#5B21B6", "secondary": "#DB2777", "accent": "#FACC15", "background": "#FFFFFF", "surface": "#F5F3FF", "text": "#1E1B4B", "muted": "#6B7280", "on_primary": "#FFFFFF", "tip": "#5B21B6", "warning": "#DB2777", "exercise": "#0D9488"},
+  "fonts": {"heading": {"family": "Montserrat", "weights": [800]}, "body": {"family": "Inter", "weights": [400, 700]}},
+  "style": {"cover": "full-bleed", "callout": "boxed", "radius": "12px", "heading_case": "uppercase", "paper": "plain", "decoration": "block"}
+}

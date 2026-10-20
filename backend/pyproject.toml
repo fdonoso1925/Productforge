@@ -5,12 +5,20 @@ description = "ProductForge — API de generación de contenido y archivos"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "anthropic==1.16.0",
+    "ebooklib==0.20",
     "fastapi==0.156.2",
     "httpx==0.28.1",
+    "jinja2==3.1.6",
+    "openpyxl==3.1.5",
+    "pillow==13.0.0",
     "pydantic==2.14.1",
     "pydantic-settings==2.16.1",
     "pyjwt[crypto]==2.15.1",
+    "pypdfium2==5.14.0",
+    "python-docx==1.2.0",
+    "python-pptx==1.0.2",
     "uvicorn[standard]==0.54.0",
+    "weasyprint==70.0",
 ]
 
 [dependency-groups]
@@ -32,7 +40,7 @@ select = ["E", "F", "I", "UP", "B", "S", "ASYNC"]
 ignore = ["S101"] # assert
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S105", "S106"] # secretos de prueba
+"tests/**" = ["S105", "S106", "S318", "S603", "S607"] # secretos de prueba, XML propio, soffice
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

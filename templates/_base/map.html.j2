@@ -1,0 +1,16 @@
+{# Mapa mental / conceptual en una página apaisada. `svg_uri` es el SVG generado en el
+   backend (app/generators/maps.py) como data URI; se escala con object-fit. #}
+<!doctype html>
+<html lang="{{ ctx.market }}">
+<head><meta charset="utf-8"><title>{{ title }}</title>
+<style>{% include "base.css.j2" %}
+@page { size: A4 landscape; margin: 12mm; @bottom-center { content: none; } @bottom-right { content: none; } }
+</style></head>
+<body>
+<section class="map-page">
+  <h2 style="margin-top: 0;">{{ title }}</h2>
+  {% if subtitle %}<p class="summary">{{ subtitle }}</p>{% endif %}
+  <img src="{{ svg_uri }}" alt="{{ title }}" style="width: {{ img_w }}mm; height: {{ img_h }}mm;">
+</section>
+</body>
+</html>

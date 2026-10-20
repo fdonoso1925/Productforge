@@ -1,0 +1,8 @@
+{
+  "id": "editorial-premium",
+  "name": "Editorial Premium",
+  "description": "Estilo revista: serif en títulos y aire editorial.",
+  "palette": {"primary": "#1F1A17", "secondary": "#7C2D12", "accent": "#B45309", "background": "#FFFDF8", "surface": "#F5EFE6", "text": "#1F1A17", "muted": "#78716C", "on_primary": "#FFFDF8", "tip": "#7C2D12", "warning": "#B45309", "exercise": "#365314"},
+  "fonts": {"heading": {"family": "Playfair Display", "weights": [700]}, "body": {"family": "Lora", "weights": [400, 700]}},
+  "style": {"cover": "split", "callout": "boxed", "radius": "0px", "heading_case": "none", "paper": "plain", "decoration": "rule"}
+}
