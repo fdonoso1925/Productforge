@@ -1,0 +1,38 @@
+[project]
+name = "productforge-backend"
+version = "0.1.0"
+description = "ProductForge — API de generación de contenido y archivos"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi==0.156.2",
+    "httpx==0.28.1",
+    "pydantic==2.14.1",
+    "pydantic-settings==2.16.1",
+    "pyjwt[crypto]==2.15.1",
+    "uvicorn[standard]==0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "pip-audit==2.10.1",
+    "pytest==9.1.1",
+    "ruff==0.17.1",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "S", "ASYNC"]
+ignore = ["S101"] # assert
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106"] # secretos de prueba
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["integration: requiere Supabase local corriendo (npx supabase start)"]

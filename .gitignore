@@ -1,0 +1,29 @@
+# Secretos
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+.next/
+out/
+
+# Supabase local
+supabase/.branches/
+supabase/.temp/
+
+# Salidas de generación local
+backend/output/
+
+# SO / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

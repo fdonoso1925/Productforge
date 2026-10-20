@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.10.11"
+      - run: uv sync --frozen --python 3.12
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest -m "not integration"
+      - run: uv run pip-audit
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+      # Dependencias de producción: sin vulnerabilidades altas.
+      - run: npm audit --omit=dev --audit-level=high
+
+  rls:
+    # Test de acceso cruzado entre dos usuarios contra Supabase local.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.121.0
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.10.11"
+      - run: supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,realtime
+        env:
+          SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: ci-placeholder
+          SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET: ci-placeholder
+      - name: Tests de integración
+        working-directory: backend
+        run: |
+          eval "$(supabase status -o env | sed 's/^/export /')"
+          export SUPABASE_URL="$API_URL" SUPABASE_ANON_KEY="$ANON_KEY" SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
+          uv sync --frozen --python 3.12
+          uv run pytest -m integration -rs

@@ -1,0 +1,23 @@
+{
+  "app": {
+    "name": "ProductForge",
+    "tagline": "Productos digitales low ticket que resuelven un problema puntual."
+  },
+  "login": {
+    "title": "Entrar",
+    "subtitle": "Usa tu cuenta de Google autorizada.",
+    "google": "Continuar con Google",
+    "error": "No se pudo iniciar sesión. Verifica que tu email esté autorizado."
+  },
+  "home": {
+    "welcome": "Hola, {email}",
+    "backendChecking": "Conectando con el backend…",
+    "backendOk": "Backend conectado",
+    "backendError": "El backend no respondió ({status})",
+    "signOut": "Cerrar sesión",
+    "comingSoon": "El generador de paquetes llega en las próximas fases."
+  },
+  "locale": {
+    "switch": "Ver en português"
+  }
+}

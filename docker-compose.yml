@@ -1,0 +1,11 @@
+# Backend local en Docker (recomendado en Windows: WeasyPrint necesita librerías nativas).
+# Supabase local corre aparte con `npx supabase start`.
+services:
+  backend:
+    build: ./backend
+    env_file: ./backend/.env
+    environment:
+      # Dentro del contenedor, Supabase local está en el host.
+      SUPABASE_URL: http://host.docker.internal:54321
+    ports:
+      - "8000:8000"
