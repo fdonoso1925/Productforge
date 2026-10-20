@@ -15,9 +15,120 @@
     "backendOk": "Backend conectado",
     "backendError": "El backend no respondió ({status})",
     "signOut": "Cerrar sesión",
-    "comingSoon": "El generador de paquetes llega en las próximas fases."
+    "newProduct": "Nuevo paquete",
+    "newProductHint": "Elige un nicho y en menos de 2 minutos tienes el paquete en camino."
   },
   "locale": {
     "switch": "Ver en português"
+  },
+  "common": {
+    "back": "Atrás",
+    "next": "Continuar",
+    "retry": "Reintentar",
+    "loading": "Cargando…",
+    "error": "Algo falló: {message}",
+    "home": "Inicio"
+  },
+  "markets": {
+    "pt-BR": "Portugués (Brasil)",
+    "es-LATAM": "Español (LATAM)"
+  },
+  "roles": {
+    "main": "Producto principal",
+    "order_bump": "Order bump",
+    "bonus": "Bonus"
+  },
+  "formats": {
+    "pdf_guide": { "name": "Guía PDF", "description": "Ebook maquetado con portada, índice y ejercicios." },
+    "epub": { "name": "Ebook EPUB", "description": "Para leer en Kindle, celular o lector de ebooks." },
+    "mind_map": { "name": "Mapa mental", "description": "Idea central con ramas; editable en XMind o Miro." },
+    "concept_map": { "name": "Mapa conceptual", "description": "Conceptos y relaciones; editable en draw.io." },
+    "sheet": { "name": "Planilla", "description": "Calculadora, tracker o presupuesto con fórmulas reales." },
+    "checklist": { "name": "Checklist / Workbook", "description": "Para imprimir, marcar y escribir a mano." },
+    "blueprint": { "name": "Blueprint", "description": "Plan por fases con tiempos, entregables y errores comunes." },
+    "editable_template": { "name": "Plantillas editables", "description": "Guiones, mensajes o documentos en Word o PowerPoint." },
+    "planner": { "name": "Planner", "description": "Calendario de 7, 21 o 30 días con tareas diarias." },
+    "swipe_file": { "name": "Swipe file", "description": "Banco de textos listos para copiar y pegar." }
+  },
+  "wizard": {
+    "title": "Nuevo paquete",
+    "steps": {
+      "niche": "Nicho",
+      "problem": "Problema",
+      "format": "Formato",
+      "template": "Plantilla",
+      "outline": "Estructura"
+    },
+    "niche": {
+      "heading": "¿Para qué nicho?",
+      "market": "Mercado e idioma del contenido",
+      "suggested": "Nichos sugeridos",
+      "custom": "O escribe el tuyo",
+      "customPlaceholder": "Ej.: dueños de perros adultos mayores"
+    },
+    "problem": {
+      "heading": "Elige el problema puntual",
+      "loading": "Buscando 5 problemas concretos que alguien pagaría por resolver…",
+      "urgency": "Urgencia {value}/5",
+      "audience": "Público",
+      "pain": "Dolor",
+      "result": "Resultado",
+      "timeframe": "Plazo",
+      "whyPay": "Por qué pagaría",
+      "titleField": "Problema",
+      "edit": "Ajusta el problema elegido",
+      "own": "Escribir mi propio problema",
+      "regenerate": "Proponer otros 5"
+    },
+    "format": {
+      "heading": "Formato del producto principal"
+    },
+    "template": {
+      "heading": "Plantilla visual"
+    },
+    "outline": {
+      "heading": "Revisa la estructura del paquete",
+      "loading": "Armando el paquete: principal, 3 order bumps y 2 bonus…",
+      "hint": "Edita títulos, promesas e índices. Esto todavía no consume la generación completa.",
+      "productName": "Nombre del paquete",
+      "itemTitle": "Título",
+      "promise": "Promesa",
+      "toc": "Índice (una sección por línea)",
+      "pages": "Páginas estimadas",
+      "objection": "Objeción que elimina",
+      "generate": "Generar paquete",
+      "invalid": "Revisa los campos marcados."
+    }
+  },
+  "product": {
+    "generating": "Generando tu paquete",
+    "stages": {
+      "items": "Escribiendo las piezas",
+      "commercial": "Armando la ficha comercial",
+      "zip": "Empaquetando el ZIP",
+      "done": "Listo"
+    },
+    "itemStatus": {
+      "pending": "En cola",
+      "generating": "Generando",
+      "ready": "Listo",
+      "error": "Error"
+    },
+    "ready": "Tu paquete está listo",
+    "partial": "Algunas piezas fallaron; puedes regenerarlas desde el historial.",
+    "failed": "La generación falló ({error}).",
+    "downloadZip": "Descargar todo (ZIP)",
+    "download": "Descargar",
+    "onedrive": "Carpeta en OneDrive: disponible en la Fase 6.",
+    "commercial": {
+      "title": "Ficha comercial",
+      "alternatives": "Nombres alternativos",
+      "price": "Precio sugerido",
+      "bumps": "Order bumps",
+      "bonuses": "Bonus (valor percibido)",
+      "description": "Descripción para Hotmart / Kiwify",
+      "benefits": "Beneficios",
+      "hooks": "Hooks para anuncios"
+    }
   }
 }

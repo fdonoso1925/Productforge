@@ -15,9 +15,120 @@
     "backendOk": "Backend conectado",
     "backendError": "O backend não respondeu ({status})",
     "signOut": "Sair",
-    "comingSoon": "O gerador de pacotes chega nas próximas fases."
+    "newProduct": "Novo pacote",
+    "newProductHint": "Escolha um nicho e em menos de 2 minutos o pacote está a caminho."
   },
   "locale": {
     "switch": "Ver en español"
+  },
+  "common": {
+    "back": "Voltar",
+    "next": "Continuar",
+    "retry": "Tentar de novo",
+    "loading": "Carregando…",
+    "error": "Algo deu errado: {message}",
+    "home": "Início"
+  },
+  "markets": {
+    "pt-BR": "Português (Brasil)",
+    "es-LATAM": "Espanhol (LATAM)"
+  },
+  "roles": {
+    "main": "Produto principal",
+    "order_bump": "Order bump",
+    "bonus": "Bônus"
+  },
+  "formats": {
+    "pdf_guide": { "name": "Guia em PDF", "description": "Ebook diagramado com capa, sumário e exercícios." },
+    "epub": { "name": "Ebook EPUB", "description": "Para ler no Kindle, celular ou e-reader." },
+    "mind_map": { "name": "Mapa mental", "description": "Ideia central com ramos; editável no XMind ou Miro." },
+    "concept_map": { "name": "Mapa conceitual", "description": "Conceitos e relações; editável no draw.io." },
+    "sheet": { "name": "Planilha", "description": "Calculadora, tracker ou orçamento com fórmulas reais." },
+    "checklist": { "name": "Checklist / Workbook", "description": "Para imprimir, marcar e escrever à mão." },
+    "blueprint": { "name": "Blueprint", "description": "Plano por fases com prazos, entregáveis e erros comuns." },
+    "editable_template": { "name": "Modelos editáveis", "description": "Roteiros, mensagens ou documentos em Word ou PowerPoint." },
+    "planner": { "name": "Planner", "description": "Calendário de 7, 21 ou 30 dias com tarefas diárias." },
+    "swipe_file": { "name": "Swipe file", "description": "Banco de textos prontos para copiar e colar." }
+  },
+  "wizard": {
+    "title": "Novo pacote",
+    "steps": {
+      "niche": "Nicho",
+      "problem": "Problema",
+      "format": "Formato",
+      "template": "Modelo visual",
+      "outline": "Estrutura"
+    },
+    "niche": {
+      "heading": "Para qual nicho?",
+      "market": "Mercado e idioma do conteúdo",
+      "suggested": "Nichos sugeridos",
+      "custom": "Ou escreva o seu",
+      "customPlaceholder": "Ex.: tutores de cães idosos"
+    },
+    "problem": {
+      "heading": "Escolha o problema específico",
+      "loading": "Buscando 5 problemas concretos que alguém pagaria para resolver…",
+      "urgency": "Urgência {value}/5",
+      "audience": "Público",
+      "pain": "Dor",
+      "result": "Resultado",
+      "timeframe": "Prazo",
+      "whyPay": "Por que pagaria",
+      "titleField": "Problema",
+      "edit": "Ajuste o problema escolhido",
+      "own": "Escrever meu próprio problema",
+      "regenerate": "Propor outros 5"
+    },
+    "format": {
+      "heading": "Formato do produto principal"
+    },
+    "template": {
+      "heading": "Modelo visual"
+    },
+    "outline": {
+      "heading": "Revise a estrutura do pacote",
+      "loading": "Montando o pacote: principal, 3 order bumps e 2 bônus…",
+      "hint": "Edite títulos, promessas e sumários. Isso ainda não consome a geração completa.",
+      "productName": "Nome do pacote",
+      "itemTitle": "Título",
+      "promise": "Promessa",
+      "toc": "Sumário (uma seção por linha)",
+      "pages": "Páginas estimadas",
+      "objection": "Objeção que elimina",
+      "generate": "Gerar pacote",
+      "invalid": "Revise os campos marcados."
+    }
+  },
+  "product": {
+    "generating": "Gerando seu pacote",
+    "stages": {
+      "items": "Escrevendo as peças",
+      "commercial": "Montando a ficha comercial",
+      "zip": "Empacotando o ZIP",
+      "done": "Pronto"
+    },
+    "itemStatus": {
+      "pending": "Na fila",
+      "generating": "Gerando",
+      "ready": "Pronto",
+      "error": "Erro"
+    },
+    "ready": "Seu pacote está pronto",
+    "partial": "Algumas peças falharam; você pode gerá-las de novo pelo histórico.",
+    "failed": "A geração falhou ({error}).",
+    "downloadZip": "Baixar tudo (ZIP)",
+    "download": "Baixar",
+    "onedrive": "Pasta no OneDrive: disponível na Fase 6.",
+    "commercial": {
+      "title": "Ficha comercial",
+      "alternatives": "Nomes alternativos",
+      "price": "Preço sugerido",
+      "bumps": "Order bumps",
+      "bonuses": "Bônus (valor percebido)",
+      "description": "Descrição para Hotmart / Kiwify",
+      "benefits": "Benefícios",
+      "hooks": "Ganchos para anúncios"
+    }
   }
 }

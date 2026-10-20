@@ -20,6 +20,15 @@ Spec completo: `prompt-app-productos-digitales.md`. Plan, modelo de datos y deci
 - `render.py`: HTML → PDF (WeasyPrint) y PDF → PNG (pdfium). En Windows carga las DLL de Pango desde `C:\msys64\ucrt64\bin` (MSYS2 + `mingw-w64-ucrt-x86_64-pango`).
 - `samples.py`: contenido de ejemplo por formato (tests y miniaturas).
 
+### Generación y jobs (Fase 4)
+
+- `POST /outline` crea el producto (`outline_ready`); `PUT /products/{id}/outline` guarda ediciones (mismas reglas); `POST /products/{id}/generate` encola un job `generate` (409 si ya hay uno activo).
+- `app/worker.py`: toma jobs con la función SQL `claim_job()` (`FOR UPDATE SKIP LOCKED`, reintenta jobs colgados tras 15 min). `WORKER_INLINE=true` lo corre dentro de la API en desarrollo; en producción, `python -m app.worker` como segundo servicio.
+- `app/pipeline/generate.py`: piezas en paralelo (máx. 3) → contenido IA → archivos → Supabase Storage (`<user>/<product>/{principal,order-bumps,bonus}/...`) → ficha comercial → ZIP. Una pieza fallida queda en `error` y no frena las demás. El progreso va en `jobs.progress`.
+- `GET /files/{id}/download` devuelve una URL firmada de 10 min (solo al dueño). `GET /templates` y `/templates/{id}/preview.png` son públicos.
+- `app/storage/base.py`: interfaz `StorageProvider`; hoy solo `SupabaseStorage` (OneDrive en Fase 6).
+- Frontend: wizard en `/[locale]/new` (`components/wizard/`), progreso y resultado en `/[locale]/products/[id]` (polling directo a Supabase con RLS). El mercado se elige en el paso 1 porque los problemas se generan en ese idioma.
+
 ### Motor de contenido (`backend/app/content/`)
 
 - `schemas/`: Pydantic del paquete (`Problem`, `PackageOutline`, `CommercialSheet`) y un schema por formato (`FORMAT_SCHEMAS`).

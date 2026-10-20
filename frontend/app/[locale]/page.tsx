@@ -1,5 +1,7 @@
+import { Plus } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { LocaleSwitch } from "@/components/locale-switch";
+import { Link } from "@/i18n/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 import { BackendStatus } from "./backend-status";
@@ -26,9 +28,16 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
       <Card>
         <CardHeader>
           <CardTitle>{t("welcome", { email })}</CardTitle>
-          <CardDescription>{t("comingSoon")}</CardDescription>
+          <CardDescription>{t("newProductHint")}</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-4">
+          <Link
+            href="/new"
+            className="inline-flex w-fit items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/80"
+          >
+            <Plus className="size-4" aria-hidden />
+            {t("newProduct")}
+          </Link>
           <BackendStatus
             labels={{
               checking: t("backendChecking"),

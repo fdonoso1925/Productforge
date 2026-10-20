@@ -1,4 +1,6 @@
+import asyncio
 import logging
+from contextlib import asynccontextmanager
 from typing import Annotated
 
 import anthropic
@@ -6,25 +8,43 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import content
+from app.api import catalog, content, products
 from app.auth import CurrentUser, get_current_user
 from app.config import get_settings
 from app.content.claude_client import LLMError
 from app.content.engines import ContentRejected
+from app.deps import get_services
+from app.worker import worker_loop
 
 logger = logging.getLogger("productforge")
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Con WORKER_INLINE=true el worker de jobs corre dentro de la API (desarrollo)."""
+    if not get_settings().worker_inline:
+        yield
+        return
+    stop = asyncio.Event()
+    task = asyncio.create_task(worker_loop(get_services(), stop))
+    yield
+    stop.set()
+    await task
+
+
 def create_app() -> FastAPI:
     settings = get_settings()
-    app = FastAPI(title="ProductForge API", version="0.2.0")
+    app = FastAPI(title="ProductForge API", version="0.4.0", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
-        allow_methods=["GET", "POST", "PATCH", "DELETE"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
         allow_headers=["Authorization", "Content-Type"],
     )
     app.include_router(content.router)
+    app.include_router(products.router)
+    app.include_router(products.files_router)
+    app.include_router(catalog.router)
 
     @app.exception_handler(ContentRejected)
     async def content_rejected(_: Request, exc: ContentRejected) -> JSONResponse:

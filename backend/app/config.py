@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     prompts_dir: Path = BACKEND_DIR.parent / "prompts"
     templates_dir: Path = BACKEND_DIR.parent / "templates"
 
+    # true: el worker de jobs corre dentro de la API (desarrollo). En producción, proceso aparte.
+    worker_inline: bool = False
+
     @field_validator("allowed_emails", "cors_origins", mode="before")
     @classmethod
     def _split_csv(cls, value: object) -> object:
