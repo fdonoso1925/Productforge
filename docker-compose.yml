@@ -2,7 +2,9 @@
 # Supabase local corre aparte con `npx supabase start`.
 services:
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     env_file: ./backend/.env
     environment:
       # Dentro del contenedor, Supabase local está en el host.

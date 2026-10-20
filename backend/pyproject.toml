@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "ProductForge — API de generación de contenido y archivos"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "anthropic==1.16.0",
     "fastapi==0.156.2",
     "httpx==0.28.1",
     "pydantic==2.14.1",

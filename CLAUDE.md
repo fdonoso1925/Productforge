@@ -11,7 +11,17 @@ Spec completo: `prompt-app-productos-digitales.md`. Plan, modelo de datos y deci
 - `frontend/`: Next.js 16 (App Router, `proxy.ts` en vez de `middleware.ts`), TypeScript, Tailwind 4, shadcn/ui (base-ui), next-intl (`es` | `pt`), Supabase SSR. Deploy: Netlify.
 - `backend/`: FastAPI, Python 3.12, uv, Pydantic. Deploy: Railway (Dockerfile).
 - `supabase/`: migraciones SQL, seed, config local. Postgres + Auth + Storage, RLS en todas las tablas.
-- `templates/`, `prompts/`: datos (plantillas visuales y prompts por mercado). Llegan en Fases 2 y 3.
+- `prompts/<mercado>/`: prompts versionados (`VERSION`), escritos nativos en pt-BR y es-LATAM. Ver `prompts/README.md`.
+- `templates/`: plantillas visuales como datos (Fase 3).
+
+### Motor de contenido (`backend/app/content/`)
+
+- `schemas/`: Pydantic del paquete (`Problem`, `PackageOutline`, `CommercialSheet`) y un schema por formato (`FORMAT_SCHEMAS`).
+- `claude_client.py`: única puerta a Claude. Streaming + `output_format` (Pydantic) + `fallbacks="default"` + system prompt cacheado. Lanza `LLMRefusal` / `LLMTruncated` / `LLMInvalidOutput`.
+- `rules.py`: reglas de negocio que el schema no expresa (1+3+2, formatos distintos, páginas, coherencia interna por formato).
+- `engines.py`: `ContentService` (problemas, outline, pieza, ficha comercial). Si las reglas fallan, reintenta con los errores como feedback (3 intentos) y registra el costo en `ai_usage`.
+- Endpoints: `POST /problems`, `POST /outline` (crea el producto en `outline_ready`). La generación de piezas se expone vía jobs en la Fase 4.
+- Tests: `tests/fakes.py` tiene `FakeLLM`; ningún test llama a la API real.
 
 Next.js 16 cambió APIs: antes de escribir código de Next, lee la guía en `frontend/node_modules/next/dist/docs/`.
 
@@ -59,5 +69,8 @@ Después de `npx supabase db reset`, autoriza tu email:
 - **Jobs:** tabla `jobs` + worker propio con `FOR UPDATE SKIP LOCKED` (Fase 2+), no `BackgroundTasks` ni Celery.
 - **Archivos:** WeasyPrint (HTML/Jinja2) para PDF; mapas mentales con render SVG propio en Python (sin Chromium).
 - **Costo de IA:** sin tope (uso personal); se registra en `ai_usage` solo para visibilidad.
+- **Modelo:** `claude-opus-5-5` por defecto para todo (configurable con `CLAUDE_MODEL_*`), effort `high`. Opus 5.5 no permite desactivar thinking ni forzar `tool_choice`; la salida estructurada va por `output_format`.
+- **Prompt injection:** los datos del usuario van como JSON dentro de `<datos_del_usuario>` / `<dados_do_usuario>` (con `</` escapado), nunca interpolados en el prompt; el system prompt indica tratarlos como datos. Toda salida se valida contra schema y reglas.
+- **Docker:** el build del backend usa la raíz como contexto (`docker build -f backend/Dockerfile .`) porque copia `prompts/`.
 - **OneDrive:** cuenta personal, `Files.ReadWrite.AppFolder` → `/Aplicaciones/ProductForge/...`.
 - **Node:** el proyecto compila con Node 20, pero Supabase JS y vitest 4+ piden Node 22. CI usa 22; vitest queda en 3.x hasta actualizar Node local.
