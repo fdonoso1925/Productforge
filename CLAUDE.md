@@ -3,8 +3,9 @@
 Genera paquetes de productos digitales low ticket (1 principal + 3 order bumps + 2 bonus) para pt-BR y es-LATAM.
 Spec completo: `prompt-app-productos-digitales.md`. Plan, modelo de datos y decisiones: `PLAN.md`.
 
-**Uso personal (un solo usuario).** Login con Google, restringido a `ALLOWED_EMAILS` (backend) y a la tabla
-`app_allowed_emails` (un trigger en `auth.users` rechaza cualquier otro email).
+**Uso personal (un solo usuario).** Login con email y contraseña (Supabase Auth), sin registro público: el
+usuario se crea en el dashboard (Authentication → Users → Add user). Restringido a `ALLOWED_EMAILS`
+(backend) y a la tabla `app_allowed_emails` (un trigger en `auth.users` rechaza cualquier otro email).
 
 ## Stack
 

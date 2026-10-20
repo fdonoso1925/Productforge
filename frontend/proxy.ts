@@ -40,6 +40,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Excluye el callback de OAuth, la API interna, assets y archivos con extensión.
-  matcher: ["/((?!auth|api|_next|_vercel|.*\\..*).*)"],
+  // Excluye la API interna, assets y archivos con extensión.
+  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
 };

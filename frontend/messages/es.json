@@ -5,9 +5,12 @@
   },
   "login": {
     "title": "Entrar",
-    "subtitle": "Usa tu cuenta de Google autorizada.",
-    "google": "Continuar con Google",
-    "error": "No se pudo iniciar sesión. Verifica que tu email esté autorizado."
+    "subtitle": "Ingresa con tu email y contraseña.",
+    "email": "Email",
+    "password": "Contraseña",
+    "submit": "Entrar",
+    "signingIn": "Entrando…",
+    "error": "Email o contraseña incorrectos."
   },
   "home": {
     "welcome": "Hola, {email}",
@@ -39,16 +42,46 @@
     "bonus": "Bonus"
   },
   "formats": {
-    "pdf_guide": { "name": "Guía PDF", "description": "Ebook maquetado con portada, índice y ejercicios." },
-    "epub": { "name": "Ebook EPUB", "description": "Para leer en Kindle, celular o lector de ebooks." },
-    "mind_map": { "name": "Mapa mental", "description": "Idea central con ramas; editable en XMind o Miro." },
-    "concept_map": { "name": "Mapa conceptual", "description": "Conceptos y relaciones; editable en draw.io." },
-    "sheet": { "name": "Planilla", "description": "Calculadora, tracker o presupuesto con fórmulas reales." },
-    "checklist": { "name": "Checklist / Workbook", "description": "Para imprimir, marcar y escribir a mano." },
-    "blueprint": { "name": "Blueprint", "description": "Plan por fases con tiempos, entregables y errores comunes." },
-    "editable_template": { "name": "Plantillas editables", "description": "Guiones, mensajes o documentos en Word o PowerPoint." },
-    "planner": { "name": "Planner", "description": "Calendario de 7, 21 o 30 días con tareas diarias." },
-    "swipe_file": { "name": "Swipe file", "description": "Banco de textos listos para copiar y pegar." }
+    "pdf_guide": {
+      "name": "Guía PDF",
+      "description": "Ebook maquetado con portada, índice y ejercicios."
+    },
+    "epub": {
+      "name": "Ebook EPUB",
+      "description": "Para leer en Kindle, celular o lector de ebooks."
+    },
+    "mind_map": {
+      "name": "Mapa mental",
+      "description": "Idea central con ramas; editable en XMind o Miro."
+    },
+    "concept_map": {
+      "name": "Mapa conceptual",
+      "description": "Conceptos y relaciones; editable en draw.io."
+    },
+    "sheet": {
+      "name": "Planilla",
+      "description": "Calculadora, tracker o presupuesto con fórmulas reales."
+    },
+    "checklist": {
+      "name": "Checklist / Workbook",
+      "description": "Para imprimir, marcar y escribir a mano."
+    },
+    "blueprint": {
+      "name": "Blueprint",
+      "description": "Plan por fases con tiempos, entregables y errores comunes."
+    },
+    "editable_template": {
+      "name": "Plantillas editables",
+      "description": "Guiones, mensajes o documentos en Word o PowerPoint."
+    },
+    "planner": {
+      "name": "Planner",
+      "description": "Calendario de 7, 21 o 30 días con tareas diarias."
+    },
+    "swipe_file": {
+      "name": "Swipe file",
+      "description": "Banco de textos listos para copiar y pegar."
+    }
   },
   "wizard": {
     "title": "Nuevo paquete",

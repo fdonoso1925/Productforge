@@ -2,12 +2,12 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { LocaleSwitch } from "@/components/locale-switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { safeNextPath } from "@/lib/redirect";
-import { GoogleButton } from "./google-button";
+import { PasswordForm } from "./password-form";
 
 export default async function LoginPage({ params, searchParams }: PageProps<"/[locale]/login">) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const { next, error } = await searchParams;
+  const { next } = await searchParams;
   const t = await getTranslations("login");
   const tApp = await getTranslations("app");
 
@@ -23,15 +23,7 @@ export default async function LoginPage({ params, searchParams }: PageProps<"/[l
           <CardDescription>{t("subtitle")}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          {error && (
-            <p role="alert" className="text-sm text-destructive">
-              {t("error")}
-            </p>
-          )}
-          <GoogleButton
-            label={t("google")}
-            next={safeNextPath(typeof next === "string" ? next : null, `/${locale}`)}
-          />
+          <PasswordForm next={safeNextPath(typeof next === "string" ? next : null, `/${locale}`)} />
         </CardContent>
       </Card>
       <LocaleSwitch />

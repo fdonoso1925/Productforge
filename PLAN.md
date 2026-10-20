@@ -341,7 +341,7 @@ class StorageProvider(Protocol):
 | # | Decisión | Impacto en el plan |
 |---|---|---|
 | D1 | **Uso personal** (un solo usuario) | Sin pagos ni onboarding. Igual se mantiene RLS y el test de acceso cruzado (criterio de aceptación). |
-| D2 | **Login con Google** (Supabase Auth) | Como Google deja entrar a cualquiera con cuenta, el backend y una política en la base aceptan solo los emails de `ALLOWED_EMAILS`. |
+| D2 | **Email y contraseña** (Supabase Auth). *Cambiado el 2026-10-21; antes era Google.* | Sin registro público: el usuario se crea en el dashboard. Además, el backend y un trigger en la base aceptan solo los emails permitidos. |
 | D3 | Cuentas de Supabase y Netlify ya existen; Railway se crea después | Proyectos y dominios se configuran juntos al llegar al deploy (Fase 7). En desarrollo se usa Supabase local (`npx supabase start`, Docker). |
 | D4 | **LATAM en USD** por defecto | Moneda configurable en `config`, sin selector en la UI de v1. |
 | D5 | Principal de 25 a 40 páginas; order bumps y bonus de 5 a 15 | Se fija en los prompts y en los schemas (mínimos de secciones). |
