@@ -121,6 +121,10 @@ async def run_regenerate_item(job: dict, deps: PipelineDeps) -> None:
         raise
     await deps.items.update(item_id, status="ready")
     await builder.progress.set(item_id, "ready", stage="zip")
+    if not product.get("commercial"):
+        # La generación original pudo caer antes de la ficha (p. ej. sin créditos de IA): así
+        # un paquete a medias se completa regenerando su pieza fallida, sin rehacer todo.
+        await builder.commercial("generate")
     await builder.rebuild_zip()
     await builder.finish()
 

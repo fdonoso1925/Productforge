@@ -25,7 +25,7 @@ usuario se crea en el dashboard (Authentication → Users → Add user). Restrin
 
 - `POST /outline` crea el producto (`outline_ready`); `PUT /products/{id}/outline` guarda ediciones (mismas reglas); `POST /products/{id}/generate` encola un job `generate` (409 si ya hay uno activo).
 - `app/worker.py`: toma jobs con la función SQL `claim_job()` (`FOR UPDATE SKIP LOCKED`, reintenta jobs colgados tras 15 min). `WORKER_INLINE=true` lo corre dentro de la API en desarrollo; en producción, `python -m app.worker` como segundo servicio.
-- `app/pipeline/generate.py`: piezas en paralelo (máx. 3) → contenido IA → archivos → Supabase Storage (`<user>/<product>/{principal,order-bumps,bonus}/...`) → ficha comercial → ZIP. Una pieza fallida queda en `error` y no frena las demás. El progreso va en `jobs.progress`.
+- `app/pipeline/generate.py`: piezas en paralelo (máx. 3) → contenido IA → archivos → Supabase Storage (`<user>/<product>/{principal,order-bumps,bonus}/...`) → ficha comercial → ZIP. Una pieza fallida queda en `error` y no frena las demás. El progreso va en `jobs.progress`. Si el job cae a medias (p. ej. sin créditos de IA al armar la ficha), el worker pasa el producto de `generating` a `error` (`release_product`) y regenerar la pieza fallida completa el paquete: también crea la ficha comercial si faltaba, sin volver a pagar las demás piezas.
 - `GET /files/{id}/download` devuelve una URL firmada de 10 min (solo al dueño). `GET /templates` y `/templates/{id}/preview.png` son públicos.
 - `app/storage/base.py`: `StorageProvider` (almacén principal: `SupabaseStorage`) y `SyncTarget` (destinos externos a los que se COPIA lo ya guardado: `GoogleDrive`; OneDrive o Dropbox implementarían lo mismo).
 - Frontend: wizard en `/[locale]/new` (`components/wizard/`), progreso y resultado en `/[locale]/products/[id]` (polling directo a Supabase con RLS). El mercado se elige en el paso 1 porque los problemas se generan en ese idioma.
@@ -126,7 +126,7 @@ Después de `npx supabase db reset`, autoriza tu email:
 - **Jobs:** tabla `jobs` + worker propio con `FOR UPDATE SKIP LOCKED` (Fase 2+), no `BackgroundTasks` ni Celery.
 - **Archivos:** WeasyPrint (HTML/Jinja2) para PDF; mapas mentales con render SVG propio en Python (sin Chromium).
 - **Costo de IA:** sin tope (uso personal); se registra en `ai_usage` solo para visibilidad.
-- **Modelo:** `claude-opus-5-5` por defecto para todo (configurable con `CLAUDE_MODEL_*`), effort `high`. Opus 5.5 no permite desactivar thinking ni forzar `tool_choice`; la salida estructurada va por `output_format`.
+- **Modelo:** `claude-sonnet-5-5` por defecto para todo (configurable con `CLAUDE_MODEL_*`), effort `high`. Medido con el mismo tipo de paquete: unos 1,4 USD con Sonnet contra unos 3,4 USD con Opus 5.5 (`claude-opus-5-5`, que sigue disponible en `PRICES`). Los modelos 5.5 no permiten desactivar thinking ni forzar `tool_choice`; la salida estructurada va por `output_format`.
 - **Prompt injection:** los datos del usuario van como JSON dentro de `<datos_del_usuario>` / `<dados_do_usuario>` (con `</` escapado), nunca interpolados en el prompt; el system prompt indica tratarlos como datos. Toda salida se valida contra schema y reglas.
 - **Docker:** el build del backend usa la raíz como contexto (`docker build -f backend/Dockerfile .`) porque copia `prompts/`.
 - **Destino externo:** Google Drive (cuenta Gmail), permiso `drive.file` → `Mi unidad/ProductForge/...`. Las columnas de `files` son genéricas (`remote_*`) por si se agrega otro destino.

@@ -9,6 +9,7 @@ import asyncio
 import logging
 import time
 from collections.abc import Awaitable, Callable
+from uuid import UUID
 
 from app.config import get_settings
 from app.deps import Services, build_services
@@ -31,6 +32,19 @@ POLL_SECONDS = 2.0
 UPLOAD_RETRY_SECONDS = 600.0
 
 
+async def release_product(services: Services, job: dict) -> None:
+    """Un job que cae a medias (p. ej. sin créditos de IA al armar la ficha) no puede dejar el
+    producto en «generando» para siempre: pasa a «error» y queda abierto a regenerar piezas."""
+    if job["kind"] == "upload":
+        return
+    try:
+        product = await services.products.get(UUID(job["product_id"]), UUID(job["user_id"]))
+        if product["status"] == "generating":
+            await services.products.update(product["id"], status="error")
+    except Exception:
+        logger.exception("no se pudo liberar el producto del job %s", job["id"])
+
+
 async def run_one(services: Services) -> bool:
     """Ejecuta un job si hay alguno en cola. Devuelve True si procesó uno."""
     job = await services.jobs.claim()
@@ -45,6 +59,7 @@ async def run_one(services: Services) -> bool:
         logger.exception("job %s falló", job["id"])
         # Mensaje genérico: nada de prompts, tokens ni datos del usuario en el error.
         await services.jobs.update(job["id"], status="error", error=type(exc).__name__)
+        await release_product(services, job)
     else:
         await services.jobs.update(job["id"], status="done")
     return True

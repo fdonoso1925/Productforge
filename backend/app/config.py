@@ -31,8 +31,8 @@ class Settings(BaseSettings):
     )
 
     anthropic_api_key: str = ""
-    claude_model_outline: str = "claude-opus-5-5"
-    claude_model_content: str = "claude-opus-5-5"
+    claude_model_outline: str = "claude-sonnet-5-5"
+    claude_model_content: str = "claude-sonnet-5-5"
     claude_effort: str = "high"
 
     prompts_dir: Path = BACKEND_DIR.parent / "prompts"

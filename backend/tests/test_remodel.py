@@ -312,6 +312,49 @@ def test_regenerating_one_item_calls_ai_once_and_rebuilds_the_zip() -> None:
     assert sum(f["file_type"] == "zip" for f in after.values()) == 1
 
 
+def test_regenerating_a_piece_also_completes_a_missing_commercial_sheet() -> None:
+    """Paquete a medias (la generación cayó antes de la ficha): regenerar la pieza lo completa."""
+    w = World(extra_responses=[new_mind_map(), commercial("BRL")])
+    item = bonus_mind_map(w)
+    pid = w.product["id"]
+    w.product["commercial"] = None
+    w.deps.files.rows = {
+        k: f
+        for k, f in w.deps.files.rows.items()
+        if f["product_item_id"] is not None or f["file_type"] == "zip"
+    }
+    w.deps.products.rows[pid]["status"] = "error"
+
+    assert w.client.post(f"/products/{pid}/items/{item['id']}/regenerate").status_code == 202
+    w.run_worker()
+
+    assert w.new_calls == 2  # la pieza y la ficha; las demás piezas no se vuelven a pagar
+    assert w.deps.products.rows[pid]["commercial"]["currency"] == "BRL"
+    assert w.deps.products.rows[pid]["status"] == "ready"
+    assert "ficha-comercial.md" in w.zip_names(pid)
+
+
+def test_generation_that_dies_at_the_commercial_sheet_does_not_stay_generating() -> None:
+    """Sin créditos al armar la ficha: el producto pasa a «error» y se puede regenerar piezas."""
+    outline = make_outline()
+    deps, product, _, _ = setup([*item_responses(outline), *[LLMRefusal("x")] * 3])
+    services = SimpleNamespace(jobs=deps.jobs, products=deps.products, pipeline=lambda: deps)
+    assert asyncio.run(run_one(services)) is True
+
+    job = next(iter(deps.jobs.rows.values()))
+    assert job["status"] == "error"
+    assert product["status"] == "error"
+    assert all(i["status"] == "ready" for i in deps.items.rows.values())  # lo bueno se conserva
+
+
+def test_regenerating_does_not_pay_again_for_an_existing_commercial_sheet() -> None:
+    w = World(extra_responses=[new_mind_map()])
+    item = bonus_mind_map(w)
+    w.client.post(f"/products/{w.product['id']}/items/{item['id']}/regenerate")
+    w.run_worker()
+    assert w.new_calls == 1
+
+
 def test_failed_regeneration_keeps_the_previous_files() -> None:
     w = World(extra_responses=[LLMRefusal("x")] * 3)
     item = bonus_mind_map(w)
