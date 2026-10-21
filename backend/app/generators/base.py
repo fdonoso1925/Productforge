@@ -86,6 +86,15 @@ def artifact(ctx: RenderContext, ext: str, content: bytes, suffix: str = "") -> 
     return FileArtifact(filename=name, file_type=ext, content=content, mime=MIME[ext])
 
 
+# "Capítulo 3 – Título", "Capitulo 3: Título", "3. Título": la plantilla ya numera los capítulos.
+CHAPTER_PREFIX = re.compile(r"^\s*(?:cap[ií]tulo\s*)?\d+\s*[-–—:.·)]\s*", re.IGNORECASE)
+
+
+def strip_chapter_number(title: str) -> str:
+    cleaned = CHAPTER_PREFIX.sub("", title, count=1).strip()
+    return cleaned or title
+
+
 def slugify(text: str, max_length: int = 60) -> str:
     ascii_text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
     slug = re.sub(r"[^a-z0-9]+", "-", ascii_text.lower()).strip("-")

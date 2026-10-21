@@ -1,10 +1,12 @@
 {# Portada: título, subtítulo, promesa y mockup simple. Variantes según style.cover. #}
 {% set s = t.style.cover %}
 {% set p = t.palette %}
+{# Títulos largos (comunes en la IA) bajan de tamaño para no desbordar la portada. #}
+{% set long = cover.title|length > 60 %}
 {% macro mockup(left, top) -%}
 <div class="mockup" style="left: {{ left }}; top: {{ top }}; transform: rotate(-4deg);">
   <div class="mockup-back"></div>
-  <div class="mockup-book"{% if s in ["full-bleed", "split"] %} style="background: {{ p.secondary }}; border-left-color: {{ p.accent }}; color: {{ p.on_primary }};"{% endif %}>{{ cover.title }}{% if cover.product_name != cover.title %}<small>{{ cover.product_name }}</small>{% endif %}</div>
+  <div class="mockup-book{% if long %} long{% endif %}"{% if s in ["full-bleed", "split"] %} style="background: {{ p.secondary }}; border-left-color: {{ p.accent }}; color: {{ p.on_primary }};"{% endif %}>{{ cover.title }}{% if cover.product_name != cover.title %}<small>{{ cover.product_name }}</small>{% endif %}</div>
 </div>
 {%- endmacro %}
 <section class="cover" style="background: {% if s == 'full-bleed' %}{{ p.primary }}{% elif s == 'centered' %}{{ p.surface }}{% else %}{{ p.background }}{% endif %};
@@ -23,8 +25,8 @@
   {{ mockup('8mm', '100mm') }}
   <div class="cover-inner" style="left: 96mm; top: 70mm;">
   {% elif s == 'band' %}
-  <div class="deco" style="left: 0; top: 0; width: 210mm; height: 120mm; background: {{ p.primary }};"></div>
-  <div class="cover-inner" style="top: 34mm; color: {{ p.on_primary }};">
+  <div class="deco" style="left: 0; top: 0; width: 210mm; height: 150mm; background: {{ p.primary }};"></div>
+  <div class="cover-inner" style="top: 30mm; color: {{ p.on_primary }};">
   {% elif s == 'notebook' %}
   <div class="deco" style="left: 0; top: 0; width: 210mm; height: 297mm; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 8.4mm, #C7D2FE 8.4mm, #C7D2FE 8.6mm);"></div>
   <div class="deco" style="left: 26mm; top: 0; width: 0.8mm; height: 297mm; background: #FCA5A5;"></div>
@@ -34,11 +36,11 @@
   <div class="cover-inner" style="top: 48mm;">
   {% endif %}
     {% if cover.product_name and cover.product_name != cover.title %}<div class="cover-kicker">{{ cover.product_name }}</div>{% endif %}
-    <div class="cover-title" style="color: {% if s in ['full-bleed', 'band'] %}{{ p.on_primary }}{% else %}{{ p.primary }}{% endif %};">{{ cover.title }}</div>
+    <div class="cover-title{% if long %} long{% endif %}" style="color: {% if s in ['full-bleed', 'band'] %}{{ p.on_primary }}{% else %}{{ p.primary }}{% endif %};">{{ cover.title }}</div>
     <div class="cover-subtitle">{{ cover.subtitle }}</div>
     {% if cover.promise %}
-    <div class="cover-promise" style="background: {% if s == 'full-bleed' %}{{ p.accent }}; color: {{ p.primary }}{% else %}{{ p.primary }}; color: {{ p.on_primary }}{% endif %};">{{ cover.promise }}</div>
+    <div class="cover-promise" style="background: {% if s in ['full-bleed', 'band'] %}{{ p.accent }}; color: {{ p.primary }}{% else %}{{ p.primary }}; color: {{ p.on_primary }}{% endif %};">{{ cover.promise }}</div>
     {% endif %}
   </div>
-  {% if s in ['centered', 'full-bleed', 'notebook'] %}{{ mockup('70mm', '150mm') }}{% elif s == 'band' %}{{ mockup('120mm', '150mm') }}{% endif %}
+  {% if s in ['centered', 'full-bleed', 'notebook'] %}{{ mockup('70mm', '150mm') }}{% elif s == 'band' %}{{ mockup('124mm', '168mm') }}{% endif %}
 </section>

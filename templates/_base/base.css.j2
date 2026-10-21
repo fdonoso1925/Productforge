@@ -91,6 +91,8 @@ ol.steps li::before { content: counter(step); position: absolute; left: 0; top: 
 .cover-kicker { font-size: 9pt; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); }
 .cover-title { font-family: var(--heading); font-weight: {{ t.fonts.heading.weights[0] }}; font-size: 34pt; line-height: 1.08; margin: 4mm 0; string-set: doc-title content();
   {% if t.style.heading_case == 'uppercase' %}text-transform: uppercase;{% endif %} }
+.cover-title.long { font-size: 24pt; }
+.mockup-book.long { font-size: 10pt; }
 .cover-subtitle { font-size: 13pt; margin-bottom: 6mm; }
 .cover-promise { font-size: 11pt; font-weight: 700; padding: 3mm 5mm; display: inline-block; border-radius: var(--radius); }
 .mockup { position: absolute; width: 70mm; height: 96mm; }

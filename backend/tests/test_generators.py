@@ -272,3 +272,41 @@ def test_guide_page_count_grows_with_content() -> None:
 def test_slugify() -> None:
     assert slugify("Adiós Sobregiro: ¡60 días!") == "adios-sobregiro-60-dias"
     assert slugify("???") == "producto"
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("Capítulo 3 – Saída 1: parcelamento", "Saída 1: parcelamento"),
+        ("capitulo 12: Como escolher", "Como escolher"),
+        ("3. Diagnóstico", "Diagnóstico"),
+        ("Capítulo 2 · O plano", "O plano"),
+        ("30 dias sem juros", "30 dias sem juros"),
+        ("Capítulo 1", "Capítulo 1"),
+    ],
+)
+def test_strip_chapter_number(raw, expected) -> None:
+    from app.generators.base import strip_chapter_number
+
+    assert strip_chapter_number(raw) == expected
+
+
+def test_guide_toc_has_no_duplicated_chapter_numbers() -> None:
+    from app.generators.pdf import without_chapter_numbers
+
+    guide = SAMPLES[Format.PDF_GUIDE]
+    numbered = guide.model_copy(
+        update={
+            "chapters": [
+                c.model_copy(update={"title": f"Capítulo {i} – {c.title}"})
+                for i, c in enumerate(guide.chapters, start=1)
+            ]
+        }
+    )
+    html = DEFAULT.render_html(
+        "guide",
+        c=without_chapter_numbers(numbered),
+        ctx=ctx(),
+        cover={"title": "t", "subtitle": "", "promise": "", "product_name": "x"},
+    )
+    assert "Capítulo 1 · Capítulo" not in html

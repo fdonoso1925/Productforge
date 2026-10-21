@@ -10,6 +10,7 @@ from ebooklib import epub
 from app.content.schemas import Format
 from app.content.schemas.formats import GuideContent
 from app.generators.base import FileArtifact, RenderContext, artifact, register
+from app.generators.pdf import without_chapter_numbers
 from app.generators.render import html_to_pdf, pdf_page_to_png
 from app.templates_engine.model import Template
 
@@ -49,6 +50,7 @@ h3 {{ color: {p.secondary}; }}
 
 
 def build_epub(content: GuideContent, template: Template, ctx: RenderContext) -> bytes:
+    content = without_chapter_numbers(content)
     labels = ctx.labels
     book = epub.EpubBook()
     book.set_identifier(f"urn:uuid:{uuid.uuid4()}")

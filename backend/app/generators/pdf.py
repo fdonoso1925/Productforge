@@ -10,9 +10,23 @@ from app.content.schemas.formats import (
     PlannerContent,
     SwipeFileContent,
 )
-from app.generators.base import FileArtifact, RenderContext, artifact, register
+from app.generators.base import (
+    FileArtifact,
+    RenderContext,
+    artifact,
+    register,
+    strip_chapter_number,
+)
 from app.generators.render import html_to_pdf
 from app.templates_engine.model import Template
+
+
+def without_chapter_numbers(content: GuideContent) -> GuideContent:
+    """La IA a veces numera los títulos ("Capítulo 3 – ..."); la plantilla ya lo hace."""
+    chapters = [
+        ch.model_copy(update={"title": strip_chapter_number(ch.title)}) for ch in content.chapters
+    ]
+    return content.model_copy(update={"chapters": chapters})
 
 
 def render_pdf(template: Template, kind: str, ctx: RenderContext, content, cover: dict) -> bytes:
@@ -30,7 +44,8 @@ class GuidePdf:
         self, content: GuideContent, template: Template, ctx: RenderContext
     ) -> list[FileArtifact]:
         cover = {"title": content.title, "subtitle": content.subtitle, "promise": content.promise}
-        return [artifact(ctx, "pdf", render_pdf(template, "guide", ctx, content, cover))]
+        pdf = render_pdf(template, "guide", ctx, without_chapter_numbers(content), cover)
+        return [artifact(ctx, "pdf", pdf)]
 
 
 @register
