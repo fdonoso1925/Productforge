@@ -350,7 +350,7 @@ class StorageProvider(Protocol):
 | D8 | Checklist con **espacios para escribir a mano** | Sin AcroForm en v1. |
 | D9 | Mockup de portada con **CSS 3D** | Sin imágenes de IA. |
 | D10 | No hay PDF Agent previo | **WeasyPrint**. |
-| D11 | **OneDrive personal**, ruta `/Aplicaciones/ProductForge/...` | Permiso `Files.ReadWrite.AppFolder`, endpoint `consumers`. |
+| D11 | ~~OneDrive personal~~ → **Google Drive** (*cambiado el 2026-10-22: el usuario usa Gmail*), carpeta `Mi unidad/ProductForge/...` | Permiso `drive.file`. OneDrive se implementó y se descartó. |
 | D12 | Plantillas 11 y 12 **después** de v1 | 10 plantillas en Fase 3c. |
 | D13 | **Git solo local** por ahora | `git init` en `C:\Proyecto-Donoso`, sin remoto. |
 

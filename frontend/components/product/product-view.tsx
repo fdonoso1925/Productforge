@@ -15,7 +15,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { FileRow, ItemRow, JobRow, ProductRow } from "@/lib/types";
 import { CommercialCard } from "./commercial-card";
 import { ConfirmButton } from "./confirm-button";
-import { OneDriveStatus } from "./onedrive-status";
+import { DriveStatus } from "./drive-status";
 import { DuplicatePanel, otherMarket } from "./duplicate-panel";
 import { RemodelPanel } from "./remodel-panel";
 import { VersionsCard } from "./versions-card";
@@ -47,7 +47,7 @@ export function ProductView({ productId }: { productId: string }) {
         .from("jobs")
         .select("id, status, progress, error, created_at")
         .eq("product_id", productId)
-        .neq("kind", "upload") // la copia a OneDrive no es una generación: no tapa los resultados
+        .neq("kind", "upload") // la copia a Drive no es una generación: no tapa los resultados
         .order("created_at", { ascending: false })
         .limit(1),
     ]);
@@ -118,7 +118,7 @@ export function ProductView({ productId }: { productId: string }) {
             <span className="font-medium">{t("ready")}</span>
             {zip && <DownloadButton file={zip} label={t("downloadZip")} primary />}
           </div>
-          <OneDriveStatus productId={product.id} refreshKey={`${product.status}|${product.updated_at ?? ""}`} />
+          <DriveStatus productId={product.id} refreshKey={`${product.status}|${product.updated_at ?? ""}`} />
 
           <div className="flex flex-wrap gap-3">
             <Button variant={panel === "remodel" ? "default" : "outline"} onClick={() => setPanel(panel === "remodel" ? null : "remodel")}>

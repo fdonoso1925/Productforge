@@ -84,10 +84,10 @@ class MemoryFiles:
         row = {
             "id": str(uuid4()),
             "product_item_id": item_id,  # mismo nombre de columna que en Postgres
-            "onedrive_status": "pending",
+            "remote_status": "pending",
             "upload_attempts": 0,
-            "onedrive_item_id": None,
-            "onedrive_url": None,
+            "remote_id": None,
+            "remote_url": None,
             **{k: str(v) if isinstance(v, UUID) else v for k, v in row.items()},
         }
         self.rows[row["id"]] = row
@@ -106,7 +106,7 @@ class MemoryFiles:
         return [
             {"product_id": r["product_id"], "user_id": r["user_id"]}
             for r in self.rows.values()
-            if r["onedrive_status"] in ("pending", "failed")
+            if r["remote_status"] in ("pending", "failed")
             and r["upload_attempts"] < max_attempts
             and r["file_type"] != "zip"
             and (user_id is None or r["user_id"] == str(user_id))

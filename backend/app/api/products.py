@@ -75,7 +75,7 @@ async def generate(product_id: UUID, user: User, services: ServicesDep) -> JobRe
         raise HTTPException(status.HTTP_409_CONFLICT, "el producto no tiene outline")
     if await services.jobs.active_for_product(product_id):
         raise HTTPException(
-            status.HTTP_409_CONFLICT, "hay un trabajo en curso (generación o subida a OneDrive)"
+            status.HTTP_409_CONFLICT, "hay un trabajo en curso (generación o subida a Google Drive)"
         )
     job = await services.jobs.enqueue(
         product_id=product_id, user_id=user.id, kind="generate", payload={}
@@ -93,7 +93,7 @@ def require_settled(product: dict) -> None:
 async def require_idle(services, product_id: UUID) -> None:
     if await services.jobs.active_for_product(product_id):
         raise HTTPException(
-            status.HTTP_409_CONFLICT, "hay un trabajo en curso (generación o subida a OneDrive)"
+            status.HTTP_409_CONFLICT, "hay un trabajo en curso (generación o subida a Google Drive)"
         )
 
 

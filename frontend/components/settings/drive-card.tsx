@@ -9,21 +9,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ConfirmButton } from "@/components/product/confirm-button";
 import { ErrorBox, Loading } from "@/components/wizard/step-nav";
 import { ApiError, api } from "@/lib/api";
-import type { OneDriveStatus } from "@/lib/types";
+import type { DriveStatus } from "@/lib/types";
 
 export type Outcome = "connected" | "denied" | "error" | null;
 
-export function OneDriveCard({ outcome }: { outcome: Outcome }) {
-  const t = useTranslations("settings.onedrive");
+export function DriveCard({ outcome }: { outcome: Outcome }) {
+  const t = useTranslations("settings.drive");
   const locale = useLocale() as "es" | "pt";
-  const [status, setStatus] = useState<OneDriveStatus | null>(null);
+  const [status, setStatus] = useState<DriveStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [queued, setQueued] = useState<number | null>(null);
   const [reload, setReload] = useState(0);
 
   useEffect(() => {
-    api.onedriveStatus().then(
+    api.driveStatus().then(
       (s) => setStatus(s),
       (e) => setError(e instanceof Error ? e.message : String(e)),
     );
@@ -43,22 +43,22 @@ export function OneDriveCard({ outcome }: { outcome: Outcome }) {
 
   const connect = () =>
     run(async () => {
-      const { url } = await api.onedriveConnect(locale);
-      // Microsoft pide el permiso y devuelve al usuario a /settings?onedrive=…
+      const { url } = await api.driveConnect(locale);
+      // Google pide el permiso y devuelve al usuario a /settings?drive=…
       window.location.assign(url);
       await new Promise(() => {}); // la página se va: mantiene el botón ocupado
     });
 
   const disconnect = () =>
     run(async () => {
-      await api.onedriveDisconnect();
+      await api.driveDisconnect();
       setQueued(null);
       setReload((n) => n + 1);
     });
 
   const syncAll = () =>
     run(async () => {
-      const { products } = await api.onedriveSyncAll();
+      const { products } = await api.driveSyncAll();
       setQueued(products);
     });
 

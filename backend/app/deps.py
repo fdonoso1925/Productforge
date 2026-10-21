@@ -25,7 +25,7 @@ from app.db.supabase import (
 from app.pipeline.generate import PipelineDeps
 from app.pipeline.uploads import UploadQueue
 from app.storage.crypto import TokenCipher
-from app.storage.onedrive import OneDrive, OneDriveConfig
+from app.storage.google_drive import GoogleConfig, GoogleDrive
 from app.storage.supabase_storage import SupabaseStorage
 
 
@@ -39,7 +39,7 @@ class Services:
     files: FileRepo
     jobs: JobRepo
     storage: SupabaseStorage
-    onedrive: OneDrive
+    drive: GoogleDrive
     upload_queue: UploadQueue
 
     def pipeline(self) -> PipelineDeps:
@@ -51,7 +51,7 @@ class Services:
             jobs=self.jobs,
             storage=self.storage,
             templates_dir=self.settings.templates_dir,
-            sync_target=self.onedrive,
+            sync_target=self.drive,
             uploads=self.upload_queue,
         )
 
@@ -70,12 +70,11 @@ def build_services(settings: Settings) -> Services:
         ),
     )
     files, jobs = FileRepo(db), JobRepo(db)
-    onedrive = OneDrive(
-        OneDriveConfig(
-            client_id=settings.ms_client_id,
-            client_secret=settings.ms_client_secret,
-            tenant=settings.ms_tenant,
-            redirect_uri=settings.ms_redirect_uri,
+    drive = GoogleDrive(
+        GoogleConfig(
+            client_id=settings.google_client_id,
+            client_secret=settings.google_client_secret,
+            redirect_uri=settings.google_redirect_uri,
         ),
         ConnectionRepo(db),
         TokenCipher(settings.token_encryption_key) if settings.token_encryption_key else None,
@@ -89,8 +88,8 @@ def build_services(settings: Settings) -> Services:
         files=files,
         jobs=jobs,
         storage=SupabaseStorage(settings.supabase_url, settings.supabase_service_role_key),
-        onedrive=onedrive,
-        upload_queue=UploadQueue(onedrive, jobs, files),
+        drive=drive,
+        upload_queue=UploadQueue(drive, jobs, files),
     )
 
 

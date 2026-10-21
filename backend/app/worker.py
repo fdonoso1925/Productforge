@@ -12,8 +12,8 @@ from collections.abc import Awaitable, Callable
 
 from app.config import get_settings
 from app.deps import Services, build_services
+from app.pipeline.drive_sync import run_upload
 from app.pipeline.generate import PipelineDeps, run_generate
-from app.pipeline.onedrive_sync import run_upload
 from app.pipeline.remodel import run_duplicate, run_regenerate_item, run_remodel
 
 logger = logging.getLogger("productforge.worker")
@@ -26,7 +26,7 @@ HANDLERS: dict[str, Callable[[dict, PipelineDeps], Awaitable[None]]] = {
     "upload": run_upload,
 }
 POLL_SECONDS = 2.0
-# Cada tanto se reencolan las subidas a OneDrive que quedaron pendientes o fallidas.
+# Cada tanto se reencolan las subidas a Google Drive que quedaron pendientes o fallidas.
 UPLOAD_RETRY_SECONDS = 600.0
 
 

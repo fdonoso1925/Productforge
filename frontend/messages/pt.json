@@ -195,11 +195,11 @@
       "current": "Você está aqui",
       "original": "Original"
     },
-    "oneDriveSync": {
-      "notConnected": "OneDrive não conectado",
+    "driveSync": {
+      "notConnected": "Drive não conectado",
       "connectLink": "Conectar",
-      "files": "OneDrive: {uploaded} de {total} arquivos",
-      "syncing": "Enviando para o OneDrive…",
+      "files": "Drive: {uploaded} de {total} arquivos",
+      "syncing": "Enviando para o Drive…",
       "pending": "{count} pendentes",
       "failed": "{count} com erro",
       "retry": "Enviar agora",
@@ -235,25 +235,25 @@
   "settings": {
     "title": "Configurações",
     "subtitle": "Conexões da sua conta.",
-    "onedrive": {
-      "title": "OneDrive",
-      "description": "Copia cada pacote para o seu OneDrive pessoal. O ProductForge só enxerga a própria pasta, nunca o resto dos seus arquivos.",
-      "folderHint": "Os arquivos ficam em Aplicativos/ProductForge, organizados por mercado, nicho e data.",
-      "notConfigured": "O backend ainda não tem as credenciais da Microsoft (MS_CLIENT_ID, MS_CLIENT_SECRET e TOKEN_ENCRYPTION_KEY). Os passos estão no CLAUDE.md, seção OneDrive.",
+    "drive": {
+      "title": "Google Drive",
+      "description": "Copia cada pacote para o seu Google Drive. O ProductForge só enxerga as pastas e arquivos que ele mesmo cria, nunca o resto do seu Drive.",
+      "folderHint": "Os arquivos ficam em Meu Drive › ProductForge, organizados por mercado, nicho e data.",
+      "notConfigured": "O backend ainda não tem as credenciais do Google (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET e TOKEN_ENCRYPTION_KEY). Os passos estão no CLAUDE.md, seção Google Drive.",
       "connected": "Conectado como {account}",
       "connectedNoName": "Conectado",
       "notConnected": "Não conectado",
-      "connect": "Conectar ao OneDrive",
-      "connecting": "Redirecionando para a Microsoft…",
+      "connect": "Conectar ao Google Drive",
+      "connecting": "Redirecionando para o Google…",
       "disconnect": "Desconectar",
       "disconnectConfirm": "Tem certeza?",
-      "disconnectHint": "Os arquivos que já estão no OneDrive continuam lá.",
+      "disconnectHint": "Os arquivos que já estão no seu Drive continuam lá.",
       "syncAll": "Sincronizar tudo",
       "queued": "{count, plural, =0 {Nada pendente.} one {# pacote na fila.} other {# pacotes na fila.}}",
       "outcome": {
-        "connected": "OneDrive conectado. Os pacotes que já existiam estão sendo copiados.",
+        "connected": "Google Drive conectado. Os pacotes que já existiam estão sendo copiados.",
         "denied": "Você cancelou a autorização: nada foi conectado.",
-        "error": "Não foi possível conectar com a Microsoft. Tente de novo."
+        "error": "Não foi possível conectar com o Google. Deixe marcada a permissão do Drive e tente de novo."
       }
     }
   }

@@ -53,7 +53,7 @@ class PipelineDeps:
     jobs: JobRepo
     storage: StorageProvider
     templates_dir: Path
-    # OneDrive: destino al que se copian los archivos y cola que encola esas copias.
+    # Google Drive: destino al que se copian los archivos y cola que encola esas copias.
     sync_target: SyncTarget | None = None
     uploads: UploadQueue | None = None
 
@@ -116,7 +116,7 @@ class PackageBuilder:
         self.template = load_template(deps.templates_dir, product["template_id"])
         self.progress = Progress(job_id=job["id"], jobs=deps.jobs)
         self.base = f"{self.user_id}/{self.product_id}"
-        # Archivos de OneDrive que quedaron huérfanos al reemplazar los de Supabase.
+        # Copias en Google Drive que quedaron huérfanos al reemplazar los de Supabase.
         self.orphaned_remote_ids: list[str] = []
 
     # ── piezas ──
@@ -131,10 +131,8 @@ class PackageBuilder:
         return group[order]
 
     async def drop_files(self, rows: list[dict]) -> None:
-        """Borra filas de `files` y recuerda sus copias en OneDrive para limpiarlas después."""
-        self.orphaned_remote_ids += [
-            r["onedrive_item_id"] for r in rows if r.get("onedrive_item_id")
-        ]
+        """Borra filas de `files` y recuerda sus copias externas para limpiarlas después."""
+        self.orphaned_remote_ids += [r["remote_id"] for r in rows if r.get("remote_id")]
         await self.deps.files.delete_ids([r["id"] for r in rows])
 
     async def start(self, rows: list[dict]) -> None:
@@ -273,7 +271,7 @@ class PackageBuilder:
             file_type="zip",
             storage_path=path,
             size=len(archive),
-            onedrive_status="skipped",  # el ZIP es para descargar, no se copia a OneDrive
+            remote_status="skipped",  # el ZIP es para descargar, no se copia a Drive
         )
 
     async def finish(self) -> None:
@@ -281,13 +279,13 @@ class PackageBuilder:
         ok = bool(items) and all(i["status"] == "ready" for i in items)
         await self.deps.products.update(self.product_id, status="ready" if ok else "error")
         await self.progress.set(stage="done")
-        await self._queue_onedrive()
+        await self._queue_uploads()
 
-    async def _queue_onedrive(self) -> None:
-        """Encola la copia a OneDrive. Un fallo aquí nunca debe tumbar la generación."""
+    async def _queue_uploads(self) -> None:
+        """Encola la copia al destino externo. Un fallo aquí nunca debe tumbar la generación."""
         if self.deps.uploads is None:
             return
         try:
             await self.deps.uploads.enqueue(self.user_id, self.product_id, self.orphaned_remote_ids)
         except Exception:
-            logger.exception("no se pudo encolar la subida a OneDrive")
+            logger.exception("no se pudo encolar la subida a Google Drive")

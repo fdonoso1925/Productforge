@@ -6,14 +6,14 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { api } from "@/lib/api";
-import type { ProductOneDrive } from "@/lib/types";
+import type { ProductDrive } from "@/lib/types";
 
 const POLL_MS = 3000;
 
-/** Estado de la copia del paquete en OneDrive, con reintento manual. */
-export function OneDriveStatus({ productId, refreshKey }: { productId: string; refreshKey: string }) {
-  const t = useTranslations("product.oneDriveSync");
-  const [data, setData] = useState<ProductOneDrive | null>(null);
+/** Estado de la copia del paquete en Google Drive, con reintento manual. */
+export function DriveStatus({ productId, refreshKey }: { productId: string; refreshKey: string }) {
+  const t = useTranslations("product.driveSync");
+  const [data, setData] = useState<ProductDrive | null>(null);
   // Sube al pedir una subida para volver a consultar y reanudar el polling.
   const [nonce, setNonce] = useState(0);
   const [error, setError] = useState(false);
@@ -23,7 +23,7 @@ export function OneDriveStatus({ productId, refreshKey }: { productId: string; r
     let timer: ReturnType<typeof setTimeout>;
     const tick = async () => {
       try {
-        const next = await api.productOneDrive(productId);
+        const next = await api.productDrive(productId);
         if (!alive) return;
         setData(next);
         setError(false);
@@ -40,7 +40,7 @@ export function OneDriveStatus({ productId, refreshKey }: { productId: string; r
     };
   }, [productId, refreshKey, nonce]);
 
-  if (error || !data) return null; // el estado de OneDrive es un extra: nunca estorba el resto
+  if (error || !data) return null; // el estado de Drive es un extra: nunca estorba el resto
 
   if (!data.connected) {
     return (
@@ -56,7 +56,7 @@ export function OneDriveStatus({ productId, refreshKey }: { productId: string; r
 
   const unsynced = data.pending + data.failed;
   const retry = async () => {
-    await api.productOneDriveSync(productId).catch(() => undefined);
+    await api.productDriveSync(productId).catch(() => undefined);
     setNonce((n) => n + 1);
   };
 

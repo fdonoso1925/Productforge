@@ -1,4 +1,4 @@
-"""Cola de subidas a destinos externos (OneDrive). Solo decide a quién encolarle un job."""
+"""Cola de subidas a destinos externos (Google Drive). Solo decide a quién encolarle un job."""
 
 import logging
 from collections.abc import Iterable
@@ -21,7 +21,7 @@ class UploadQueue:
     async def enqueue(
         self, user_id: UUID, product_id: UUID, delete_item_ids: Iterable[str] = ()
     ) -> bool:
-        """Encola la copia de un producto. No hace nada si el usuario no conectó OneDrive."""
+        """Encola la copia de un producto. No hace nada si el usuario no conectó Google Drive."""
         if not self.target.configured() or not await self.target.is_connected(user_id):
             return False
         delete = list(delete_item_ids)

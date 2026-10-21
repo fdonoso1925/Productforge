@@ -111,9 +111,9 @@ export type FileRow = {
   size: number;
 };
 
-export type OneDriveStatus = { configured: boolean; connected: boolean; account: string | null };
+export type DriveStatus = { configured: boolean; connected: boolean; account: string | null };
 
-export type ProductOneDrive = {
+export type ProductDrive = {
   connected: boolean;
   total: number;
   uploaded: number;

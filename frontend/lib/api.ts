@@ -1,6 +1,6 @@
 import { env } from "@/lib/env";
 import { createClient } from "@/lib/supabase/client";
-import type { Format, Market, OneDriveStatus, PackageOutline, ProductOneDrive, Problem, TemplateInfo } from "@/lib/types";
+import type { Format, Market, DriveStatus, PackageOutline, ProductDrive, Problem, TemplateInfo } from "@/lib/types";
 
 export class ApiError extends Error {
   constructor(
@@ -91,14 +91,14 @@ export const api = {
     }),
   regenerateItem: (productId: string, itemId: string) =>
     call<{ job_id: string }>(`/products/${productId}/items/${itemId}/regenerate`, { method: "POST" }),
-  onedriveStatus: () => call<OneDriveStatus>("/storage/onedrive/status"),
-  onedriveConnect: (locale: "es" | "pt") =>
-    call<{ url: string }>("/storage/onedrive/connect", { method: "POST", body: JSON.stringify({ locale }) }),
-  onedriveDisconnect: () => call<void>("/storage/onedrive", { method: "DELETE" }),
-  onedriveSyncAll: () => call<{ products: number }>("/storage/onedrive/sync", { method: "POST" }),
-  productOneDrive: (productId: string) => call<ProductOneDrive>(`/products/${productId}/onedrive`),
-  productOneDriveSync: (productId: string) =>
-    call<{ products: number }>(`/products/${productId}/onedrive/sync`, { method: "POST" }),
+  driveStatus: () => call<DriveStatus>("/storage/drive/status"),
+  driveConnect: (locale: "es" | "pt") =>
+    call<{ url: string }>("/storage/drive/connect", { method: "POST", body: JSON.stringify({ locale }) }),
+  driveDisconnect: () => call<void>("/storage/drive", { method: "DELETE" }),
+  driveSyncAll: () => call<{ products: number }>("/storage/drive/sync", { method: "POST" }),
+  productDrive: (productId: string) => call<ProductDrive>(`/products/${productId}/drive`),
+  productDriveSync: (productId: string) =>
+    call<{ products: number }>(`/products/${productId}/drive/sync`, { method: "POST" }),
   downloadUrl: (fileId: string) => call<{ url: string }>(`/files/${fileId}/download`),
   templates: async (): Promise<TemplateInfo[]> => {
     const response = await fetch(`${env.apiUrl}/templates`);

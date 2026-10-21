@@ -1,4 +1,4 @@
-"""Capa de almacenamiento (§10). Supabase Storage es siempre el respaldo; OneDrive (Fase 6)
+"""Capa de almacenamiento (§10). Supabase Storage es siempre el respaldo; Google Drive (Fase 6)
 u otros (Google Drive, Dropbox) implementan la misma interfaz."""
 
 from dataclasses import dataclass
@@ -35,7 +35,7 @@ class RemoteFile:
 class SyncTarget(Protocol):
     """Destino externo al que se COPIAN los archivos ya guardados en Supabase Storage.
 
-    OneDrive hoy; Google Drive o Dropbox mañana implementan lo mismo. Supabase sigue siendo
+    Google Drive hoy; OneDrive o Dropbox mañana implementarían lo mismo. Supabase sigue siendo
     el respaldo: si el destino falla, el archivo no se pierde y la copia se reintenta.
     """
 

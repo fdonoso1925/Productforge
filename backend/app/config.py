@@ -33,14 +33,13 @@ class Settings(BaseSettings):
     # true: el worker de jobs corre dentro de la API (desarrollo). En producción, proceso aparte.
     worker_inline: bool = False
 
-    # URL pública del frontend: a dónde vuelve el navegador tras autorizar OneDrive.
+    # URL pública del frontend: a dónde vuelve el navegador tras autorizar Google Drive.
     frontend_url: str = "http://localhost:3000"
 
-    # OneDrive (Microsoft Graph). Cuenta personal → tenant "consumers".
-    ms_client_id: str = ""
-    ms_client_secret: str = ""
-    ms_tenant: str = "consumers"
-    ms_redirect_uri: str = "http://localhost:8000/storage/onedrive/callback"
+    # Google Drive (OAuth de Google). Credenciales de un cliente "Aplicación web" en Cloud Console.
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    google_redirect_uri: str = "http://localhost:8000/storage/drive/callback"
     # Clave Fernet que cifra los tokens OAuth en la base.
     token_encryption_key: str = ""
 

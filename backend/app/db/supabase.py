@@ -204,7 +204,7 @@ class FileRepo:
         file_type: str,
         storage_path: str,
         size: int,
-        onedrive_status: str = "pending",
+        remote_status: str = "pending",
     ) -> Row:
         [row] = await self._db.insert(
             "files",
@@ -215,7 +215,7 @@ class FileRepo:
                 "file_type": file_type,
                 "storage_path": storage_path,
                 "size": size,
-                "onedrive_status": onedrive_status,
+                "remote_status": remote_status,
             },
         )
         return row
@@ -227,7 +227,7 @@ class FileRepo:
         """Archivos pendientes o fallidos que aún admiten reintentos (para el reintento
         automático y para "sincronizar todo")."""
         filters = {
-            "onedrive_status": "in.(pending,failed)",
+            "remote_status": "in.(pending,failed)",
             "upload_attempts": f"lt.{max_attempts}",
             "file_type": "neq.zip",
             "select": "product_id,user_id",

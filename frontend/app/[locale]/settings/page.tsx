@@ -1,5 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { OneDriveCard, type Outcome } from "@/components/settings/onedrive-card";
+import { DriveCard, type Outcome } from "@/components/settings/drive-card";
 import { Link } from "@/i18n/navigation";
 
 const OUTCOMES: Outcome[] = ["connected", "denied", "error"];
@@ -7,11 +7,11 @@ const OUTCOMES: Outcome[] = ["connected", "denied", "error"];
 export default async function SettingsPage({ params, searchParams }: PageProps<"/[locale]/settings">) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const { onedrive } = await searchParams;
+  const { drive } = await searchParams;
   const t = await getTranslations("settings");
   const tc = await getTranslations("common");
   // Solo se aceptan los tres valores conocidos: el parámetro viene de la URL.
-  const outcome = OUTCOMES.find((o) => o === onedrive) ?? null;
+  const outcome = OUTCOMES.find((o) => o === drive) ?? null;
 
   return (
     <main className="mx-auto flex w-full min-w-0 max-w-3xl flex-1 flex-col gap-6 px-4 py-8">
@@ -29,7 +29,7 @@ export default async function SettingsPage({ params, searchParams }: PageProps<"
           </Link>
         </nav>
       </header>
-      <OneDriveCard outcome={outcome} />
+      <DriveCard outcome={outcome} />
     </main>
   );
 }

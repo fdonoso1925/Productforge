@@ -6,10 +6,10 @@ from uuid import UUID, uuid4
 import pytest
 
 from app.config import Settings
-from app.pipeline.onedrive_sync import UploadIncomplete, product_folder, run_upload
+from app.pipeline.drive_sync import UploadIncomplete, product_folder, run_upload
 from app.pipeline.package import PipelineDeps
 from app.pipeline.uploads import MAX_ATTEMPTS, UploadQueue
-from tests.fake_microsoft import FakeTarget
+from tests.fake_google import FakeTarget
 from tests.memory import MemoryFiles, MemoryItems, MemoryJobs, MemoryProducts, MemoryStorage
 from tests.test_remodel import World, bonus_mind_map, new_mind_map
 
@@ -22,7 +22,7 @@ def run(coro):
 
 
 class Env:
-    """Un producto con archivos ya guardados en Storage, listo para copiarse a OneDrive."""
+    """Un producto con archivos ya guardados en Storage, listo para copiarse a Google Drive."""
 
     def __init__(self, target: FakeTarget | None = None, **product) -> None:
         self.target = target or FakeTarget()
@@ -74,7 +74,7 @@ class Env:
         run(run_upload(self.job(**payload), self.deps))
 
     def status(self, row: dict) -> str:
-        return self.files.rows[row["id"]]["onedrive_status"]
+        return self.files.rows[row["id"]]["remote_status"]
 
 
 # ─────────────────────────── carpeta ───────────────────────────
@@ -141,8 +141,8 @@ def test_files_are_copied_with_the_folder_structure_and_zip_is_skipped() -> None
     assert {m for _, _, _, m in env.target.uploads} >= {"application/pdf", "text/markdown"}
     for row in (pdf, xlsx, ficha):
         saved = env.files.rows[row["id"]]
-        assert saved["onedrive_status"] == "uploaded" and saved["upload_attempts"] == 1
-        assert saved["onedrive_item_id"].startswith("remote-") and saved["onedrive_url"].startswith(
+        assert saved["remote_status"] == "uploaded" and saved["upload_attempts"] == 1
+        assert saved["remote_id"].startswith("remote-") and saved["remote_url"].startswith(
             "https://"
         )
     assert env.status(zip_row) == "skipped"
@@ -160,7 +160,7 @@ def test_failures_are_recorded_and_retried_without_losing_anything() -> None:
     assert env.status(bad) == "failed" and env.files.rows[bad["id"]]["upload_attempts"] == 1
     assert env.storage.objects[bad["storage_path"]]  # el respaldo en Supabase sigue ahí
 
-    env.target.fail = ()  # OneDrive se recupera
+    env.target.fail = ()  # Drive se recupera
     env.upload()
     assert env.status(bad) == "uploaded" and env.files.rows[bad["id"]]["upload_attempts"] == 2
     uploaded_again = [p for _, p, _, _ in env.target.uploads if p.endswith("guia.pdf")]
@@ -169,9 +169,7 @@ def test_failures_are_recorded_and_retried_without_losing_anything() -> None:
 
 def test_files_that_exhausted_their_attempts_are_left_alone() -> None:
     env = Env()
-    stuck = env.add_file(
-        "principal/guia.pdf", onedrive_status="failed", upload_attempts=MAX_ATTEMPTS
-    )
+    stuck = env.add_file("principal/guia.pdf", remote_status="failed", upload_attempts=MAX_ATTEMPTS)
     env.upload()
     assert env.target.attempted == [] and env.status(stuck) == "failed"
 
@@ -193,7 +191,7 @@ def test_missing_supabase_object_marks_the_file_failed() -> None:
     assert env.status(row) == "failed"
 
 
-def test_replaced_files_are_deleted_from_onedrive_best_effort() -> None:
+def test_replaced_files_are_deleted_from_drive_best_effort() -> None:
     env = Env(FakeTarget(fail_delete=True))
     env.add_file("principal/a.pdf")
     env.upload(delete_item_ids=["old-1", "old-2"])  # el borrado falla y no rompe el job
@@ -241,7 +239,7 @@ def test_enqueue_unsynced_picks_only_products_with_pending_files() -> None:
             file_type="pdf",
             storage_path="x",
             size=1,
-            onedrive_status="uploaded",
+            remote_status="uploaded",
         )
     )
     assert run(env.deps.uploads.enqueue_unsynced(UUID(USER))) == 1
@@ -251,7 +249,7 @@ def test_enqueue_unsynced_picks_only_products_with_pending_files() -> None:
 # ─────────────────────────── integración con la generación ───────────────────────────
 
 
-def with_onedrive(world: World, target: FakeTarget) -> None:
+def with_drive(world: World, target: FakeTarget) -> None:
     world.deps.sync_target = target
     world.deps.uploads = UploadQueue(target, world.deps.jobs, world.deps.files)
 
@@ -260,9 +258,9 @@ def upload_jobs(world: World) -> list[dict]:
     return [j for j in world.deps.jobs.rows.values() if j["kind"] == "upload"]
 
 
-def test_generation_queues_the_onedrive_copy_when_connected() -> None:
+def test_generation_queues_the_drive_copy_when_connected() -> None:
     w = World()
-    with_onedrive(w, FakeTarget())
+    with_drive(w, FakeTarget())
     response = w.client.post(
         f"/products/{w.product['id']}/remodel", json={"template_id": "soft-pastel"}
     )
@@ -271,9 +269,9 @@ def test_generation_queues_the_onedrive_copy_when_connected() -> None:
     assert job["product_id"] == response.json()["product_id"]
 
 
-def test_generation_does_not_queue_anything_without_onedrive() -> None:
+def test_generation_does_not_queue_anything_without_drive() -> None:
     w = World()
-    with_onedrive(w, FakeTarget(connected=False))
+    with_drive(w, FakeTarget(connected=False))
     w.client.post(f"/products/{w.product['id']}/remodel", json={"template_id": "soft-pastel"})
     w.run_worker()
     assert upload_jobs(w) == []
@@ -281,7 +279,7 @@ def test_generation_does_not_queue_anything_without_onedrive() -> None:
 
 def test_a_broken_queue_never_fails_the_generation() -> None:
     w = World()
-    with_onedrive(w, FakeTarget())
+    with_drive(w, FakeTarget())
 
     async def boom(*_a, **_k):
         raise RuntimeError("cola caída")
@@ -294,13 +292,13 @@ def test_a_broken_queue_never_fails_the_generation() -> None:
     assert w.deps.products.rows[response.json()["product_id"]]["status"] == "ready"
 
 
-def test_regenerating_a_piece_schedules_cleanup_of_its_old_onedrive_files() -> None:
+def test_regenerating_a_piece_schedules_cleanup_of_its_old_drive_files() -> None:
     w = World(extra_responses=[new_mind_map()])
-    with_onedrive(w, FakeTarget())
+    with_drive(w, FakeTarget())
     item = bonus_mind_map(w)
     mine = [f for f in w.deps.files.rows.values() if f["product_item_id"] == item["id"]]
     for i, f in enumerate(mine):
-        f["onedrive_status"], f["onedrive_item_id"] = "uploaded", f"old-{i}"
+        f["remote_status"], f["remote_id"] = "uploaded", f"old-{i}"
 
     w.client.post(f"/products/{w.product['id']}/items/{item['id']}/regenerate")
     w.run_worker()
@@ -308,10 +306,10 @@ def test_regenerating_a_piece_schedules_cleanup_of_its_old_onedrive_files() -> N
     [job] = upload_jobs(w)
     assert sorted(job["payload"]["delete_item_ids"]) == sorted(f"old-{i}" for i in range(len(mine)))
     new_files = [f for f in w.deps.files.rows.values() if f["product_item_id"] == item["id"]]
-    assert new_files and all(f["onedrive_status"] == "pending" for f in new_files)
+    assert new_files and all(f["remote_status"] == "pending" for f in new_files)
 
 
 def test_the_zip_row_is_created_as_skipped() -> None:
     w = World()
     zips = [f for f in w.deps.files.rows.values() if f["file_type"] == "zip"]
-    assert zips and all(z["onedrive_status"] == "skipped" for z in zips)
+    assert zips and all(z["remote_status"] == "skipped" for z in zips)

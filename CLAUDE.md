@@ -27,26 +27,27 @@ usuario se crea en el dashboard (Authentication → Users → Add user). Restrin
 - `app/worker.py`: toma jobs con la función SQL `claim_job()` (`FOR UPDATE SKIP LOCKED`, reintenta jobs colgados tras 15 min). `WORKER_INLINE=true` lo corre dentro de la API en desarrollo; en producción, `python -m app.worker` como segundo servicio.
 - `app/pipeline/generate.py`: piezas en paralelo (máx. 3) → contenido IA → archivos → Supabase Storage (`<user>/<product>/{principal,order-bumps,bonus}/...`) → ficha comercial → ZIP. Una pieza fallida queda en `error` y no frena las demás. El progreso va en `jobs.progress`.
 - `GET /files/{id}/download` devuelve una URL firmada de 10 min (solo al dueño). `GET /templates` y `/templates/{id}/preview.png` son públicos.
-- `app/storage/base.py`: `StorageProvider` (almacén principal: `SupabaseStorage`) y `SyncTarget` (destinos externos a los que se COPIA lo ya guardado: `OneDrive`; Google Drive o Dropbox implementarían lo mismo).
+- `app/storage/base.py`: `StorageProvider` (almacén principal: `SupabaseStorage`) y `SyncTarget` (destinos externos a los que se COPIA lo ya guardado: `GoogleDrive`; OneDrive o Dropbox implementarían lo mismo).
 - Frontend: wizard en `/[locale]/new` (`components/wizard/`), progreso y resultado en `/[locale]/products/[id]` (polling directo a Supabase con RLS). El mercado se elige en el paso 1 porque los problemas se generan en ese idioma.
 
-### OneDrive (Fase 6)
+### Google Drive (Fase 6)
 
-- **Supabase Storage sigue siendo el respaldo y la fuente de verdad.** OneDrive es una copia: `files.onedrive_status` = `pending` → `uploaded` | `failed` | `skipped` (el ZIP nunca se sube). Si OneDrive falla, el archivo queda `failed` con `upload_attempts` y se reintenta; nunca se pierde nada.
-- `app/storage/onedrive.py`: OAuth 2.0 con código + secreto de cliente, hablado directo con el endpoint de Microsoft con `httpx` (mismo protocolo que MSAL, pero asíncrono y sin dependencia extra). Permiso mínimo `Files.ReadWrite.AppFolder` (+ `offline_access`, `User.Read` solo para mostrar la cuenta): la app solo ve `Apps/ProductForge`. Tenant `consumers` (cuenta personal, D11).
-- Tokens cifrados con Fernet (`TOKEN_ENCRYPTION_KEY`) en `storage_connections` (sin policies: solo la service role). El refresh token rota en cada renovación y se guarda el nuevo; `invalid_grant` borra la conexión y pide reconectar. El `state` del flujo OAuth es opaco, vence a los 10 min y lleva el usuario; el callback no usa JWT y siempre redirige a `FRONTEND_URL`.
-- Subida: ≤ 4 MB con un PUT (`conflictBehavior=replace`, idempotente); mayor, sesión de subida en partes de 5 MiB. Reintentos con `Retry-After`/backoff ante 429/5xx y un único refresh ante 401.
-- Carpeta: `<mercado>/<nicho>/<YYYY-MM-DD>_<slug-producto>/{principal,order-bumps,bonus}/…` + `ficha-comercial.md`. Las versiones derivadas añaden `-<id6>` para no pisar al original.
-- Job `upload` (`pipeline/onedrive_sync.py`): lo encola `PackageBuilder.finish()` si el usuario está conectado, y el worker reencola pendientes/fallidos cada 10 min (máx. 5 intentos por archivo; el botón del producto reinicia los intentos). Al regenerar una pieza, sus copias viejas se borran de OneDrive (`delete_item_ids`).
-- Endpoints: `GET /storage/onedrive/status`, `POST …/connect` (devuelve la URL de Microsoft), `GET …/callback`, `DELETE /storage/onedrive`, `POST …/sync`, `GET|POST /products/{id}/onedrive[/sync]`. Frontend: `/[locale]/settings` y `OneDriveStatus` en cada paquete.
+- **Supabase Storage sigue siendo el respaldo y la fuente de verdad.** Drive es una copia: `files.remote_status` = `pending` → `uploaded` | `failed` | `skipped` (el ZIP nunca se sube). Si Drive falla, el archivo queda `failed` con `upload_attempts` y se reintenta; nunca se pierde nada. (OneDrive se evaluó y se descartó: el usuario usa Gmail.)
+- `app/storage/google_drive.py`: OAuth 2.0 con código + secreto de cliente (cliente "Aplicación web"), hablado directo con `httpx`. Permiso mínimo `drive.file` (+ `openid email` solo para mostrar la cuenta): la app solo ve lo que ella misma crea, nunca el resto del Drive. `access_type=offline` + `prompt=consent` para recibir refresh token; se rechaza la autorización si el usuario desmarcó el permiso de Drive.
+- Tokens cifrados con Fernet (`TOKEN_ENCRYPTION_KEY`) en `storage_connections` (sin policies: solo la service role). Google NO rota el refresh token (se conserva el original). `invalid_grant` borra la conexión y pide reconectar. Al desconectar se revoca el acceso en Google. El `state` del flujo es opaco, vence a los 10 min y lleva el usuario; el callback no usa JWT y siempre redirige a `FRONTEND_URL`.
+- **Drive no direcciona por ruta**: cada carpeta se busca o crea por nombre dentro de su padre, y Drive permite carpetas duplicadas, así que la creación se serializa con un candado por usuario y los ids se cachean. Si el usuario borra una carpeta a mano, se detecta (404) y se recrea. Los archivos se reemplazan en su lugar (idempotente); al regenerar una pieza, las copias viejas van a la **papelera** (recuperable), no se borran.
+- Subida: hasta 5 MB en un request multipart; más, subida reanudable en partes de 8 MiB (si se corta, se consulta cuánto recibió Google y se retoma). Reintentos con `Retry-After`/backoff ante 429/5xx y 403 de límite de velocidad, y un único refresh ante 401.
+- Carpeta (en Mi unidad): `ProductForge/<mercado>/<nicho>/<YYYY-MM-DD>_<slug-producto>/{principal,order-bumps,bonus}/…` + `ficha-comercial.md`. Las versiones derivadas añaden `-<id6>` para no pisar al original.
+- Job `upload` (`pipeline/drive_sync.py`): lo encola `PackageBuilder.finish()` si el usuario está conectado, y el worker reencola pendientes/fallidos cada 10 min (máx. 5 intentos por archivo; el botón del producto reinicia los intentos).
+- Endpoints: `GET /storage/drive/status`, `POST …/connect` (devuelve la URL de Google), `GET …/callback`, `DELETE /storage/drive`, `POST …/sync`, `GET|POST /products/{id}/drive[/sync]`. Frontend: `/[locale]/settings` y `DriveStatus` en cada paquete.
 
-**Registrar la app en Microsoft (una sola vez):**
-1. https://entra.microsoft.com → *Identidad → Aplicaciones → Registros de aplicaciones → Nuevo registro*.
-2. Nombre `ProductForge` (ese nombre es el de la carpeta en OneDrive). Tipos de cuenta: *Solo cuentas Microsoft personales*. URI de redirección: plataforma **Web**, `http://localhost:8000/storage/onedrive/callback` (en producción, la URL pública del backend + la misma ruta, y `MS_REDIRECT_URI` igual).
-3. *Certificados y secretos → Nuevo secreto de cliente*: copia el **Valor** (solo se ve una vez) → `MS_CLIENT_SECRET`.
-4. *Información general*: **ID de aplicación (cliente)** → `MS_CLIENT_ID`.
-5. *Permisos de API → Microsoft Graph → Permisos delegados*: `Files.ReadWrite.AppFolder` y `User.Read` (`offline_access` se pide en el flujo). Las cuentas personales consienten al iniciar sesión; no hace falta consentimiento de administrador.
-6. Reinicia el backend y, en `/settings`, pulsa *Conectar con OneDrive*.
+**Crear las credenciales de Google (una sola vez, gratis):**
+1. https://console.cloud.google.com → proyecto nuevo `ProductForge`.
+2. *APIs y servicios → Biblioteca* → **Google Drive API** → *Habilitar*.
+3. *Pantalla de consentimiento de OAuth* (Google Auth Platform): tipo de usuario **Externo**; nombre `ProductForge`; correo de asistencia y de contacto; en *Acceso a datos* agrega el permiso `.../auth/drive.file`; en *Público* agrega tu Gmail como usuario de prueba.
+4. **Publicar la app ("En producción")**. Mientras esté en modo *Prueba*, Google vence el acceso a los 7 días y habría que reconectar cada semana. `drive.file` no es un permiso sensible, así que no requiere revisión de Google.
+5. *Credenciales → Crear credenciales → ID de cliente de OAuth* → tipo **Aplicación web**. URI de redirección autorizado: `http://localhost:8000/storage/drive/callback` (en producción, la URL pública del backend + la misma ruta, y `GOOGLE_REDIRECT_URI` igual). Copia el **ID de cliente** → `GOOGLE_CLIENT_ID` y el **secreto** → `GOOGLE_CLIENT_SECRET` en `backend/.env`.
+6. Aplica la migración que renombra las columnas (`npx supabase db push`), reinicia el backend y, en `/settings`, pulsa *Conectar con Google Drive*. En la pantalla de Google deja marcado el permiso de Drive.
 
 Si pierdes `TOKEN_ENCRYPTION_KEY`, los tokens guardados quedan ilegibles: basta con reconectar.
 
@@ -120,5 +121,5 @@ Después de `npx supabase db reset`, autoriza tu email:
 - **Modelo:** `claude-opus-5-5` por defecto para todo (configurable con `CLAUDE_MODEL_*`), effort `high`. Opus 5.5 no permite desactivar thinking ni forzar `tool_choice`; la salida estructurada va por `output_format`.
 - **Prompt injection:** los datos del usuario van como JSON dentro de `<datos_del_usuario>` / `<dados_do_usuario>` (con `</` escapado), nunca interpolados en el prompt; el system prompt indica tratarlos como datos. Toda salida se valida contra schema y reglas.
 - **Docker:** el build del backend usa la raíz como contexto (`docker build -f backend/Dockerfile .`) porque copia `prompts/`.
-- **OneDrive:** cuenta personal, `Files.ReadWrite.AppFolder` → `/Aplicaciones/ProductForge/...`.
+- **Destino externo:** Google Drive (cuenta Gmail), permiso `drive.file` → `Mi unidad/ProductForge/...`. Las columnas de `files` son genéricas (`remote_*`) por si se agrega otro destino.
 - **Node:** el proyecto compila con Node 20, pero Supabase JS y vitest 4+ piden Node 22. CI usa 22; vitest queda en 3.x hasta actualizar Node local.
