@@ -80,8 +80,19 @@ export type ProductRow = {
   status: "draft" | "outline_ready" | "generating" | "ready" | "error";
   outline: PackageOutline | null;
   commercial: CommercialSheet | null;
+  tone: string | null;
+  audience_override: string | null;
+  parent_product_id: string | null;
+  root_product_id: string | null;
   created_at: string;
+  updated_at: string;
 };
+
+/** Columnas que lista el historial (y el árbol de versiones). */
+export type HistoryRow = Pick<
+  ProductRow,
+  "id" | "title" | "niche" | "market" | "main_format" | "template_id" | "status" | "parent_product_id" | "created_at"
+>;
 
 export type ItemRow = {
   id: string;
@@ -104,7 +115,7 @@ export type JobRow = {
   id: string;
   status: "queued" | "running" | "done" | "error" | "cancelled";
   progress: {
-    stage?: "items" | "commercial" | "zip" | "done";
+    stage?: "adapting" | "items" | "commercial" | "zip" | "done";
     items?: Record<string, ItemRow["status"]>;
     done?: number;
     total?: number;

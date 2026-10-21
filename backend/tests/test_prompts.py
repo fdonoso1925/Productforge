@@ -71,6 +71,7 @@ TASK_VALUES = {
     },
     "item": {"target_pages": 8, "format_guide": "guia"},
     "commercial": {"currency": "BRL"},
+    "adapt_market": {"main_min_pages": 25, "main_max_pages": 40, "small_max_pages": 15},
 }
 
 

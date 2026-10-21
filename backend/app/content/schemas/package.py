@@ -90,3 +90,11 @@ class CommercialSheet(BaseModel):
     short_description: str = Field(description="Descripción corta para Hotmart / Kiwify")
     benefit_bullets: list[str]
     ad_hooks: list[str] = Field(description="Exactamente 3 hooks para anuncios")
+
+
+class AdaptedPackage(BaseModel):
+    """Paquete adaptado (no traducido) a otro mercado: nicho, problema y outline."""
+
+    niche: str = Field(description="Nombre del nicho en el idioma del mercado destino")
+    problem: Problem
+    outline: PackageOutline

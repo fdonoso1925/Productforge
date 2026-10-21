@@ -10,13 +10,14 @@ from dataclasses import dataclass
 from typing import Protocol, TypeVar
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from app.content import rules
 from app.content.claude_client import CallUsage, LLMInvalidOutput, StructuredLLM
 from app.content.prompts import PromptLibrary, wrap_user_data
 from app.content.schemas import (
     FORMAT_SCHEMAS,
+    AdaptedPackage,
     CommercialSheet,
     Format,
     ItemOutline,
@@ -100,6 +101,58 @@ class ContentService:
             model=self.config.model_outline,
             max_tokens=16_000,
             check=lambda outline: rules.check_package_rules(outline, request),
+        )
+
+    async def adapt_to_market(
+        self,
+        *,
+        user_id: UUID,
+        product_id: UUID,
+        source: PackageRequest,
+        outline: PackageOutline,
+        target: Market,
+    ) -> AdaptedPackage:
+        """Reescribe nicho, problema y outline para otro mercado (no es una traducción literal).
+
+        El contenido de cada pieza se genera después, nativo, con el outline adaptado.
+        """
+        task = self.prompts.render(
+            target,
+            "adapt_market",
+            main_min_pages=rules.MAIN_PAGES[0],
+            main_max_pages=rules.MAIN_PAGES[1],
+            small_max_pages=rules.SMALL_MAX_PAGES,
+        )
+        data = {
+            "source_market": source.market,
+            **_request_data(source),
+            "outline": outline.model_dump(mode="json"),
+        }
+
+        def check(adapted: AdaptedPackage) -> list[str]:
+            try:
+                request = PackageRequest(
+                    niche=adapted.niche,
+                    problem=adapted.problem,
+                    market=target,
+                    main_format=source.main_format,
+                )
+            except ValidationError as exc:
+                return [f"niche o problem inválidos: {exc.errors()[0]['msg']}"]
+            return rules.check_package_rules(adapted.outline, request) + rules.check_adaptation(
+                outline, adapted.outline
+            )
+
+        return await self._call(
+            user_id=user_id,
+            product_id=product_id,
+            market=target,
+            task=task,
+            data=data,
+            schema=AdaptedPackage,
+            model=self.config.model_outline,
+            max_tokens=16_000,
+            check=check,
         )
 
     async def generate_item(

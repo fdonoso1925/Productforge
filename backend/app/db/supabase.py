@@ -63,6 +63,33 @@ def eq(value: object) -> str:
     return f"eq.{value}"
 
 
+def child_row(parent: Row, **overrides: Any) -> Row:
+    """Fila de un producto derivado (versión remodelada o duplicado a otro mercado).
+
+    Apunta al original (`parent_product_id`) y a la raíz del árbol (`root_product_id`).
+    """
+    row: Row = {
+        "user_id": parent["user_id"],
+        "parent_product_id": parent["id"],
+        "root_product_id": parent.get("root_product_id") or parent["id"],
+        "title": parent.get("title"),
+        "slug": parent.get("slug"),
+        "niche": parent["niche"],
+        "problem": parent["problem"],
+        "market": parent["market"],
+        "main_format": parent["main_format"],
+        "template_id": parent["template_id"],
+        "tone": parent.get("tone"),
+        "audience_override": parent.get("audience_override"),
+        "outline": parent.get("outline"),
+        "commercial": parent.get("commercial"),
+        "prompt_version": parent["prompt_version"],
+        "status": "generating",
+    }
+    row.update(overrides)
+    return row
+
+
 class ProductRepo:
     def __init__(self, db: SupabaseRest) -> None:
         self._db = db
@@ -107,6 +134,10 @@ class ProductRepo:
     async def update(self, product_id: UUID, **values: Any) -> None:
         await self._db.update("products", values, id=eq(product_id))
 
+    async def create_child(self, parent: Row, **overrides: Any) -> Row:
+        [row] = await self._db.insert("products", child_row(parent, **overrides))
+        return row
+
 
 class ItemRepo:
     def __init__(self, db: SupabaseRest) -> None:
@@ -136,6 +167,14 @@ class ItemRepo:
                     }
                 )
         return await self._db.insert("product_items", rows)
+
+    async def list_for_product(self, product_id: UUID) -> list[Row]:
+        return await self._db.select(
+            "product_items", product_id=eq(product_id), order="role.asc,order.asc"
+        )
+
+    async def insert_many(self, rows: list[Row]) -> list[Row]:
+        return await self._db.insert("product_items", rows) if rows else []
 
     async def update(self, item_id: UUID | str, **values: Any) -> None:
         await self._db.update("product_items", values, id=eq(item_id))
@@ -170,6 +209,13 @@ class FileRepo:
 
     async def delete_for_product(self, product_id: UUID) -> None:
         await self._db.delete("files", product_id=eq(product_id))
+
+    async def list_for_product(self, product_id: UUID) -> list[Row]:
+        return await self._db.select("files", product_id=eq(product_id))
+
+    async def delete_ids(self, ids: list[str]) -> None:
+        if ids:
+            await self._db.delete("files", id=f"in.({','.join(ids)})")
 
     async def get(self, file_id: UUID, user_id: UUID) -> Row:
         rows = await self._db.select("files", id=eq(file_id), user_id=eq(user_id))

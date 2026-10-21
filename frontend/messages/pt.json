@@ -19,7 +19,8 @@
     "backendError": "O backend não respondeu ({status})",
     "signOut": "Sair",
     "newProduct": "Novo pacote",
-    "newProductHint": "Escolha um nicho e em menos de 2 minutos o pacote está a caminho."
+    "newProductHint": "Escolha um nicho e em menos de 2 minutos o pacote está a caminho.",
+    "history": "Ver histórico"
   },
   "locale": {
     "switch": "Ver en español"
@@ -30,7 +31,8 @@
     "retry": "Tentar de novo",
     "loading": "Carregando…",
     "error": "Algo deu errado: {message}",
-    "home": "Início"
+    "home": "Início",
+    "history": "Histórico"
   },
   "markets": {
     "pt-BR": "Português (Brasil)",
@@ -139,7 +141,8 @@
       "items": "Escrevendo as peças",
       "commercial": "Montando a ficha comercial",
       "zip": "Empacotando o ZIP",
-      "done": "Pronto"
+      "done": "Pronto",
+      "adapting": "Adaptando o pacote ao outro mercado"
     },
     "itemStatus": {
       "pending": "Na fila",
@@ -162,6 +165,59 @@
       "description": "Descrição para Hotmart / Kiwify",
       "benefits": "Benefícios",
       "hooks": "Ganchos para anúncios"
+    },
+    "actions": {
+      "remodel": "Remodelar",
+      "duplicate": "Duplicar para {market}",
+      "remodelTitle": "Remodelar este pacote",
+      "remodelHint": "Cria uma nova versão e deixa esta intacta. A IA só é usada no que realmente muda.",
+      "template": "Modelo visual",
+      "tone": "Tom",
+      "tonePlaceholder": "Ex.: mais próximo e informal",
+      "audience": "Público",
+      "audiencePlaceholder": "Ex.: mães que trabalham em casa",
+      "formats": "Formato de cada peça",
+      "planAi": "{count, plural, one {# peça é regenerada com IA (consome tokens)} other {# peças são regeneradas com IA (consome tokens)}}",
+      "planFree": "{count, plural, one {# peça é rediagramada sem IA} other {# peças são rediagramadas sem IA}}",
+      "planNone": "Você ainda não mudou nada.",
+      "apply": "Criar versão",
+      "cancel": "Cancelar",
+      "duplicateTitle": "Duplicar para outro idioma",
+      "duplicateHint": "Cria uma versão adaptada (não traduzida) para {market}, com conteúdo nativo. Usa IA no pacote inteiro: leva vários minutos e custa quase o mesmo que gerar de novo.",
+      "duplicateConfirm": "Criar versão em {market}",
+      "regenerate": "Regenerar",
+      "regenerateConfirm": "Tem certeza? Usa IA",
+      "working": "Criando…"
+    },
+    "versions": {
+      "title": "Versões",
+      "current": "Você está aqui",
+      "original": "Original"
+    }
+  },
+  "history": {
+    "title": "Histórico",
+    "subtitle": "Todos os seus pacotes. Abra um para baixar, remodelar ou ver as versões.",
+    "search": "Buscar",
+    "searchPlaceholder": "Título ou nicho…",
+    "niche": "Nicho",
+    "market": "Mercado",
+    "format": "Formato principal",
+    "from": "De",
+    "to": "Até",
+    "all": "Todos",
+    "clear": "Limpar filtros",
+    "results": "{count, plural, one {# pacote} other {# pacotes}}",
+    "empty": "Nenhum pacote encontrado.",
+    "emptyNew": "Criar um pacote",
+    "loadMore": "Carregar mais",
+    "derived": "Versão derivada",
+    "status": {
+      "draft": "Rascunho",
+      "outline_ready": "Não gerado",
+      "generating": "Gerando",
+      "ready": "Pronto",
+      "error": "Com erros"
     }
   }
 }

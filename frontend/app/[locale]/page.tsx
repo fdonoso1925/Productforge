@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { History, Plus } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { LocaleSwitch } from "@/components/locale-switch";
 import { Link } from "@/i18n/navigation";
@@ -31,13 +31,22 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
           <CardDescription>{t("newProductHint")}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <Link
-            href="/new"
-            className="inline-flex w-fit items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/80"
-          >
-            <Plus className="size-4" aria-hidden />
-            {t("newProduct")}
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/new"
+              className="inline-flex w-fit items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/80"
+            >
+              <Plus className="size-4" aria-hidden />
+              {t("newProduct")}
+            </Link>
+            <Link
+              href="/history"
+              className="inline-flex w-fit items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted"
+            >
+              <History className="size-4" aria-hidden />
+              {t("history")}
+            </Link>
+          </div>
           <BackendStatus
             labels={{
               checking: t("backendChecking"),

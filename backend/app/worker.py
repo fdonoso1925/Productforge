@@ -12,11 +12,15 @@ from collections.abc import Awaitable, Callable
 from app.config import get_settings
 from app.deps import Services, build_services
 from app.pipeline.generate import PipelineDeps, run_generate
+from app.pipeline.remodel import run_duplicate, run_regenerate_item, run_remodel
 
 logger = logging.getLogger("productforge.worker")
 
 HANDLERS: dict[str, Callable[[dict, PipelineDeps], Awaitable[None]]] = {
     "generate": run_generate,
+    "remodel": run_remodel,
+    "regenerate_item": run_regenerate_item,
+    "duplicate_market": run_duplicate,
 }
 POLL_SECONDS = 2.0
 

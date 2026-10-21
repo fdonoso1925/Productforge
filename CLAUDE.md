@@ -30,6 +30,16 @@ usuario se crea en el dashboard (Authentication → Users → Add user). Restrin
 - `app/storage/base.py`: interfaz `StorageProvider`; hoy solo `SupabaseStorage` (OneDrive en Fase 6).
 - Frontend: wizard en `/[locale]/new` (`components/wizard/`), progreso y resultado en `/[locale]/products/[id]` (polling directo a Supabase con RLS). El mercado se elige en el paso 1 porque los problemas se generan en ese idioma.
 
+### Historial y remodelado (Fase 5)
+
+- `app/pipeline/package.py`: `PackageBuilder` es el núcleo común de todos los jobs que producen archivos (contenido por pieza → archivos → Storage → ficha comercial → ZIP reconstruido descargando de Storage). `generate.py` y `remodel.py` solo orquestan.
+- **Regla de oro: no llamar a la IA si no cambia el contenido.** `plan_remodel` decide por pieza `rerender` (reusa `product_items.content`) o `generate` (IA). Cambiar plantilla o pasar entre formatos con el mismo schema (guía PDF ↔ EPUB) es gratis; cambiar tono/público o a un formato con otro schema usa IA. `frontend/lib/remodel.ts` espeja esta lógica para avisar el costo antes de crear la versión: si cambia una, cambia la otra.
+- `POST /products/{id}/remodel`: crea un producto hijo (`parent_product_id`, `root_product_id` = raíz del árbol, nulo en la raíz) con sus piezas ya copiadas y encola un job `remodel`. Solo viaja lo que cambia (`tone: null` borra el tono). Aplica las mismas reglas del paquete (422 con la lista de errores).
+- `POST /products/{id}/items/{item_id}/regenerate`: job `regenerate_item`. Los archivos viejos se reemplazan solo cuando los nuevos están listos; si falla, la pieza conserva lo que tenía.
+- `POST /products/{id}/duplicate {market}`: job `duplicate_market` = `adapt_to_market` (nicho + problema + outline, prompt `adapt_market.md` nativo del mercado destino, mismos formatos y orden que el original) y después generación normal con contenido nativo. No traduce el contenido ya generado.
+- Los tres exigen un paquete `ready`/`error` sin jobs activos (409) y pertenecer al usuario (404).
+- Frontend: `/[locale]/history` (filtros: búsqueda, nicho, mercado, formato, fechas; lectura directa a Supabase con RLS; `sanitizeSearch` antes de armar el `or()` de PostgREST), paneles de remodelar/duplicar y árbol de versiones (`lib/versions.ts`) en `/[locale]/products/[id]`. Las acciones que usan IA piden doble clic (`ConfirmButton`).
+
 ### Motor de contenido (`backend/app/content/`)
 
 - `schemas/`: Pydantic del paquete (`Problem`, `PackageOutline`, `CommercialSheet`) y un schema por formato (`FORMAT_SCHEMAS`).

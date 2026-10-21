@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from uuid import UUID, uuid4
 
-from app.db.supabase import NotFound
+from app.db.supabase import NotFound, child_row
 
 
 @dataclass
@@ -29,6 +29,9 @@ class MemoryProducts:
 
     async def update(self, product_id: UUID, **values) -> None:
         self.rows[str(product_id)].update(values)
+
+    async def create_child(self, parent: dict, **overrides) -> dict:
+        return self.add(**child_row(parent, **overrides))
 
 
 @dataclass
@@ -57,6 +60,18 @@ class MemoryItems:
                 created.append(row)
         return created
 
+    async def list_for_product(self, product_id) -> list[dict]:
+        rows = [r for r in self.rows.values() if r["product_id"] == str(product_id)]
+        return sorted(rows, key=lambda r: (r["role"], r["order"]))
+
+    async def insert_many(self, rows: list[dict]) -> list[dict]:
+        created = []
+        for row in rows:
+            row = {"id": str(uuid4()), "status": "pending", **row}
+            self.rows[row["id"]] = row
+            created.append(row)
+        return created
+
     async def update(self, item_id, **values) -> None:
         self.rows[str(item_id)].update(values)
 
@@ -76,6 +91,13 @@ class MemoryFiles:
 
     async def delete_for_product(self, product_id) -> None:
         self.rows = {k: v for k, v in self.rows.items() if v["product_id"] != str(product_id)}
+
+    async def list_for_product(self, product_id) -> list[dict]:
+        return [r for r in self.rows.values() if r["product_id"] == str(product_id)]
+
+    async def delete_ids(self, ids: list[str]) -> None:
+        for file_id in ids:
+            self.rows.pop(file_id, None)
 
     async def get(self, file_id, user_id) -> dict:
         row = self.rows.get(str(file_id))
@@ -130,3 +152,10 @@ class MemoryStorage:
 
     async def signed_url(self, path: str, expires_in: int) -> str:
         return f"https://storage.test/{path}?ttl={expires_in}"
+
+    async def download(self, path: str) -> bytes:
+        return self.objects[path]
+
+    async def delete(self, paths: list[str]) -> None:
+        for path in paths:
+            self.objects.pop(path, None)

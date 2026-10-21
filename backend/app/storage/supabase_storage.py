@@ -33,3 +33,16 @@ class SupabaseStorage:
         )
         response.raise_for_status()
         return f"{self._base}{response.json()['signedURL']}"
+
+    async def download(self, path: str) -> bytes:
+        response = await self._client.get(f"{self._base}/object/{self._bucket}/{quote(path)}")
+        response.raise_for_status()
+        return response.content
+
+    async def delete(self, paths: list[str]) -> None:
+        if not paths:
+            return
+        response = await self._client.request(
+            "DELETE", f"{self._base}/object/{self._bucket}", json={"prefixes": paths}
+        )
+        response.raise_for_status()

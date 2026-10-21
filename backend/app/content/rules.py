@@ -132,3 +132,22 @@ def _sheet_errors(content: SheetContent) -> list[str]:
                     f"Pestaña '{tab.name}': sample_rows[{i}] debe tener {len(headers)} valores."
                 )
     return errors
+
+
+def check_adaptation(source: PackageOutline, adapted: PackageOutline) -> list[str]:
+    """La adaptación conserva la estructura: mismos formatos en el mismo orden."""
+    errors: list[str] = []
+    for name, src, new in (
+        ("main", [source.main], [adapted.main]),
+        ("order_bumps", source.order_bumps, adapted.order_bumps),
+        ("bonuses", source.bonuses, adapted.bonuses),
+    ):
+        if len(src) != len(new):
+            errors.append(f"{name} debe tener exactamente {len(src)} pieza(s), como el original.")
+            continue
+        for i, (a, b) in enumerate(zip(src, new, strict=True)):
+            if a.format != b.format:
+                errors.append(
+                    f"{name}[{i}].format debe seguir siendo '{a.format.value}' (como el original)."
+                )
+    return errors

@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, FileArchive } from "lucide-react";
+import { Download, FileArchive, Languages, Palette, RefreshCw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { ErrorBox, Loading } from "@/components/wizard/step-nav";
@@ -9,11 +9,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Link } from "@/i18n/navigation";
-import { api } from "@/lib/api";
+import { ApiError, api } from "@/lib/api";
 import { FORMAT_ICONS } from "@/lib/formats";
 import { createClient } from "@/lib/supabase/client";
 import type { FileRow, ItemRow, JobRow, ProductRow } from "@/lib/types";
 import { CommercialCard } from "./commercial-card";
+import { ConfirmButton } from "./confirm-button";
+import { DuplicatePanel, otherMarket } from "./duplicate-panel";
+import { RemodelPanel } from "./remodel-panel";
+import { VersionsCard } from "./versions-card";
 
 const POLL_MS = 2500;
 
@@ -21,9 +25,15 @@ type Data = { product: ProductRow; items: ItemRow[]; files: FileRow[]; job: JobR
 
 export function ProductView({ productId }: { productId: string }) {
   const t = useTranslations("product");
+  const ta = useTranslations("product.actions");
   const tc = useTranslations("common");
+  const tm = useTranslations("markets");
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [panel, setPanel] = useState<"remodel" | "duplicate" | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  // Sube al encolar un job (regenerar una pieza) para reanudar el polling.
+  const [nonce, setNonce] = useState(0);
 
   // Lecturas directas a Supabase: RLS garantiza que solo vemos lo nuestro.
   const fetchAll = useCallback(async (): Promise<Data | null> => {
@@ -72,32 +82,63 @@ export function ProductView({ productId }: { productId: string }) {
       alive = false;
       clearTimeout(timer);
     };
-  }, [fetchAll]);
+  }, [fetchAll, nonce]);
 
   if (!data) return <Shell>{error ? <ErrorBox message={error} /> : <Loading text={tc("loading")} />}</Shell>;
 
   const { product, items, files, job } = data;
   const running = product.status === "generating" || (job && ["queued", "running"].includes(job.status));
   const zip = files.find((f) => f.file_type === "zip");
+  const settled = !running && files.length > 0 && (product.status === "ready" || product.status === "error");
+
+  const regenerate = async (item: ItemRow) => {
+    setActionError(null);
+    try {
+      await api.regenerateItem(product.id, item.id);
+      setNonce((n) => n + 1);
+    } catch (e) {
+      setActionError(e instanceof ApiError ? e.message : String(e));
+    }
+  };
 
   return (
-    <Shell title={product.title ?? product.niche}>
+    <Shell title={product.title ?? product.niche} meta={<ProductMeta product={product} />}>
       {running && job && <ProgressPanel job={job} items={items} />}
       {!running && job?.status === "error" && <ErrorBox message={t("failed", { error: job.error ?? "?" })} />}
       {!running && product.status === "error" && job?.status === "done" && (
         <p className="rounded-lg bg-amber-500/10 p-3 text-sm">{t("partial")}</p>
       )}
+      {actionError && <ErrorBox message={actionError} />}
 
-      {!running && files.length > 0 && (
+      {settled && (
         <>
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-primary/5 p-4">
             <span className="font-medium">{t("ready")}</span>
             {zip && <DownloadButton file={zip} label={t("downloadZip")} primary />}
           </div>
           <p className="text-xs text-muted-foreground">{t("onedrive")}</p>
+
+          <div className="flex flex-wrap gap-3">
+            <Button variant={panel === "remodel" ? "default" : "outline"} onClick={() => setPanel(panel === "remodel" ? null : "remodel")}>
+              <Palette aria-hidden />
+              {ta("remodel")}
+            </Button>
+            <Button variant={panel === "duplicate" ? "default" : "outline"} onClick={() => setPanel(panel === "duplicate" ? null : "duplicate")}>
+              <Languages aria-hidden />
+              {ta("duplicate", { market: tm(otherMarket(product.market)) })}
+            </Button>
+          </div>
+          {panel === "remodel" && <RemodelPanel product={product} items={items} onClose={() => setPanel(null)} />}
+          {panel === "duplicate" && <DuplicatePanel product={product} onClose={() => setPanel(null)} />}
+
           <div className="grid gap-3">
             {items.map((item) => (
-              <ItemFiles key={item.id} item={item} files={files.filter((f) => f.product_item_id === item.id)} />
+              <ItemFiles
+                key={item.id}
+                item={item}
+                files={files.filter((f) => f.product_item_id === item.id)}
+                onRegenerate={() => regenerate(item)}
+              />
             ))}
           </div>
           {product.commercial && (
@@ -108,32 +149,61 @@ export function ProductView({ productId }: { productId: string }) {
           )}
         </>
       )}
+
+      <VersionsCard
+        currentId={product.id}
+        rootId={product.root_product_id ?? product.id}
+        refreshKey={`${product.status}|${product.updated_at ?? ""}`}
+      />
     </Shell>
   );
 }
 
-function Shell({ title, children }: { title?: string; children: React.ReactNode }) {
+function ProductMeta({ product }: { product: ProductRow }) {
+  const tm = useTranslations("markets");
+  const th = useTranslations("history.status");
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+      <Badge variant="secondary">{tm(product.market)}</Badge>
+      <span>{product.template_id}</span>
+      <span>· {product.niche}</span>
+      {product.status !== "ready" && <Badge variant={product.status === "error" ? "destructive" : "secondary"}>{th(product.status)}</Badge>}
+    </div>
+  );
+}
+
+function Shell({ title, meta, children }: { title?: string; meta?: React.ReactNode; children: React.ReactNode }) {
   const tc = useTranslations("common");
   return (
     <main className="mx-auto flex w-full min-w-0 max-w-4xl flex-1 flex-col gap-6 px-4 py-8">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        <Link href="/" className="text-sm text-muted-foreground hover:underline">
-          {tc("home")}
-        </Link>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 flex-col gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          {meta}
+        </div>
+        <nav className="flex shrink-0 gap-4 text-sm text-muted-foreground">
+          <Link href="/history" className="hover:underline">
+            {tc("history")}
+          </Link>
+          <Link href="/" className="hover:underline">
+            {tc("home")}
+          </Link>
+        </nav>
       </div>
       {children}
     </main>
   );
 }
 
+const STAGE_PROGRESS: Record<string, number> = { adapting: 0, items: 0, commercial: 5, zip: 10, done: 15 };
+
 function ProgressPanel({ job, items }: { job: JobRow; items: ItemRow[] }) {
   const t = useTranslations("product");
   const p = job.progress ?? {};
+  const stage = p.stage ?? "items";
   const total = p.total || items.length || 1;
   // Las piezas son ~85 % del trabajo; ficha comercial y ZIP, el resto.
-  const stageBonus = { items: 0, commercial: 5, zip: 10, done: 15 }[p.stage ?? "items"];
-  const value = Math.round(((p.done ?? 0) / total) * 85 + stageBonus);
+  const value = Math.round(((p.done ?? 0) / total) * 85 + (STAGE_PROGRESS[stage] ?? 0));
 
   return (
     <Card>
@@ -143,7 +213,7 @@ function ProgressPanel({ job, items }: { job: JobRow; items: ItemRow[] }) {
       <CardContent className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <div className="flex justify-between text-sm">
-            <span>{t(`stages.${p.stage ?? "items"}`)}</span>
+            <span>{t(`stages.${stage}`)}</span>
             <span className="tabular-nums">{value}%</span>
           </div>
           <Progress value={value} />
@@ -186,12 +256,29 @@ function StatusBadge({ status }: { status: ItemRow["status"] }) {
   );
 }
 
-function ItemFiles({ item, files }: { item: ItemRow; files: FileRow[] }) {
+function ItemFiles({
+  item,
+  files,
+  onRegenerate,
+}: {
+  item: ItemRow;
+  files: FileRow[];
+  onRegenerate: () => void;
+}) {
+  const ta = useTranslations("product.actions");
   return (
-    <div className="flex min-w-0 flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex min-w-0 items-center gap-3">
-        <ItemLabel item={item} />
-        {item.status === "error" && <StatusBadge status="error" />}
+    <div className="flex min-w-0 flex-col gap-3 rounded-xl border p-4">
+      <div className="flex min-w-0 items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <ItemLabel item={item} />
+          {item.status === "error" && <StatusBadge status="error" />}
+        </div>
+        <ConfirmButton
+          label={ta("regenerate")}
+          confirmLabel={ta("regenerateConfirm")}
+          onConfirm={onRegenerate}
+          icon={<RefreshCw aria-hidden />}
+        />
       </div>
       <div className="flex flex-wrap gap-2">
         {files.map((f) => (

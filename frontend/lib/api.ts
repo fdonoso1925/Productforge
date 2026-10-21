@@ -1,6 +1,6 @@
 import { env } from "@/lib/env";
 import { createClient } from "@/lib/supabase/client";
-import type { Market, PackageOutline, Problem, TemplateInfo } from "@/lib/types";
+import type { Format, Market, PackageOutline, Problem, TemplateInfo } from "@/lib/types";
 
 export class ApiError extends Error {
   constructor(
@@ -52,6 +52,14 @@ export type OutlineRequest = {
   audience_override?: string | null;
 };
 
+/** Solo viajan los campos que cambian: omitir `tone` lo conserva, `null` lo borra. */
+export type RemodelBody = {
+  template_id?: string;
+  tone?: string | null;
+  audience_override?: string | null;
+  formats?: Record<string, Format>;
+};
+
 export const api = {
   proposeProblems: (niche: string, market: Market) =>
     call<{ problems: Problem[] }>("/problems", {
@@ -70,6 +78,18 @@ export const api = {
     }),
   generate: (productId: string) =>
     call<{ job_id: string }>(`/products/${productId}/generate`, { method: "POST" }),
+  remodel: (productId: string, body: RemodelBody) =>
+    call<{ product_id: string; job_id: string; plan: { generate: number; rerender: number } }>(
+      `/products/${productId}/remodel`,
+      { method: "POST", body: JSON.stringify(body) },
+    ),
+  duplicate: (productId: string, market: Market) =>
+    call<{ product_id: string; job_id: string }>(`/products/${productId}/duplicate`, {
+      method: "POST",
+      body: JSON.stringify({ market }),
+    }),
+  regenerateItem: (productId: string, itemId: string) =>
+    call<{ job_id: string }>(`/products/${productId}/items/${itemId}/regenerate`, { method: "POST" }),
   downloadUrl: (fileId: string) => call<{ url: string }>(`/files/${fileId}/download`),
   templates: async (): Promise<TemplateInfo[]> => {
     const response = await fetch(`${env.apiUrl}/templates`);

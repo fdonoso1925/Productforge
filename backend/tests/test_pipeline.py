@@ -34,6 +34,7 @@ def setup(responses):
         main_format="pdf_guide",
         template_id="minimal-clean",
         outline=outline.model_dump(mode="json"),
+        prompt_version="test",
     )
     llm = FakeLLM(responses)
     deps = PipelineDeps(

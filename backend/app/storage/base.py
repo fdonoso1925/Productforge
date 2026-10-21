@@ -14,3 +14,11 @@ class StorageProvider(Protocol):
     async def signed_url(self, path: str, expires_in: int) -> str:
         """URL de descarga temporal."""
         ...
+
+    async def download(self, path: str) -> bytes:
+        """Contenido de un archivo ya subido."""
+        ...
+
+    async def delete(self, paths: list[str]) -> None:
+        """Borra archivos (ignora los que no existen)."""
+        ...
