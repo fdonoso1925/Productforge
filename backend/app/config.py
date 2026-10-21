@@ -13,6 +13,14 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=BACKEND_DIR / ".env", extra="ignore")
 
+    # "production" activa las validaciones de arranque y apaga /docs y /openapi.json.
+    environment: str = "development"
+
+    # Freno ante loops en los endpoints con IA (no es una cuota de costo; ver app/security.py).
+    rate_limit_per_minute: int = 30
+    rate_limit_per_hour: int = 300
+    max_body_bytes: int = 1_000_000
+
     supabase_url: str = "http://127.0.0.1:54321"
     supabase_service_role_key: str = ""
     supabase_jwt_secret: str = ""

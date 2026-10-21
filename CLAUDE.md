@@ -45,11 +45,19 @@ usuario se crea en el dashboard (Authentication → Users → Add user). Restrin
 1. https://console.cloud.google.com → proyecto nuevo `ProductForge`.
 2. *APIs y servicios → Biblioteca* → **Google Drive API** → *Habilitar*.
 3. *Pantalla de consentimiento de OAuth* (Google Auth Platform): tipo de usuario **Externo**; nombre `ProductForge`; correo de asistencia y de contacto; en *Acceso a datos* agrega el permiso `.../auth/drive.file`; en *Público* agrega tu Gmail como usuario de prueba.
-4. **Publicar la app ("En producción")**. Mientras esté en modo *Prueba*, Google vence el acceso a los 7 días y habría que reconectar cada semana. `drive.file` no es un permiso sensible, así que no requiere revisión de Google.
+4. **Publicar la app ("En producción")**. Mientras esté en modo *Prueba*, Google vence el acceso a los 7 días y habría que reconectar cada semana. `drive.file` no es un permiso sensible, así que no requiere revisión de Google, **pero el botón exige una URL de página principal y una de política de privacidad públicas**: la app trae `/[locale]/privacy` sin sesión; se podrá publicar cuando esté desplegada (ver `DEPLOY.md` §4). Antes, seguir en *Prueba* funciona igual.
 5. *Credenciales → Crear credenciales → ID de cliente de OAuth* → tipo **Aplicación web**. URI de redirección autorizado: `http://localhost:8000/storage/drive/callback` (en producción, la URL pública del backend + la misma ruta, y `GOOGLE_REDIRECT_URI` igual). Copia el **ID de cliente** → `GOOGLE_CLIENT_ID` y el **secreto** → `GOOGLE_CLIENT_SECRET` en `backend/.env`.
 6. Aplica la migración que renombra las columnas (`npx supabase db push`), reinicia el backend y, en `/settings`, pulsa *Conectar con Google Drive*. En la pantalla de Google deja marcado el permiso de Drive.
 
 Si pierdes `TOKEN_ENCRYPTION_KEY`, los tokens guardados quedan ilegibles: basta con reconectar.
+
+### Endurecimiento y deploy (Fase 7)
+
+- `app/security.py`: **rate limit** por usuario (ventana deslizante en memoria, `RATE_LIMIT_PER_MINUTE`/`_PER_HOUR`, 30/300 por defecto) como dependencia `ai_rate_limit` en `/problems`, `/outline`, `generate`, `regenerate`, `remodel` y `duplicate`; es un freno ante loops, **no** una cuota de costo (D6). Cabeceras de seguridad en todas las respuestas, tope de tamaño de body (`Content-Length`, 1 MB), access log sin query string (el callback de Google trae `code`/`state`) y `httpx` en WARNING.
+- `ENVIRONMENT=production` (la imagen Docker lo fija): `ensure_production_ready` impide arrancar API y worker con URLs locales, claves vacías, CORS con `localhost`/`*` o una `TOKEN_ENCRYPTION_KEY` inválida, y se apagan `/docs` y `/openapi.json`. Si agregas una variable obligatoria, súmala a `production_problems`.
+- Frontend: cabeceras en `next.config.ts` (sin `script-src`: exigiría nonces), `/[locale]/privacy` pública (`lib/public-paths.ts`; `NEXT_PUBLIC_CONTACT_EMAIL` opcional).
+- Tests: `tests/test_security.py` y `tests/test_e2e_flow.py` (recorrido completo por la API con repos e IA en memoria: 1+3+2, ≥3 formatos, cada archivo se abre, fórmulas XLSX, ZIP, descargas solo del dueño, plantilla sin IA, regenerar). El test de acceso cruzado de RLS sigue en `test_rls_integration.py` (CI con Supabase local).
+- Deploy: `DEPLOY.md` (Netlify `netlify.toml`; Railway `railway.json` para la API y `railway.worker.json` para el worker, misma imagen). CI construye la imagen Docker.
 
 ### Historial y remodelado (Fase 5)
 

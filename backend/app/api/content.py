@@ -10,6 +10,7 @@ from app.content.prompts import PromptLibrary
 from app.content.schemas import Market, PackageOutline, PackageRequest, Problem
 from app.db.supabase import ProductRepo
 from app.deps import get_content_service, get_product_repo, get_prompts
+from app.security import ai_rate_limit
 
 router = APIRouter()
 
@@ -35,13 +36,13 @@ class OutlineResponse(BaseModel):
     outline: PackageOutline
 
 
-@router.post("/problems")
+@router.post("/problems", dependencies=[Depends(ai_rate_limit)])
 async def propose_problems(body: ProblemsRequest, user: User, service: Service) -> ProblemsResponse:
     problems = await service.propose_problems(user_id=user.id, niche=body.niche, market=body.market)
     return ProblemsResponse(problems=problems)
 
 
-@router.post("/outline")
+@router.post("/outline", dependencies=[Depends(ai_rate_limit)])
 async def build_outline(
     body: OutlineRequest,
     user: User,

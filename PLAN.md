@@ -20,7 +20,7 @@ Complejidad: **S** ≈ 1–2 días · **M** ≈ 3–5 días · **L** ≈ 1–2 s
 | **4 — Wizard UI** | Las 8 pantallas de la sección 3, outline editable, polling de jobs con progreso por pieza, ZIP, ficha comercial en pantalla | **L** | Flujo completo < 2 min de interacción (test E2E con IA mockeada) |
 | **5 — Historial y remodelado** | Listado + filtros, detalle, árbol de versiones, remodelar (diff → solo piezas afectadas), regenerar pieza, duplicar al otro idioma | **M** | Cambiar plantilla regenera archivos **sin llamar a la IA** (test que falla si se invoca el cliente Claude) |
 | **6 — OneDrive** | OAuth MSAL, tokens cifrados + refresh, `StorageProvider`, upload sessions, estructura de carpetas, reintentos | **M** | Archivos en `/ProductForge/<mercado>/<nicho>/...`; con Graph caído el archivo queda en Supabase y se reintenta |
-| **7 — Endurecimiento** | Rate limit por usuario, tope de costo diario, E2E completo, deploy Netlify + Railway, docs finales | **M** | Checklist de la sección 13 completo |
+| **7 — Endurecimiento** | Rate limit por usuario, ~~tope de costo diario~~ (descartado, D6), E2E completo, deploy Netlify + Railway, docs finales | **M** | Checklist de la sección 13 completo |
 
 Total estimado: **~6–9 semanas** de trabajo efectivo. Cada fase cierra con tests + commit + resumen.
 

@@ -11,6 +11,7 @@ from app.db.supabase import NotFound
 from app.deps import ServicesDep
 from app.pipeline.generate import package_request
 from app.pipeline.remodel import apply_formats, plan_remodel
+from app.security import ai_rate_limit
 from app.templates_engine.model import list_templates
 
 router = APIRouter(prefix="/products")
@@ -68,7 +69,11 @@ async def save_outline(
     return outline
 
 
-@router.post("/{product_id}/generate", status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/{product_id}/generate",
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(ai_rate_limit)],
+)
 async def generate(product_id: UUID, user: User, services: ServicesDep) -> JobResponse:
     product = await owned_product(services, product_id, user)
     if not product.get("outline"):
@@ -101,7 +106,11 @@ def unprocessable(*errors: str) -> HTTPException:
     return HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, {"errors": list(errors)})
 
 
-@router.post("/{product_id}/items/{item_id}/regenerate", status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/{product_id}/items/{item_id}/regenerate",
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(ai_rate_limit)],
+)
 async def regenerate_item(
     product_id: UUID, item_id: UUID, user: User, services: ServicesDep
 ) -> JobResponse:
@@ -121,7 +130,11 @@ async def regenerate_item(
     return JobResponse(job_id=job["id"])
 
 
-@router.post("/{product_id}/remodel", status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/{product_id}/remodel",
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(ai_rate_limit)],
+)
 async def remodel(
     product_id: UUID, body: RemodelRequest, user: User, services: ServicesDep
 ) -> RemodelResponse:
@@ -204,7 +217,11 @@ async def remodel(
     return RemodelResponse(product_id=child["id"], job_id=job["id"], plan=plan)
 
 
-@router.post("/{product_id}/duplicate", status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/{product_id}/duplicate",
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(ai_rate_limit)],
+)
 async def duplicate_to_market(
     product_id: UUID, body: DuplicateRequest, user: User, services: ServicesDep
 ) -> RemodelResponse:

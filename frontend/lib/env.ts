@@ -4,4 +4,6 @@ export const env = {
   supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
   supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
   apiUrl: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000",
+  // Opcional: se muestra en la política de privacidad pública.
+  contactEmail: process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "",
 };

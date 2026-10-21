@@ -10,7 +10,8 @@
     "password": "Senha",
     "submit": "Entrar",
     "signingIn": "Entrando…",
-    "error": "Email ou senha incorretos."
+    "error": "Email ou senha incorretos.",
+    "privacy": "Privacidade"
   },
   "home": {
     "welcome": "Olá, {email}",
@@ -231,6 +232,54 @@
       "ready": "Pronto",
       "error": "Com erros"
     }
+  },
+  "privacy": {
+    "title": "Política de privacidade",
+    "updated": "Última atualização: outubro de 2026",
+    "intro": "O ProductForge é uma ferramenta pessoal para gerar pacotes de produtos digitais. Esta página explica quais dados ele usa e para quê.",
+    "contact": "Contato: {email}",
+    "back": "Voltar ao início",
+    "sections": [
+      {
+        "title": "Quais dados são usados",
+        "items": [
+          "Seu e-mail e senha, apenas para entrar (gerenciados pelo Supabase Auth).",
+          "O que você escreve para criar um pacote (nicho, problema, tom, público) e os arquivos gerados a partir disso.",
+          "Se você conectar o Google Drive: seu endereço de e-mail do Google, para mostrar qual conta está conectada, e um token de acesso para copiar os arquivos para o seu Drive."
+        ]
+      },
+      {
+        "title": "Acesso ao Google Drive",
+        "items": [
+          "O app pede a permissão mínima (drive.file): só pode ver e modificar as pastas e arquivos que ele mesmo cria no seu Drive. Não consegue ler nem listar o resto dos seus arquivos.",
+          "Só são enviados os pacotes que você gera, para a pasta ProductForge em Meu Drive.",
+          "Os tokens de acesso ficam armazenados criptografados. Ao desconectar o Drive em Configurações, o acesso é revogado no Google e os tokens são apagados. Os arquivos que já estão no seu Drive continuam lá."
+        ]
+      },
+      {
+        "title": "Serviços que processam os dados",
+        "items": [
+          "Supabase: banco de dados, autenticação e armazenamento dos arquivos gerados.",
+          "Anthropic (Claude): recebe o texto que você escreve para criar um pacote, com o único fim de gerar o conteúdo.",
+          "Google Drive: destino opcional da cópia dos arquivos."
+        ]
+      },
+      {
+        "title": "O que não é feito",
+        "items": [
+          "Os dados não são vendidos nem compartilhados com terceiros para publicidade.",
+          "Os dados do Google não são usados para nada além de copiar seus pacotes para o seu próprio Drive.",
+          "Nenhum arquivo do seu Drive que o app não tenha criado é lido."
+        ]
+      },
+      {
+        "title": "Apagar seus dados",
+        "items": [
+          "Você pode desconectar o Google Drive a qualquer momento em Configurações.",
+          "Para apagar sua conta e todos os pacotes salvos, escreva para o contato indicado acima."
+        ]
+      }
+    ]
   },
   "settings": {
     "title": "Configurações",

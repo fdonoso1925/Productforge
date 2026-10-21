@@ -23,7 +23,9 @@ COPY templates ./templates
 RUN useradd --create-home appuser
 USER appuser
 
-ENV PATH="/app/.venv/bin:$PATH"
+# En la imagen se corre siempre como producción: valida la configuración al arrancar y
+# no publica /docs. Para probar la imagen en local pasa -e ENVIRONMENT=development.
+ENV PATH="/app/.venv/bin:$PATH" ENVIRONMENT=production
 EXPOSE 8000
 # Railway inyecta $PORT.
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

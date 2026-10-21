@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { LocaleSwitch } from "@/components/locale-switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Link } from "@/i18n/navigation";
 import { safeNextPath } from "@/lib/redirect";
 import { PasswordForm } from "./password-form";
 
@@ -26,7 +27,12 @@ export default async function LoginPage({ params, searchParams }: PageProps<"/[l
           <PasswordForm next={safeNextPath(typeof next === "string" ? next : null, `/${locale}`)} />
         </CardContent>
       </Card>
-      <LocaleSwitch />
+      <div className="flex items-center gap-4">
+        <LocaleSwitch />
+        <Link href="/privacy" className="text-sm text-muted-foreground underline-offset-4 hover:underline">
+          {t("privacy")}
+        </Link>
+      </div>
     </main>
   );
 }

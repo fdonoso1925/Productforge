@@ -15,6 +15,7 @@ from app.deps import Services, build_services
 from app.pipeline.drive_sync import run_upload
 from app.pipeline.generate import PipelineDeps, run_generate
 from app.pipeline.remodel import run_duplicate, run_regenerate_item, run_remodel
+from app.security import configure_logging, ensure_production_ready
 
 logger = logging.getLogger("productforge.worker")
 
@@ -73,7 +74,10 @@ async def worker_loop(services: Services, stop: asyncio.Event) -> None:
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO)
-    asyncio.run(worker_loop(build_services(get_settings()), asyncio.Event()))
+    configure_logging()
+    settings = get_settings()
+    ensure_production_ready(settings)
+    asyncio.run(worker_loop(build_services(settings), asyncio.Event()))
 
 
 if __name__ == "__main__":

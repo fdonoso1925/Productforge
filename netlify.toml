@@ -1,0 +1,8 @@
+# Frontend en Netlify. El resto de la configuración (variables NEXT_PUBLIC_*) va en el panel
+# del sitio: ver DEPLOY.md. Netlify detecta Next.js y aplica su runtime solo.
+[build]
+  base = "frontend"
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "22"

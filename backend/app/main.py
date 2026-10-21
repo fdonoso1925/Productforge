@@ -14,6 +14,12 @@ from app.config import get_settings
 from app.content.claude_client import LLMError
 from app.content.engines import ContentRejected
 from app.deps import get_services
+from app.security import (
+    BodyLimitMiddleware,
+    SecurityHeadersMiddleware,
+    configure_logging,
+    ensure_production_ready,
+)
 from app.worker import worker_loop
 
 logger = logging.getLogger("productforge")
@@ -22,6 +28,7 @@ logger = logging.getLogger("productforge")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Con WORKER_INLINE=true el worker de jobs corre dentro de la API (desarrollo)."""
+    ensure_production_ready(get_settings())
     if not get_settings().worker_inline:
         yield
         return
@@ -34,7 +41,16 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     settings = get_settings()
-    app = FastAPI(title="ProductForge API", version="0.4.0", lifespan=lifespan)
+    configure_logging()
+    # En producción no se publica el esquema de la API.
+    docs = (
+        {"docs_url": None, "redoc_url": None, "openapi_url": None}
+        if settings.environment == "production"
+        else {}
+    )
+    app = FastAPI(title="ProductForge API", version="0.7.0", lifespan=lifespan, **docs)
+    app.add_middleware(BodyLimitMiddleware, max_bytes=settings.max_body_bytes)
+    app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,

@@ -3,9 +3,9 @@ import createIntlMiddleware from "next-intl/middleware";
 import { type NextRequest, NextResponse } from "next/server";
 import { routing } from "@/i18n/routing";
 import { env } from "@/lib/env";
+import { isPublicPath, LOGIN_PATH } from "@/lib/public-paths";
 
 const intl = createIntlMiddleware(routing);
-const LOGIN_PATH = /^\/(es|pt)\/login\/?$/;
 
 export async function proxy(request: NextRequest) {
   const response = intl(request);
@@ -27,7 +27,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const locale = pathname.split("/")[1] || routing.defaultLocale;
 
-  if (!signedIn && !LOGIN_PATH.test(pathname)) {
+  if (!signedIn && !isPublicPath(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}/login`;
     url.search = `?next=${encodeURIComponent(pathname)}`;
