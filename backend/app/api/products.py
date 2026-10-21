@@ -74,7 +74,9 @@ async def generate(product_id: UUID, user: User, services: ServicesDep) -> JobRe
     if not product.get("outline"):
         raise HTTPException(status.HTTP_409_CONFLICT, "el producto no tiene outline")
     if await services.jobs.active_for_product(product_id):
-        raise HTTPException(status.HTTP_409_CONFLICT, "ya hay una generación en curso")
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "hay un trabajo en curso (generación o subida a OneDrive)"
+        )
     job = await services.jobs.enqueue(
         product_id=product_id, user_id=user.id, kind="generate", payload={}
     )
@@ -90,7 +92,9 @@ def require_settled(product: dict) -> None:
 
 async def require_idle(services, product_id: UUID) -> None:
     if await services.jobs.active_for_product(product_id):
-        raise HTTPException(status.HTTP_409_CONFLICT, "hay una generación en curso")
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "hay un trabajo en curso (generación o subida a OneDrive)"
+        )
 
 
 def unprocessable(*errors: str) -> HTTPException:

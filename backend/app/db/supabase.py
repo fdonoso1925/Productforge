@@ -12,6 +12,7 @@ import httpx
 
 from app.content.claude_client import CallUsage
 from app.content.schemas import PackageOutline, PackageRequest
+from app.storage.crypto import from_bytea, to_bytea
 
 Row = dict[str, Any]
 
@@ -31,6 +32,16 @@ class SupabaseRest:
     async def insert(self, table: str, row: Row | list[Row]) -> list[Row]:
         response = await self._client.post(
             f"/{table}", json=row, headers={"Prefer": "return=representation"}
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def upsert(self, table: str, row: Row, on_conflict: str) -> list[Row]:
+        response = await self._client.post(
+            f"/{table}",
+            json=row,
+            params={"on_conflict": on_conflict},
+            headers={"Prefer": "return=representation,resolution=merge-duplicates"},
         )
         response.raise_for_status()
         return response.json()
@@ -193,6 +204,7 @@ class FileRepo:
         file_type: str,
         storage_path: str,
         size: int,
+        onedrive_status: str = "pending",
     ) -> Row:
         [row] = await self._db.insert(
             "files",
@@ -203,9 +215,27 @@ class FileRepo:
                 "file_type": file_type,
                 "storage_path": storage_path,
                 "size": size,
+                "onedrive_status": onedrive_status,
             },
         )
         return row
+
+    async def update(self, file_id: UUID | str, **values: Any) -> None:
+        await self._db.update("files", values, id=eq(file_id))
+
+    async def unsynced(self, max_attempts: int, user_id: UUID | None = None) -> list[Row]:
+        """Archivos pendientes o fallidos que aún admiten reintentos (para el reintento
+        automático y para "sincronizar todo")."""
+        filters = {
+            "onedrive_status": "in.(pending,failed)",
+            "upload_attempts": f"lt.{max_attempts}",
+            "file_type": "neq.zip",
+            "select": "product_id,user_id",
+            "limit": "1000",
+        }
+        if user_id:
+            filters["user_id"] = eq(user_id)
+        return await self._db.select("files", **filters)
 
     async def delete_for_product(self, product_id: UUID) -> None:
         await self._db.delete("files", product_id=eq(product_id))
@@ -247,10 +277,11 @@ class JobRepo:
     async def update(self, job_id: UUID | str, **values: Any) -> None:
         await self._db.update("jobs", values, id=eq(job_id))
 
-    async def active_for_product(self, product_id: UUID) -> list[Row]:
-        return await self._db.select(
-            "jobs", product_id=eq(product_id), status="in.(queued,running)"
-        )
+    async def active_for_product(self, product_id: UUID, kind: str | None = None) -> list[Row]:
+        filters = {"product_id": eq(product_id), "status": "in.(queued,running)"}
+        if kind:
+            filters["kind"] = eq(kind)
+        return await self._db.select("jobs", **filters)
 
 
 class UsageRepo:
@@ -271,3 +302,50 @@ class UsageRepo:
                 "cost_usd": round(usage.cost_usd, 5),
             },
         )
+
+
+class ConnectionRepo:
+    """Tokens OAuth cifrados de cada usuario (tabla `storage_connections`, sin policies:
+    solo la service role la ve)."""
+
+    def __init__(self, db: SupabaseRest) -> None:
+        self._db = db
+
+    async def get(self, user_id: UUID, provider: str) -> Row | None:
+        rows = await self._db.select(
+            "storage_connections", user_id=eq(user_id), provider=eq(provider)
+        )
+        if not rows:
+            return None
+        row = rows[0]
+        return {
+            **row,
+            "access_token_enc": from_bytea(row["access_token_enc"]),
+            "refresh_token_enc": from_bytea(row["refresh_token_enc"]),
+        }
+
+    async def save(
+        self,
+        *,
+        user_id: UUID,
+        provider: str,
+        account_label: str | None,
+        access_token_enc: bytes,
+        refresh_token_enc: bytes,
+        expires_at: str,
+    ) -> None:
+        await self._db.upsert(
+            "storage_connections",
+            {
+                "user_id": str(user_id),
+                "provider": provider,
+                "account_label": account_label,
+                "access_token_enc": to_bytea(access_token_enc),
+                "refresh_token_enc": to_bytea(refresh_token_enc),
+                "expires_at": expires_at,
+            },
+            on_conflict="user_id,provider",
+        )
+
+    async def delete(self, user_id: UUID, provider: str) -> None:
+        await self._db.delete("storage_connections", user_id=eq(user_id), provider=eq(provider))

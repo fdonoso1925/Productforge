@@ -7,11 +7,13 @@ ejecuta. Sobrevive reinicios: un job a medias se retoma tras `stale_after`.
 
 import asyncio
 import logging
+import time
 from collections.abc import Awaitable, Callable
 
 from app.config import get_settings
 from app.deps import Services, build_services
 from app.pipeline.generate import PipelineDeps, run_generate
+from app.pipeline.onedrive_sync import run_upload
 from app.pipeline.remodel import run_duplicate, run_regenerate_item, run_remodel
 
 logger = logging.getLogger("productforge.worker")
@@ -21,8 +23,11 @@ HANDLERS: dict[str, Callable[[dict, PipelineDeps], Awaitable[None]]] = {
     "remodel": run_remodel,
     "regenerate_item": run_regenerate_item,
     "duplicate_market": run_duplicate,
+    "upload": run_upload,
 }
 POLL_SECONDS = 2.0
+# Cada tanto se reencolan las subidas a OneDrive que quedaron pendientes o fallidas.
+UPLOAD_RETRY_SECONDS = 600.0
 
 
 async def run_one(services: Services) -> bool:
@@ -46,12 +51,19 @@ async def run_one(services: Services) -> bool:
 
 async def worker_loop(services: Services, stop: asyncio.Event) -> None:
     logger.info("worker iniciado")
+    next_retry = time.monotonic() + UPLOAD_RETRY_SECONDS
     while not stop.is_set():
         try:
             busy = await run_one(services)
         except Exception:
             logger.exception("error tomando jobs; reintento")
             busy = False
+        if time.monotonic() >= next_retry:
+            next_retry = time.monotonic() + UPLOAD_RETRY_SECONDS
+            try:
+                await services.upload_queue.enqueue_unsynced()
+            except Exception:
+                logger.exception("no se pudo reencolar las subidas pendientes")
         if not busy:
             try:
                 await asyncio.wait_for(stop.wait(), timeout=POLL_SECONDS)

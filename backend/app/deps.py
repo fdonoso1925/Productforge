@@ -13,8 +13,19 @@ from app.config import Settings, get_settings
 from app.content.claude_client import ClaudeClient
 from app.content.engines import ContentService, EngineConfig
 from app.content.prompts import PromptLibrary
-from app.db.supabase import FileRepo, ItemRepo, JobRepo, ProductRepo, SupabaseRest, UsageRepo
+from app.db.supabase import (
+    ConnectionRepo,
+    FileRepo,
+    ItemRepo,
+    JobRepo,
+    ProductRepo,
+    SupabaseRest,
+    UsageRepo,
+)
 from app.pipeline.generate import PipelineDeps
+from app.pipeline.uploads import UploadQueue
+from app.storage.crypto import TokenCipher
+from app.storage.onedrive import OneDrive, OneDriveConfig
 from app.storage.supabase_storage import SupabaseStorage
 
 
@@ -28,6 +39,8 @@ class Services:
     files: FileRepo
     jobs: JobRepo
     storage: SupabaseStorage
+    onedrive: OneDrive
+    upload_queue: UploadQueue
 
     def pipeline(self) -> PipelineDeps:
         return PipelineDeps(
@@ -38,6 +51,8 @@ class Services:
             jobs=self.jobs,
             storage=self.storage,
             templates_dir=self.settings.templates_dir,
+            sync_target=self.onedrive,
+            uploads=self.upload_queue,
         )
 
 
@@ -54,15 +69,28 @@ def build_services(settings: Settings) -> Services:
             effort=settings.claude_effort,
         ),
     )
+    files, jobs = FileRepo(db), JobRepo(db)
+    onedrive = OneDrive(
+        OneDriveConfig(
+            client_id=settings.ms_client_id,
+            client_secret=settings.ms_client_secret,
+            tenant=settings.ms_tenant,
+            redirect_uri=settings.ms_redirect_uri,
+        ),
+        ConnectionRepo(db),
+        TokenCipher(settings.token_encryption_key) if settings.token_encryption_key else None,
+    )
     return Services(
         settings=settings,
         prompts=prompts,
         content=content,
         products=ProductRepo(db),
         items=ItemRepo(db),
-        files=FileRepo(db),
-        jobs=JobRepo(db),
+        files=files,
+        jobs=jobs,
         storage=SupabaseStorage(settings.supabase_url, settings.supabase_service_role_key),
+        onedrive=onedrive,
+        upload_queue=UploadQueue(onedrive, jobs, files),
     )
 
 

@@ -84,6 +84,10 @@ class MemoryFiles:
         row = {
             "id": str(uuid4()),
             "product_item_id": item_id,  # mismo nombre de columna que en Postgres
+            "onedrive_status": "pending",
+            "upload_attempts": 0,
+            "onedrive_item_id": None,
+            "onedrive_url": None,
             **{k: str(v) if isinstance(v, UUID) else v for k, v in row.items()},
         }
         self.rows[row["id"]] = row
@@ -94,6 +98,19 @@ class MemoryFiles:
 
     async def list_for_product(self, product_id) -> list[dict]:
         return [r for r in self.rows.values() if r["product_id"] == str(product_id)]
+
+    async def update(self, file_id, **values) -> None:
+        self.rows[str(file_id)].update(values)
+
+    async def unsynced(self, max_attempts: int, user_id=None) -> list[dict]:
+        return [
+            {"product_id": r["product_id"], "user_id": r["user_id"]}
+            for r in self.rows.values()
+            if r["onedrive_status"] in ("pending", "failed")
+            and r["upload_attempts"] < max_attempts
+            and r["file_type"] != "zip"
+            and (user_id is None or r["user_id"] == str(user_id))
+        ]
 
     async def delete_ids(self, ids: list[str]) -> None:
         for file_id in ids:
@@ -133,11 +150,13 @@ class MemoryJobs:
     async def update(self, job_id, **values) -> None:
         self.rows[str(job_id)].update(values)
 
-    async def active_for_product(self, product_id) -> list[dict]:
+    async def active_for_product(self, product_id, kind: str | None = None) -> list[dict]:
         return [
             r
             for r in self.rows.values()
-            if r["product_id"] == str(product_id) and r["status"] in ("queued", "running")
+            if r["product_id"] == str(product_id)
+            and r["status"] in ("queued", "running")
+            and (kind is None or r["kind"] == kind)
         ]
 
 
@@ -159,3 +178,28 @@ class MemoryStorage:
     async def delete(self, paths: list[str]) -> None:
         for path in paths:
             self.objects.pop(path, None)
+
+
+@dataclass
+class MemoryConnections:
+    """Misma interfaz que ConnectionRepo; guarda los tokens tal cual los recibe (cifrados)."""
+
+    rows: dict[tuple[str, str], dict] = field(default_factory=dict)
+
+    async def get(self, user_id, provider: str) -> dict | None:
+        return self.rows.get((str(user_id), provider))
+
+    async def save(
+        self, *, user_id, provider, account_label, access_token_enc, refresh_token_enc, expires_at
+    ) -> None:
+        self.rows[(str(user_id), provider)] = {
+            "user_id": str(user_id),
+            "provider": provider,
+            "account_label": account_label,
+            "access_token_enc": access_token_enc,
+            "refresh_token_enc": refresh_token_enc,
+            "expires_at": expires_at,
+        }
+
+    async def delete(self, user_id, provider: str) -> None:
+        self.rows.pop((str(user_id), provider), None)

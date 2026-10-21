@@ -1,6 +1,6 @@
 import { env } from "@/lib/env";
 import { createClient } from "@/lib/supabase/client";
-import type { Format, Market, PackageOutline, Problem, TemplateInfo } from "@/lib/types";
+import type { Format, Market, OneDriveStatus, PackageOutline, ProductOneDrive, Problem, TemplateInfo } from "@/lib/types";
 
 export class ApiError extends Error {
   constructor(
@@ -28,6 +28,7 @@ export async function apiFetch<T>(path: string, token: string, init: RequestInit
     const errors: string[] = body?.errors ?? detail?.errors ?? [];
     throw new ApiError(response.status, typeof detail === "string" ? detail : response.statusText, errors);
   }
+  if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
 }
 
@@ -90,6 +91,14 @@ export const api = {
     }),
   regenerateItem: (productId: string, itemId: string) =>
     call<{ job_id: string }>(`/products/${productId}/items/${itemId}/regenerate`, { method: "POST" }),
+  onedriveStatus: () => call<OneDriveStatus>("/storage/onedrive/status"),
+  onedriveConnect: (locale: "es" | "pt") =>
+    call<{ url: string }>("/storage/onedrive/connect", { method: "POST", body: JSON.stringify({ locale }) }),
+  onedriveDisconnect: () => call<void>("/storage/onedrive", { method: "DELETE" }),
+  onedriveSyncAll: () => call<{ products: number }>("/storage/onedrive/sync", { method: "POST" }),
+  productOneDrive: (productId: string) => call<ProductOneDrive>(`/products/${productId}/onedrive`),
+  productOneDriveSync: (productId: string) =>
+    call<{ products: number }>(`/products/${productId}/onedrive/sync`, { method: "POST" }),
   downloadUrl: (fileId: string) => call<{ url: string }>(`/files/${fileId}/download`),
   templates: async (): Promise<TemplateInfo[]> => {
     const response = await fetch(`${env.apiUrl}/templates`);

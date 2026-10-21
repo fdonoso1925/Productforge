@@ -1,4 +1,4 @@
-import { History, Plus } from "lucide-react";
+import { History, Plus, Settings } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { LocaleSwitch } from "@/components/locale-switch";
 import { Link } from "@/i18n/navigation";
@@ -45,6 +45,13 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
             >
               <History className="size-4" aria-hidden />
               {t("history")}
+            </Link>
+            <Link
+              href="/settings"
+              className="inline-flex w-fit items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted"
+            >
+              <Settings className="size-4" aria-hidden />
+              {t("settings")}
             </Link>
           </div>
           <BackendStatus

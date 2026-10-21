@@ -77,7 +77,7 @@ async def run_remodel(job: dict, deps: PipelineDeps) -> None:
     builder = PackageBuilder(deps, job, product)
     modes: dict[str, Mode] = job["payload"].get("modes", {})
 
-    await deps.files.delete_for_product(product_id)
+    await builder.drop_files(await deps.files.list_for_product(product_id))
     rows = await deps.items.list_for_product(product_id)
     await builder.start(rows)
     results = await builder.run_items([(row, modes.get(row["id"], "rerender")) for row in rows])
@@ -113,7 +113,7 @@ async def run_regenerate_item(job: dict, deps: PipelineDeps) -> None:
             for f in await deps.files.list_for_product(product_id)
             if f.get("product_item_id") == item_id
         ]
-        await deps.files.delete_ids([f["id"] for f in old])
+        await builder.drop_files(old)
         await deps.storage.delete([f["storage_path"] for f in old])
         await builder.store_item_files(row, files)
     except Exception:

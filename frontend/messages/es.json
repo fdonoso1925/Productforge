@@ -20,7 +20,8 @@
     "signOut": "Cerrar sesión",
     "newProduct": "Nuevo paquete",
     "newProductHint": "Elige un nicho y en menos de 2 minutos tienes el paquete en camino.",
-    "history": "Ver historial"
+    "history": "Ver historial",
+    "settings": "Ajustes"
   },
   "locale": {
     "switch": "Ver en português"
@@ -32,7 +33,8 @@
     "loading": "Cargando…",
     "error": "Algo falló: {message}",
     "home": "Inicio",
-    "history": "Historial"
+    "history": "Historial",
+    "settings": "Ajustes"
   },
   "markets": {
     "pt-BR": "Portugués (Brasil)",
@@ -155,7 +157,6 @@
     "failed": "La generación falló ({error}).",
     "downloadZip": "Descargar todo (ZIP)",
     "download": "Descargar",
-    "onedrive": "Carpeta en OneDrive: disponible en la Fase 6.",
     "commercial": {
       "title": "Ficha comercial",
       "alternatives": "Nombres alternativos",
@@ -193,6 +194,17 @@
       "title": "Versiones",
       "current": "Estás aquí",
       "original": "Original"
+    },
+    "oneDriveSync": {
+      "notConnected": "OneDrive sin conectar",
+      "connectLink": "Conectar",
+      "files": "OneDrive: {uploaded} de {total} archivos",
+      "syncing": "Subiendo a OneDrive…",
+      "pending": "{count} pendientes",
+      "failed": "{count} con error",
+      "retry": "Subir ahora",
+      "retryFailed": "Reintentar",
+      "openFolder": "Abrir carpeta"
     }
   },
   "history": {
@@ -218,6 +230,31 @@
       "generating": "Generando",
       "ready": "Listo",
       "error": "Con errores"
+    }
+  },
+  "settings": {
+    "title": "Ajustes",
+    "subtitle": "Conexiones de tu cuenta.",
+    "onedrive": {
+      "title": "OneDrive",
+      "description": "Copia cada paquete a tu OneDrive personal. ProductForge solo ve su propia carpeta, nunca el resto de tus archivos.",
+      "folderHint": "Los archivos quedan en Aplicaciones/ProductForge, ordenados por mercado, nicho y fecha.",
+      "notConfigured": "El backend todavía no tiene las credenciales de Microsoft (MS_CLIENT_ID, MS_CLIENT_SECRET y TOKEN_ENCRYPTION_KEY). Los pasos están en CLAUDE.md, sección OneDrive.",
+      "connected": "Conectado como {account}",
+      "connectedNoName": "Conectado",
+      "notConnected": "Sin conectar",
+      "connect": "Conectar con OneDrive",
+      "connecting": "Redirigiendo a Microsoft…",
+      "disconnect": "Desconectar",
+      "disconnectConfirm": "¿Seguro?",
+      "disconnectHint": "Los archivos que ya están en OneDrive se quedan ahí.",
+      "syncAll": "Sincronizar todo",
+      "queued": "{count, plural, =0 {No hay nada pendiente.} one {# paquete en cola.} other {# paquetes en cola.}}",
+      "outcome": {
+        "connected": "OneDrive conectado. Los paquetes que ya existían se están copiando.",
+        "denied": "Cancelaste la autorización: no se conectó nada.",
+        "error": "No se pudo conectar con Microsoft. Inténtalo de nuevo."
+      }
     }
   }
 }

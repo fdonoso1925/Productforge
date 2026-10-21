@@ -35,7 +35,7 @@ async def run_generate(job: dict, deps: PipelineDeps) -> None:
     builder = PackageBuilder(deps, job, product)
 
     await deps.products.update(product_id, status="generating")
-    await deps.files.delete_for_product(product_id)
+    await builder.drop_files(await deps.files.list_for_product(product_id))
     rows = await deps.items.replace_from_outline(product_id, user_id, builder.outline)
     await builder.start(rows)
 

@@ -15,6 +15,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { FileRow, ItemRow, JobRow, ProductRow } from "@/lib/types";
 import { CommercialCard } from "./commercial-card";
 import { ConfirmButton } from "./confirm-button";
+import { OneDriveStatus } from "./onedrive-status";
 import { DuplicatePanel, otherMarket } from "./duplicate-panel";
 import { RemodelPanel } from "./remodel-panel";
 import { VersionsCard } from "./versions-card";
@@ -46,6 +47,7 @@ export function ProductView({ productId }: { productId: string }) {
         .from("jobs")
         .select("id, status, progress, error, created_at")
         .eq("product_id", productId)
+        .neq("kind", "upload") // la copia a OneDrive no es una generación: no tapa los resultados
         .order("created_at", { ascending: false })
         .limit(1),
     ]);
@@ -116,7 +118,7 @@ export function ProductView({ productId }: { productId: string }) {
             <span className="font-medium">{t("ready")}</span>
             {zip && <DownloadButton file={zip} label={t("downloadZip")} primary />}
           </div>
-          <p className="text-xs text-muted-foreground">{t("onedrive")}</p>
+          <OneDriveStatus productId={product.id} refreshKey={`${product.status}|${product.updated_at ?? ""}`} />
 
           <div className="flex flex-wrap gap-3">
             <Button variant={panel === "remodel" ? "default" : "outline"} onClick={() => setPanel(panel === "remodel" ? null : "remodel")}>
@@ -184,6 +186,9 @@ function Shell({ title, meta, children }: { title?: string; meta?: React.ReactNo
         <nav className="flex shrink-0 gap-4 text-sm text-muted-foreground">
           <Link href="/history" className="hover:underline">
             {tc("history")}
+          </Link>
+          <Link href="/settings" className="hover:underline">
+            {tc("settings")}
           </Link>
           <Link href="/" className="hover:underline">
             {tc("home")}

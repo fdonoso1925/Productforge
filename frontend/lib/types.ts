@@ -111,6 +111,18 @@ export type FileRow = {
   size: number;
 };
 
+export type OneDriveStatus = { configured: boolean; connected: boolean; account: string | null };
+
+export type ProductOneDrive = {
+  connected: boolean;
+  total: number;
+  uploaded: number;
+  pending: number;
+  failed: number;
+  syncing: boolean;
+  folder_url: string | null;
+};
+
 export type JobRow = {
   id: string;
   status: "queued" | "running" | "done" | "error" | "cancelled";
