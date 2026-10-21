@@ -148,6 +148,15 @@ def configure_logging() -> None:
         access.addFilter(RedactQueryFilter())
     # httpx a INFO escribe cada URL llamada (Supabase, Google): ruido que no aporta.
     logging.getLogger("httpx").setLevel(logging.WARNING)
+    # Uvicorn no configura el logger raíz: sin esto, los INFO de la app (p. ej. tiempos y caché
+    # de cada llamada a Claude) no aparecen.
+    app_log = logging.getLogger("productforge")
+    if not app_log.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("%(levelname)s:     %(name)s - %(message)s"))
+        app_log.addHandler(handler)
+        app_log.setLevel(logging.INFO)
+        app_log.propagate = False
 
 
 def _is_local(url: str) -> bool:

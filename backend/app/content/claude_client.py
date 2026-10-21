@@ -5,6 +5,8 @@ siempre: el producto principal puede superar las 30k palabras de salida y una
 llamada sin streaming se arriesga al timeout HTTP.
 """
 
+import logging
+import time
 from dataclasses import dataclass
 from typing import Protocol, TypeVar
 
@@ -12,6 +14,7 @@ import anthropic
 from pydantic import BaseModel, ValidationError
 
 T = TypeVar("T", bound=BaseModel)
+logger = logging.getLogger("productforge.llm")
 
 # USD por millón de tokens: (input, output, lectura de caché). Escritura de caché = 1.25x input.
 PRICES: dict[str, tuple[float, float, float]] = {
@@ -90,6 +93,7 @@ class ClaudeClient:
         max_tokens: int,
         effort: str,
     ) -> tuple[T, CallUsage]:
+        started = time.monotonic()
         try:
             async with self._client.beta.messages.stream(
                 model=model,
@@ -112,6 +116,18 @@ class ClaudeClient:
             output_tokens=message.usage.output_tokens,
             cache_read_tokens=message.usage.cache_read_input_tokens or 0,
             cache_write_tokens=message.usage.cache_creation_input_tokens or 0,
+        )
+        # Solo números: sirve para comprobar que el caché lee (cache_read > 0) y ver dónde se va
+        # el tiempo. Nada de prompts ni contenido en los logs.
+        logger.info(
+            "llamada %s: %.1fs, entrada=%d, caché leído=%d, caché escrito=%d, salida=%d, stop=%s",
+            usage.model,
+            time.monotonic() - started,
+            usage.input_tokens,
+            usage.cache_read_tokens,
+            usage.cache_write_tokens,
+            usage.output_tokens,
+            message.stop_reason,
         )
         if message.stop_reason == "refusal":
             category = getattr(message.stop_details, "category", None)
