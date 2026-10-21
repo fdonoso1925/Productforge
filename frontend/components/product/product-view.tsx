@@ -115,7 +115,7 @@ export function ProductView({ productId }: { productId: string }) {
 function Shell({ title, children }: { title?: string; children: React.ReactNode }) {
   const tc = useTranslations("common");
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-8">
+    <main className="mx-auto flex w-full min-w-0 max-w-4xl flex-1 flex-col gap-6 px-4 py-8">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
         <Link href="/" className="text-sm text-muted-foreground hover:underline">
@@ -188,14 +188,14 @@ function StatusBadge({ status }: { status: ItemRow["status"] }) {
 
 function ItemFiles({ item, files }: { item: ItemRow; files: FileRow[] }) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex items-center gap-3">
+    <div className="flex min-w-0 flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 items-center gap-3">
         <ItemLabel item={item} />
         {item.status === "error" && <StatusBadge status="error" />}
       </div>
       <div className="flex flex-wrap gap-2">
         {files.map((f) => (
-          <DownloadButton key={f.id} file={f} label={f.file_type.toUpperCase()} />
+          <DownloadButton key={f.id} file={f} label={fileLabel(f, files)} />
         ))}
       </div>
     </div>
@@ -219,11 +219,26 @@ export function DownloadButton({ file, label, primary }: { file: FileRow; label:
   };
   const Icon = primary ? FileArchive : Download;
   return (
-    <Button variant={primary ? "default" : "outline"} size={primary ? "lg" : "sm"} onClick={download} disabled={pending}>
+    <Button
+      variant={primary ? "default" : "outline"}
+      size={primary ? "lg" : "sm"}
+      onClick={download}
+      disabled={pending}
+      title={file.storage_path.split("/").pop()}
+    >
       <Icon aria-hidden />
       {label}
     </Button>
   );
+}
+
+/** "PDF", "XLSX"… y, si hay varios del mismo tipo (un CSV por pestaña), "CSV 1", "CSV 2"… */
+function fileLabel(file: FileRow, siblings: FileRow[]): string {
+  const same = siblings.filter((f) => f.file_type === file.file_type);
+  const type = file.file_type.toUpperCase();
+  if (same.length < 2) return type;
+  const sorted = [...same].sort((a, b) => a.storage_path.localeCompare(b.storage_path));
+  return `${type} ${sorted.findIndex((f) => f.id === file.id) + 1}`;
 }
 
 const ROLE_ORDER = { main: 0, order_bump: 1, bonus: 2 } as const;
