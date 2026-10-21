@@ -43,8 +43,12 @@ export function Wizard({ niches, defaultMarket }: { niches: Niche[]; defaultMark
     (patch: Partial<WizardState>) => setState((s) => ({ ...s, ...patch })),
     [],
   );
-  const next = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
-  const back = () => setStep((s) => Math.max(s - 1, 0));
+  const go = (to: (s: number) => number) => {
+    setStep(to);
+    window.scrollTo({ top: 0 });
+  };
+  const next = () => go((s) => Math.min(s + 1, STEPS.length - 1));
+  const back = () => go((s) => Math.max(s - 1, 0));
   const nav = { next, back };
 
   return (

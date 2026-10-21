@@ -112,7 +112,7 @@ export function StepOutline({ state, update, nav }: StepProps) {
             <Label htmlFor="product-name">{t("productName")}</Label>
             <Input
               id="product-name"
-              maxLength={200}
+              maxLength={300}
               value={draft.product_name}
               onChange={(e) => {
                 setDraft({ ...draft, product_name: e.target.value });
@@ -126,7 +126,11 @@ export function StepOutline({ state, update, nav }: StepProps) {
           {draft.bonuses.map((item, index) => (
             <ItemCard key={`n${index}`} item={item} onChange={(p) => edit({ group: "bonuses", index }, p)} />
           ))}
-          {parsed && !parsed.success && <p className="text-sm text-destructive">{t("invalid")}</p>}
+          {parsed && !parsed.success && (
+            <p className="text-sm text-destructive">
+              {t("invalid")} ({parsed.error.issues[0]?.path.join(" › ")})
+            </p>
+          )}
         </>
       )}
 
@@ -184,15 +188,15 @@ function ItemCard({
       </div>
       <div className="flex flex-col gap-3">
         <Labeled label={t("itemTitle")}>
-          <Input maxLength={200} value={item.title} onChange={(e) => onChange({ title: e.target.value })} />
+          <Input maxLength={300} value={item.title} onChange={(e) => onChange({ title: e.target.value })} />
         </Labeled>
         <Labeled label={t("promise")}>
-          <Textarea maxLength={400} rows={2} value={item.promise} onChange={(e) => onChange({ promise: e.target.value })} />
+          <Textarea maxLength={800} rows={2} value={item.promise} onChange={(e) => onChange({ promise: e.target.value })} />
         </Labeled>
         {item.role === "bonus" && (
           <Labeled label={t("objection")}>
             <Input
-              maxLength={300}
+              maxLength={500}
               value={item.objection_addressed ?? ""}
               onChange={(e) => onChange({ objection_addressed: e.target.value })}
             />

@@ -109,20 +109,20 @@ export function StepProblem({ state, update, nav }: StepProps) {
         <div className="grid gap-4 rounded-xl border bg-muted/30 p-4 md:grid-cols-2">
           <h3 className="font-medium md:col-span-2">{t("edit")}</h3>
           <Field label={t("titleField")} className="md:col-span-2">
-            <Input maxLength={300} value={problem.title} onChange={(e) => edit({ title: e.target.value })} />
+            <Input maxLength={500} value={problem.title} onChange={(e) => edit({ title: e.target.value })} />
           </Field>
           <Field label={t("audience")}>
-            <Input maxLength={300} value={problem.audience} onChange={(e) => edit({ audience: e.target.value })} />
+            <Textarea maxLength={1000} value={problem.audience} onChange={(e) => edit({ audience: e.target.value })} />
           </Field>
           <Field label={t("timeframe")}>
-            <Input maxLength={100} value={problem.timeframe} onChange={(e) => edit({ timeframe: e.target.value })} />
+            <Input maxLength={400} value={problem.timeframe} onChange={(e) => edit({ timeframe: e.target.value })} />
           </Field>
           <Field label={t("pain")}>
-            <Textarea maxLength={500} value={problem.pain} onChange={(e) => edit({ pain: e.target.value })} />
+            <Textarea maxLength={1000} value={problem.pain} onChange={(e) => edit({ pain: e.target.value })} />
           </Field>
           <Field label={t("result")}>
             <Textarea
-              maxLength={300}
+              maxLength={1000}
               value={problem.promised_result}
               onChange={(e) => edit({ promised_result: e.target.value })}
             />
