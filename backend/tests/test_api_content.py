@@ -85,3 +85,22 @@ def test_outline_rejected_returns_502_with_errors(ctx) -> None:
 def test_outline_validates_template_id(ctx) -> None:
     client, _, _ = ctx
     assert client.post("/outline", json=outline_body(template_id="../x")).status_code == 422
+
+
+def test_no_credits_message_is_actionable(ctx) -> None:
+    import anthropic
+    import httpx
+
+    client, llm, _ = ctx
+    request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+    response = httpx.Response(400, request=request)
+    llm.responses.append(
+        anthropic.BadRequestError(
+            "Your credit balance is too low to access the Anthropic API.",
+            response=response,
+            body=None,
+        )
+    )
+    result = client.post("/problems", json={"niche": "Pets"})
+    assert result.status_code == 503
+    assert "créditos" in result.json()["detail"]

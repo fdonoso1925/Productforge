@@ -63,6 +63,10 @@ def create_app() -> FastAPI:
     async def anthropic_error(_: Request, exc: anthropic.APIError) -> JSONResponse:
         # Sin detalles del proveedor hacia el cliente (pueden incluir ids internos).
         logger.error("error de la API de Claude: %s", type(exc).__name__)
+        if isinstance(exc, anthropic.BadRequestError) and "credit balance" in str(exc):
+            # Problema de cuenta, no de la petición: el usuario tiene que recargar créditos.
+            detail = "la cuenta de Anthropic no tiene créditos (console.anthropic.com → Billing)"
+            return JSONResponse({"detail": detail}, status_code=503)
         status = 503 if isinstance(exc, anthropic.RateLimitError) else 502
         return JSONResponse({"detail": "el servicio de IA no está disponible"}, status_code=status)
 
