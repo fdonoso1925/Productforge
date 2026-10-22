@@ -18,7 +18,13 @@ LANG = {"pt-BR": "pt-BR", "es-LATAM": "es"}
 
 
 def cover_png(template: Template, ctx: RenderContext, cover: dict, width: int = 1400) -> bytes:
-    cover = {"product_name": ctx.product_name, "subtitle": "", "promise": ctx.promise, **cover}
+    cover = {
+        "product_name": ctx.product_name,
+        "subtitle": "",
+        "promise": ctx.promise,
+        **ctx.cover_extra,
+        **cover,
+    }
     html = template.render_html("cover_page", c=None, ctx=ctx, cover=cover)
     return pdf_page_to_png(html_to_pdf(html, template.base_dir), width=width)
 

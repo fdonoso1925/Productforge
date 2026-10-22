@@ -30,6 +30,15 @@ class RenderContext:
     slug: str  # base del nombre de archivo, p. ej. "guia-adeus-cheque-especial"
     product_name: str = ""
     promise: str = ""  # promesa de la pieza (outline), para la portada
+    # Portada: SVG de arte generativo o imagen propia (data URI) y su velo. Vacío = solo plantilla.
+    cover_art: str = ""
+    cover_image: str = ""
+    cover_veil: float = 0.0
+
+    @property
+    def cover_extra(self) -> dict[str, object]:
+        """Lo que la portada (templates/_base/cover.html.j2) lee además del texto."""
+        return {"art": self.cover_art, "bg": self.cover_image, "veil": self.cover_veil}
 
     @property
     def labels(self) -> dict[str, str]:

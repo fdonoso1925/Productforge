@@ -87,7 +87,11 @@ ol.steps li::before { content: counter(step); position: absolute; left: 0; top: 
 
 /* Portada */
 .cover { page: cover; position: relative; width: 210mm; height: 297mm; overflow: hidden; break-after: page; }
-.cover-inner { position: absolute; left: 20mm; right: 20mm; }
+.cover-inner { position: absolute; left: 20mm; right: 20mm; z-index: 2; }
+.mockup { z-index: 2; }
+.cover-art { position: absolute; left: 0; top: 0; width: 210mm; height: 297mm; z-index: 1; }
+.cover-art img { width: 210mm; height: 297mm; object-fit: cover; }
+.cover-veil { position: absolute; left: 0; top: 0; width: 210mm; height: 297mm; }
 .cover-kicker { font-size: 9pt; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); }
 .cover-title { font-family: var(--heading); font-weight: {{ t.fonts.heading.weights[0] }}; font-size: 34pt; line-height: 1.08; margin: 4mm 0; string-set: doc-title content();
   {% if t.style.heading_case == 'uppercase' %}text-transform: uppercase;{% endif %} }

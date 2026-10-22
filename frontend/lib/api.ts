@@ -1,6 +1,16 @@
 import { env } from "@/lib/env";
 import { createClient } from "@/lib/supabase/client";
-import type { Format, Market, DriveStatus, PackageOutline, ProductDrive, Problem, TemplateInfo } from "@/lib/types";
+import type {
+  ArtChoice,
+  CoverSpec,
+  DriveStatus,
+  Format,
+  Market,
+  PackageOutline,
+  Problem,
+  ProductDrive,
+  TemplateInfo,
+} from "@/lib/types";
 
 export class ApiError extends Error {
   constructor(
@@ -19,7 +29,8 @@ export async function apiFetch<T>(path: string, token: string, init: RequestInit
     headers: {
       ...init.headers,
       Authorization: `Bearer ${token}`,
-      ...(init.body ? { "Content-Type": "application/json" } : {}),
+      // Solo el JSON lo fija aquí; un archivo (subida de imagen) lleva el tipo que le pase quien llama.
+      ...(typeof init.body === "string" ? { "Content-Type": "application/json" } : {}),
     },
   });
   if (!response.ok) {
@@ -51,6 +62,7 @@ export type OutlineRequest = {
   template_id: string;
   tone?: string | null;
   audience_override?: string | null;
+  cover_art?: ArtChoice;
 };
 
 /** Solo viajan los campos que cambian: omitir `tone` lo conserva, `null` lo borra. */
@@ -59,6 +71,8 @@ export type RemodelBody = {
   tone?: string | null;
   audience_override?: string | null;
   formats?: Record<string, Format>;
+  /** Otra portada: solo cambia la maquetación (no usa IA). */
+  cover?: CoverSpec;
 };
 
 export const api = {
@@ -99,6 +113,19 @@ export const api = {
   productDrive: (productId: string) => call<ProductDrive>(`/products/${productId}/drive`),
   productDriveSync: (productId: string) =>
     call<{ products: number }>(`/products/${productId}/drive/sync`, { method: "POST" }),
+  setCover: (productId: string, cover: CoverSpec) =>
+    call<CoverSpec>(`/products/${productId}/cover`, { method: "PUT", body: JSON.stringify(cover) }),
+  /** El cuerpo es el archivo tal cual; el backend lo valida y lo guarda como JPEG limpio. */
+  uploadCoverImage: (file: File) =>
+    call<{ image_id: string; url: string; width: number; height: number }>("/cover-images", {
+      method: "POST",
+      body: file,
+      headers: { "Content-Type": file.type || "application/octet-stream" },
+    }),
+  coverImageUrl: (imageId: string) => call<{ url: string }>(`/cover-images/${imageId}/url`),
+  /** Muestra de un estilo con la paleta de la plantilla (SVG público). */
+  artPreviewUrl: (style: string, templateId: string) =>
+    `${env.apiUrl}/cover/art/${style}.svg?template=${encodeURIComponent(templateId)}&background=true`,
   downloadUrl: (fileId: string) => call<{ url: string }>(`/files/${fileId}/download`),
   templates: async (): Promise<TemplateInfo[]> => {
     const response = await fetch(`${env.apiUrl}/templates`);

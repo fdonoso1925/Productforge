@@ -44,7 +44,9 @@ USER = str(uuid4())
 class Products(MemoryProducts):
     """Como ProductRepo real: `/outline` crea el producto en `outline_ready`."""
 
-    async def create_with_outline(self, *, user_id, request, template_id, outline, prompt_version):
+    async def create_with_outline(
+        self, *, user_id, request, template_id, outline, prompt_version, cover=None
+    ):
         row = self.add(
             user_id=str(user_id),
             title=outline.product_name,
@@ -55,6 +57,7 @@ class Products(MemoryProducts):
             template_id=template_id,
             outline=outline.model_dump(mode="json"),
             prompt_version=prompt_version,
+            cover=cover or {},
         )
         return UUID(row["id"])
 

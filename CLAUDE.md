@@ -69,6 +69,15 @@ Si pierdes `TOKEN_ENCRYPTION_KEY`, los tokens guardados quedan ilegibles: basta 
 - Los tres exigen un paquete `ready`/`error` sin jobs activos (409) y pertenecer al usuario (404).
 - Frontend: `/[locale]/history` (filtros: búsqueda, nicho, mercado, formato, fechas; lectura directa a Supabase con RLS; `sanitizeSearch` antes de armar el `or()` de PostgREST), paneles de remodelar/duplicar y árbol de versiones (`lib/versions.ts`) en `/[locale]/products/[id]`. Las acciones que usan IA piden doble clic (`ConfirmButton`).
 
+### Portadas (arte generativo e imagen propia)
+
+- `products.cover` (jsonb) = `CoverSpec {art: auto|topo|waves|circles|bauhaus|facets|none, image_id}` (`app/generators/cover.py`). `{}` = producto anterior a la función: queda **sin arte**, como se veía antes; los nuevos arrancan en `auto`. La plantilla sigue aplicándose a todo el PDF; la portada solo agrega una capa bajo el texto.
+- **Arte** (`cover_art.py`): SVG a 210x297 mm armado solo con números y colores de la paleta (nada del contenido de la IA ni del usuario entra al SVG). Un estilo por paquete (`auto` lo elige por la **raíz** del árbol de versiones, así las versiones comparten arte) y un motivo distinto por pieza (semilla = raíz + rol + orden). Sobre el arte va una "zona protegida" (degradado del color de fondo donde cae el título de cada diseño, `text_zone`): si agregas un diseño de portada o mueves el texto, actualiza `text_zone`.
+- **Imagen propia** (`cover_image.py`): entrada no confiable. Máx. 5 MB y 40 Mpx, mín. 800 px de lado, solo JPEG/PNG/WebP reales (se mira el contenido), siempre se reencodea a JPEG (sin EXIF/GPS) y se guarda en `<user>/covers/<uuid>.jpg`. Con imagen la portada es siempre "full-bleed": texto con `on_primary` sobre un velo del color `primary` cuya opacidad (35–90 %) se calcula para llegar a contraste 4,5 con el 90 % de píxeles más claros de la zona del título. Si la imagen falta al generar, la pieza sale con el arte.
+- Endpoints: `POST /cover-images` (el body ES el archivo; tope propio en `BodyLimitMiddleware.overrides`), `GET /cover-images/{id}/url`, `GET /cover/art/{style}.svg?template=&background=` (público, para el selector), `PUT /products/{id}/cover` (solo `outline_ready`, el asistente) y `cover` en `POST /outline` (`cover_art`) y en `POST /products/{id}/remodel`.
+- **Cambiar la portada es gratis (sin IA):** remodelar con otra portada crea una versión hija y solo re-maqueta (`plan_remodel` no cambia). Aplica a PDF (guía, checklist, blueprint, planner, swipe file) y a la portada del EPUB; mapas, XLSX y DOCX/PPTX no llevan portada de plantilla.
+- Frontend: `CoverPicker` (`components/cover/`) en el último paso del asistente y en el panel de remodelar; `lib/cover.ts`.
+
 ### Motor de contenido (`backend/app/content/`)
 
 - `schemas/`: Pydantic del paquete (`Problem`, `PackageOutline`, `CommercialSheet`) y un schema por formato (`FORMAT_SCHEMAS`).

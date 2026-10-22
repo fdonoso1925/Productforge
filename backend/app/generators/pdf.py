@@ -30,7 +30,13 @@ def without_chapter_numbers(content: GuideContent) -> GuideContent:
 
 
 def render_pdf(template: Template, kind: str, ctx: RenderContext, content, cover: dict) -> bytes:
-    cover = {"product_name": ctx.product_name, "subtitle": "", "promise": ctx.promise, **cover}
+    cover = {
+        "product_name": ctx.product_name,
+        "subtitle": "",
+        "promise": ctx.promise,
+        **ctx.cover_extra,
+        **cover,
+    }
     html = template.render_html(kind, c=content, ctx=ctx, cover=cover)
     return html_to_pdf(html, template.base_dir)
 

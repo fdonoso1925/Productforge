@@ -8,8 +8,10 @@ import { Label } from "@/components/ui/label";
 import { ErrorBox } from "@/components/wizard/step-nav";
 import { useRouter } from "@/i18n/navigation";
 import { ApiError, api, type RemodelBody } from "@/lib/api";
+import { CoverPicker } from "@/components/cover/cover-picker";
+import { coverOf, sameCover } from "@/lib/cover";
 import { BONUS_FORMATS, planRemodel } from "@/lib/remodel";
-import { FORMATS, type Format, type ItemRow, type ProductRow, type TemplateInfo } from "@/lib/types";
+import { FORMATS, type CoverSpec, type Format, type ItemRow, type ProductRow, type TemplateInfo } from "@/lib/types";
 
 /** Formulario para crear una versión nueva con otra plantilla, formato, tono o público. */
 export function RemodelPanel({
@@ -30,6 +32,8 @@ export function RemodelPanel({
   const [tone, setTone] = useState(product.tone ?? "");
   const [audience, setAudience] = useState(product.audience_override ?? "");
   const [formats, setFormats] = useState<Record<string, Format>>({});
+  const currentCover = coverOf(product);
+  const [cover, setCover] = useState<CoverSpec>(currentCover);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<{ message: string; errors: string[] } | null>(null);
 
@@ -44,7 +48,9 @@ export function RemodelPanel({
   const toneChanged = tone.trim() !== (product.tone ?? "");
   const audienceChanged = audience.trim() !== (product.audience_override ?? "");
   const templateChanged = templateId !== product.template_id;
-  const hasChanges = templateChanged || toneChanged || audienceChanged || Object.keys(changedFormats).length > 0;
+  // Cambiar la portada solo re-maqueta: nunca usa IA (como cambiar de plantilla).
+  const coverChanged = !sameCover(cover, currentCover);
+  const hasChanges = templateChanged || toneChanged || audienceChanged || coverChanged || Object.keys(changedFormats).length > 0;
   const plan = planRemodel(items, changedFormats, toneChanged || audienceChanged);
 
   const submit = async () => {
@@ -53,6 +59,7 @@ export function RemodelPanel({
     if (toneChanged) body.tone = tone.trim() || null;
     if (audienceChanged) body.audience_override = audience.trim() || null;
     if (Object.keys(changedFormats).length > 0) body.formats = changedFormats;
+    if (coverChanged) body.cover = cover;
     setPending(true);
     setError(null);
     try {
@@ -106,6 +113,10 @@ export function RemodelPanel({
             onChange={(e) => setAudience(e.target.value)}
           />
         </div>
+      </div>
+
+      <div className="rounded-lg border bg-background p-3">
+        <CoverPicker templateId={templateId} value={cover} onChange={setCover} disabled={pending} />
       </div>
 
       <fieldset className="flex min-w-0 flex-col gap-2">

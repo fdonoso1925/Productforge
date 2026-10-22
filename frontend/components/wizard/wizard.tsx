@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useCallback, useState } from "react";
 import { Link } from "@/i18n/navigation";
-import type { Format, Market, Niche, PackageOutline, Problem } from "@/lib/types";
+import type { CoverSpec, Format, Market, Niche, PackageOutline, Problem } from "@/lib/types";
 import { StepFormat } from "./step-format";
 import { StepNiche } from "./step-niche";
 import { StepOutline } from "./step-outline";
@@ -19,6 +19,8 @@ export type WizardState = {
   problem: Problem | null;
   format: Format;
   templateId: string;
+  // La portada no entra en `inputsKey`: cambiarla no obliga a rehacer el outline.
+  cover: CoverSpec;
   // El outline queda atado a las elecciones con que se creó; si cambian, se rehace.
   built: { key: string; productId: string; outline: PackageOutline; dirty: boolean } | null;
 };
@@ -37,6 +39,7 @@ export function Wizard({ niches, defaultMarket }: { niches: Niche[]; defaultMark
     problem: null,
     format: "pdf_guide",
     templateId: "minimal-clean",
+    cover: { art: "auto", image_id: null },
     built: null,
   });
   const update = useCallback(

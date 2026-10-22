@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
+import { CoverPicker } from "@/components/cover/cover-picker";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +11,7 @@ import { useRouter } from "@/i18n/navigation";
 import { ApiError, api } from "@/lib/api";
 import { FORMAT_ICONS } from "@/lib/formats";
 import { outlineSchema } from "@/lib/schemas";
-import { FORMATS, type Format, type ItemOutline, type PackageOutline } from "@/lib/types";
+import { FORMATS, type CoverSpec, type Format, type ItemOutline, type PackageOutline } from "@/lib/types";
 import { ErrorBox, Loading, StepNav } from "./step-nav";
 import { inputsKey, type StepProps } from "./wizard";
 
@@ -41,14 +42,19 @@ export function StepOutline({ state, update, nav }: StepProps) {
         market: state.market,
         main_format: state.format,
         template_id: state.templateId,
+        cover_art: state.cover.art,
       })
       .then(
-        ({ product_id, outline }) => {
+        async ({ product_id, outline }) => {
+          // Un producto nuevo nace solo con el estilo: si ya había elegido una imagen, se aplica.
+          if (state.cover.image_id) {
+            await api.setCover(product_id, state.cover).catch(() => update({ cover: { ...state.cover, image_id: null } }));
+          }
           update({ built: { key, productId: product_id, outline, dirty: false } });
         },
         (e) => setError(toError(e)),
       );
-  }, [current, key, attempt, state.niche, state.problem, state.market, state.format, state.templateId, update]);
+  }, [current, key, attempt, state.niche, state.problem, state.market, state.format, state.templateId, state.cover, update]);
 
   const build = () => {
     setError(null);
@@ -67,6 +73,21 @@ export function StepOutline({ state, update, nav }: StepProps) {
   };
 
   const parsed = draft ? outlineSchema.safeParse(draft) : null;
+
+  // La portada se guarda al instante en el producto ya creado; si falla, vuelve a la anterior.
+  const [coverError, setCoverError] = useState<string | null>(null);
+  const changeCover = async (next: CoverSpec) => {
+    if (!current) return;
+    const previous = state.cover;
+    setCoverError(null);
+    update({ cover: next });
+    try {
+      await api.setCover(current.productId, next);
+    } catch (e) {
+      update({ cover: previous });
+      setCoverError(toError(e).message);
+    }
+  };
 
   const submit = async () => {
     if (!draft || !current || !parsed?.success) return;
@@ -126,6 +147,14 @@ export function StepOutline({ state, update, nav }: StepProps) {
           {draft.bonuses.map((item, index) => (
             <ItemCard key={`n${index}`} item={item} onChange={(p) => edit({ group: "bonuses", index }, p)} />
           ))}
+          <div className="rounded-xl border p-4">
+            <CoverPicker templateId={state.templateId} value={state.cover} onChange={changeCover} disabled={submitting} />
+            {coverError && (
+              <p role="alert" className="mt-2 text-sm text-destructive">
+                {coverError}
+              </p>
+            )}
+          </div>
           {parsed && !parsed.success && (
             <p className="text-sm text-destructive">
               {t("invalid")} ({parsed.error.issues[0]?.path.join(" › ")})

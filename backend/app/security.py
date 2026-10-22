@@ -103,16 +103,21 @@ class SecurityHeadersMiddleware:
 class BodyLimitMiddleware:
     """Rechaza bodies enormes según `Content-Length` (todos los bodies de la API son JSON chico)."""
 
-    def __init__(self, app: ASGIApp, max_bytes: int) -> None:
+    def __init__(
+        self, app: ASGIApp, max_bytes: int, overrides: dict[str, int] | None = None
+    ) -> None:
         self.app = app
         self.max_bytes = max_bytes
+        # Rutas con otro tope (p. ej. la subida de una imagen de portada).
+        self.overrides = overrides or {}
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] == "http":
+            limit = self.overrides.get(scope["path"], self.max_bytes)
             for name, value in scope["headers"]:
                 if name == b"content-length":
                     try:
-                        too_big = int(value) > self.max_bytes
+                        too_big = int(value) > limit
                     except ValueError:
                         too_big = True
                     if too_big:

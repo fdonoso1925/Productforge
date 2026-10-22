@@ -138,6 +138,36 @@
       "invalid": "Revisa los campos marcados."
     }
   },
+  "cover": {
+    "title": "Portada",
+    "hint": "El arte es único en cada pieza y de la misma familia en todo el paquete. La plantilla elegida se aplica al PDF completo.",
+    "styleLabel": "Estilo de arte",
+    "styles": {
+      "auto": "Automático",
+      "topo": "Topográfico",
+      "waves": "Ondas",
+      "circles": "Círculos",
+      "bauhaus": "Bauhaus",
+      "facets": "Facetas",
+      "none": "Sin arte"
+    },
+    "styleHint": {
+      "auto": "Se elige un estilo distinto para cada producto y se mantiene en todas sus versiones.",
+      "style": "Todas las piezas usan este estilo, cada una con su propio motivo.",
+      "none": "Solo la plantilla, sin ilustración de fondo."
+    },
+    "imageTitle": "Imagen propia (opcional)",
+    "imageHint": "JPG, PNG o WebP, hasta 5 MB y mínimo 800 px de lado. Se oscurece sola lo necesario para que el título se lea.",
+    "imageReplaces": "Tu imagen reemplaza al arte en todas las portadas de este paquete.",
+    "imageAlt": "Imagen de portada elegida",
+    "upload": "Subir imagen",
+    "replace": "Cambiar imagen",
+    "remove": "Quitar",
+    "uploading": "Subiendo…",
+    "errorType": "Usa una imagen JPG, PNG o WebP.",
+    "errorSize": "La imagen pesa más de 5 MB.",
+    "errorUpload": "No se pudo subir la imagen. Intenta de nuevo."
+  },
   "product": {
     "generating": "Generando tu paquete",
     "stages": {

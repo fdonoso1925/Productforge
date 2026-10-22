@@ -31,6 +31,8 @@ from app.db.supabase import FileRepo, ItemRepo, JobRepo, ProductRepo
 from app.generators import FileArtifact, RenderContext, generate_files
 from app.generators.base import slugify
 from app.generators.commercial import commercial_files
+from app.generators.cover import art_for_piece, image_path, stored_spec, veil_for
+from app.generators.cover_image import data_uri
 from app.pipeline.uploads import UploadQueue
 from app.storage.base import StorageProvider, SyncTarget
 from app.templates_engine.model import load_template
@@ -116,6 +118,9 @@ class PackageBuilder:
         self.template = load_template(deps.templates_dir, product["template_id"])
         self.progress = Progress(job_id=job["id"], jobs=deps.jobs)
         self.base = f"{self.user_id}/{self.product_id}"
+        self.cover = stored_spec(product)
+        self._cover_image: tuple[str, float] | None = None
+        self._cover_lock = asyncio.Lock()
         # Copias en Google Drive que quedaron huérfanos al reemplazar los de Supabase.
         self.orphaned_remote_ids: list[str] = []
 
@@ -139,6 +144,34 @@ class PackageBuilder:
         for row in rows:
             self.progress.items[row["id"]] = "pending"
         await self.progress.set()
+
+    async def cover_image(self) -> tuple[str, float] | None:
+        """Imagen propia de la portada (data URI) y su velo; se baja una sola vez por job."""
+        if self.cover.image_id is None:
+            return None
+        async with self._cover_lock:
+            if self._cover_image is None:
+                try:
+                    raw = await self.deps.storage.download(
+                        image_path(self.user_id, self.cover.image_id)
+                    )
+                    self._cover_image = (
+                        data_uri(raw),
+                        await asyncio.to_thread(veil_for, raw, self.template),
+                    )
+                except Exception:
+                    # Sin la imagen la pieza igual se genera, con el arte de la portada.
+                    logger.exception("no se pudo cargar la imagen de portada")
+                    return None
+        return self._cover_image
+
+    async def cover_fields(self, row: dict) -> dict[str, Any]:
+        """Campos de `RenderContext` con la portada de esta pieza (imagen propia o arte)."""
+        image = await self.cover_image()
+        if image:
+            return {"cover_image": image[0], "cover_veil": image[1]}
+        _, art = art_for_piece(self.cover, self.product, self.template, row["role"], row["order"])
+        return {"cover_art": art}
 
     async def produce(self, row: dict, mode: Mode) -> list[FileArtifact]:
         """Contenido de la pieza (IA o guardado) → archivos. No sube nada."""
@@ -168,6 +201,7 @@ class PackageBuilder:
             slug=slugify(item.title),
             product_name=self.outline.product_name,
             promise=item.promise,
+            **await self.cover_fields(row),
         )
         return await asyncio.to_thread(
             generate_files, Format(item.format), content, self.template, ctx

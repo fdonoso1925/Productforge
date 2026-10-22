@@ -1,5 +1,11 @@
-{# Portada: título, subtítulo, promesa y mockup simple. Variantes según style.cover. #}
-{% set s = t.style.cover %}
+{# Portada: título, subtítulo, promesa y mockup simple. Variantes según style.cover.
+   cover.art = SVG de arte generativo (capa bajo el texto); cover.bg = imagen propia (data URI) con
+   su velo: con imagen la portada es siempre "full-bleed" (texto claro sobre velo oscuro). #}
+{# Los campos de portada son opcionales: quien no los pasa obtiene la portada de siempre. #}
+{% set art = cover.get("art") %}
+{% set bg = cover.get("bg") %}
+{% set veil = cover.get("veil") or 0 %}
+{% set s = "full-bleed" if bg else t.style.cover %}
 {% set p = t.palette %}
 {# Títulos largos (comunes en la IA) bajan de tamaño para no desbordar la portada. #}
 {% set long = cover.title|length > 60 %}
@@ -11,7 +17,8 @@
 {%- endmacro %}
 <section class="cover" style="background: {% if s == 'full-bleed' %}{{ p.primary }}{% elif s == 'centered' %}{{ p.surface }}{% else %}{{ p.background }}{% endif %};
   color: {% if s == 'full-bleed' %}{{ p.on_primary }}{% else %}{{ p.text }}{% endif %};">
-  {% if t.style.decoration == 'blob' %}
+  {% if bg %}
+  {% elif t.style.decoration == 'blob' %}
   <div class="deco" style="right: -40mm; top: -30mm; width: 140mm; height: 140mm; border-radius: 70mm; background: {{ p.accent }}55;"></div>
   <div class="deco" style="left: -30mm; bottom: -40mm; width: 110mm; height: 110mm; border-radius: 55mm; background: {{ p.secondary }}33;"></div>
   {% elif t.style.decoration == 'dots' %}
@@ -20,6 +27,11 @@
   <div class="deco" style="left: -20mm; top: 180mm; width: 260mm; height: 40mm; background: {{ p.accent }}; transform: rotate(-12deg);"></div>
   {% endif %}
 
+  {% if bg %}
+  <div class="cover-art"><img src="{{ bg }}" alt=""><div class="cover-veil" style="background: {{ p.primary }}; opacity: {{ veil }};"></div></div>
+  {% elif art %}
+  <div class="cover-art">{{ art|safe }}</div>
+  {% endif %}
   {% if s == 'split' %}
   <div class="deco" style="left: 0; top: 0; width: 84mm; height: 297mm; background: {{ p.primary }};"></div>
   {{ mockup('8mm', '100mm') }}
@@ -35,11 +47,11 @@
   {% else %}
   <div class="cover-inner" style="top: 48mm;">
   {% endif %}
-    {% if cover.product_name and cover.product_name != cover.title %}<div class="cover-kicker">{{ cover.product_name }}</div>{% endif %}
+    {% if cover.product_name and cover.product_name != cover.title %}<div class="cover-kicker"{% if bg %} style="color: {{ p.on_primary }}; opacity: 0.85;"{% endif %}>{{ cover.product_name }}</div>{% endif %}
     <div class="cover-title{% if long %} long{% endif %}" style="color: {% if s in ['full-bleed', 'band'] %}{{ p.on_primary }}{% else %}{{ p.primary }}{% endif %};">{{ cover.title }}</div>
     <div class="cover-subtitle">{{ cover.subtitle }}</div>
     {% if cover.promise %}
-    <div class="cover-promise" style="background: {% if s in ['full-bleed', 'band'] %}{{ p.accent }}; color: {{ p.primary }}{% else %}{{ p.primary }}; color: {{ p.on_primary }}{% endif %};">{{ cover.promise }}</div>
+    <div class="cover-promise" style="background: {% if bg %}{{ p.on_primary }}; color: {{ p.primary }}{% elif s in ['full-bleed', 'band'] %}{{ p.accent }}; color: {{ p.primary }}{% else %}{{ p.primary }}; color: {{ p.on_primary }}{% endif %};">{{ cover.promise }}</div>
     {% endif %}
   </div>
   {% if s in ['centered', 'full-bleed', 'notebook'] %}{{ mockup('70mm', '150mm') }}{% elif s == 'band' %}{{ mockup('124mm', '168mm') }}{% endif %}

@@ -138,6 +138,36 @@
       "invalid": "Revise os campos marcados."
     }
   },
+  "cover": {
+    "title": "Capa",
+    "hint": "A arte é única em cada peça e da mesma família em todo o pacote. O modelo escolhido vale para o PDF inteiro.",
+    "styleLabel": "Estilo de arte",
+    "styles": {
+      "auto": "Automático",
+      "topo": "Topográfico",
+      "waves": "Ondas",
+      "circles": "Círculos",
+      "bauhaus": "Bauhaus",
+      "facets": "Facetas",
+      "none": "Sem arte"
+    },
+    "styleHint": {
+      "auto": "Um estilo diferente é escolhido para cada produto e mantido em todas as versões.",
+      "style": "Todas as peças usam este estilo, cada uma com o seu próprio motivo.",
+      "none": "Só o modelo, sem ilustração de fundo."
+    },
+    "imageTitle": "Imagem própria (opcional)",
+    "imageHint": "JPG, PNG ou WebP, até 5 MB e mínimo de 800 px de lado. Ela escurece sozinha o necessário para o título ficar legível.",
+    "imageReplaces": "Sua imagem substitui a arte em todas as capas deste pacote.",
+    "imageAlt": "Imagem de capa escolhida",
+    "upload": "Enviar imagem",
+    "replace": "Trocar imagem",
+    "remove": "Remover",
+    "uploading": "Enviando…",
+    "errorType": "Use uma imagem JPG, PNG ou WebP.",
+    "errorSize": "A imagem pesa mais de 5 MB.",
+    "errorUpload": "Não foi possível enviar a imagem. Tente de novo."
+  },
   "product": {
     "generating": "Gerando seu pacote",
     "stages": {

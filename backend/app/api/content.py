@@ -10,6 +10,7 @@ from app.content.prompts import PromptLibrary
 from app.content.schemas import Market, PackageOutline, PackageRequest, Problem
 from app.db.supabase import ProductRepo
 from app.deps import get_content_service, get_product_repo, get_prompts
+from app.generators.cover import ArtChoice
 from app.security import ai_rate_limit
 
 router = APIRouter()
@@ -29,6 +30,8 @@ class ProblemsResponse(BaseModel):
 
 class OutlineRequest(PackageRequest):
     template_id: str = Field(min_length=1, max_length=64, pattern=r"^[a-z0-9-]+$")
+    # Estilo de arte de la portada; la imagen propia se agrega después, sobre el producto creado.
+    cover_art: ArtChoice = "auto"
 
 
 class OutlineResponse(BaseModel):
@@ -50,7 +53,7 @@ async def build_outline(
     products: Annotated[ProductRepo, Depends(get_product_repo)],
     prompts: Annotated[PromptLibrary, Depends(get_prompts)],
 ) -> OutlineResponse:
-    request = PackageRequest.model_validate(body.model_dump(exclude={"template_id"}))
+    request = PackageRequest.model_validate(body.model_dump(exclude={"template_id", "cover_art"}))
     outline = await service.build_outline(user_id=user.id, request=request)
     product_id = await products.create_with_outline(
         user_id=user.id,
@@ -58,5 +61,6 @@ async def build_outline(
         template_id=body.template_id,
         outline=outline,
         prompt_version=prompts.version,
+        cover={"art": body.cover_art, "image_id": None},
     )
     return OutlineResponse(product_id=product_id, outline=outline)

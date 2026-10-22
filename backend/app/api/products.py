@@ -9,6 +9,7 @@ from app.content import rules
 from app.content.schemas import Format, Market, PackageOutline, PackageRequest
 from app.db.supabase import NotFound
 from app.deps import ServicesDep
+from app.generators.cover import CoverSpec, image_exists, stored_spec
 from app.pipeline.generate import package_request
 from app.pipeline.remodel import apply_formats, plan_remodel
 from app.security import ai_rate_limit
@@ -35,6 +36,8 @@ class RemodelRequest(BaseModel):
     tone: str | None = Field(default=None, max_length=200)
     audience_override: str | None = Field(default=None, max_length=300)
     formats: dict[UUID, Format] = Field(default_factory=dict, max_length=20)
+    # Otra portada (estilo de arte o imagen propia): solo cambia la maquetación, no usa IA.
+    cover: CoverSpec | None = None
 
 
 class RemodelResponse(BaseModel):
@@ -102,6 +105,13 @@ async def require_idle(services, product_id: UUID) -> None:
         )
 
 
+async def validate_cover(services, user: CurrentUser, cover: CoverSpec) -> None:
+    if cover.image_id is not None and not await image_exists(
+        services.storage, user.id, cover.image_id
+    ):
+        raise unprocessable("la imagen de portada no existe")
+
+
 def unprocessable(*errors: str) -> HTTPException:
     return HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, {"errors": list(errors)})
 
@@ -164,7 +174,14 @@ async def remodel(
     content_changed = tone != (parent.get("tone") or None) or audience != (
         parent.get("audience_override") or None
     )
-    if not (new_formats or content_changed or template_id != parent["template_id"]):
+    current_cover = stored_spec(parent)
+    cover = body.cover or current_cover
+    cover_changed = cover != current_cover
+    if cover_changed:
+        await validate_cover(services, user, cover)
+    if not (
+        new_formats or content_changed or template_id != parent["template_id"] or cover_changed
+    ):
         raise unprocessable("no hay cambios que aplicar")
 
     outline = apply_formats(PackageOutline.model_validate(parent["outline"]), rows, new_formats)
@@ -181,6 +198,7 @@ async def remodel(
         template_id=template_id,
         tone=tone,
         audience_override=audience,
+        cover=cover.model_dump(mode="json"),
         main_format=outline.main.format.value,
         outline=outline.model_dump(mode="json"),
         prompt_version=services.prompts.version if uses_ai else parent["prompt_version"],

@@ -68,6 +68,12 @@ export type TemplateInfo = {
   body_font: string;
 };
 
+/** Estilos de arte generativo de la portada (los mismos del backend: app/generators/cover_art.py). */
+export const ART_STYLES = ["topo", "waves", "circles", "bauhaus", "facets"] as const;
+export type ArtStyle = (typeof ART_STYLES)[number];
+export type ArtChoice = "auto" | ArtStyle | "none";
+export type CoverSpec = { art: ArtChoice; image_id: string | null };
+
 export type Niche = { id: string; slug: string; name: string; market: Market };
 
 export type ProductRow = {
@@ -82,6 +88,8 @@ export type ProductRow = {
   commercial: CommercialSheet | null;
   tone: string | null;
   audience_override: string | null;
+  /** {} en los productos anteriores a las portadas (se ven sin arte). */
+  cover: Partial<CoverSpec>;
   parent_product_id: string | null;
   root_product_id: string | null;
   created_at: string;

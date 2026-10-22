@@ -94,6 +94,7 @@ def child_row(parent: Row, **overrides: Any) -> Row:
         "audience_override": parent.get("audience_override"),
         "outline": parent.get("outline"),
         "commercial": parent.get("commercial"),
+        "cover": parent.get("cover") or {},
         "prompt_version": parent["prompt_version"],
         "status": "generating",
     }
@@ -113,6 +114,7 @@ class ProductRepo:
         template_id: str,
         outline: PackageOutline,
         prompt_version: str,
+        cover: dict | None = None,
     ) -> UUID:
         [row] = await self._db.insert(
             "products",
@@ -128,6 +130,7 @@ class ProductRepo:
                 "audience_override": request.audience_override,
                 "outline": outline.model_dump(mode="json"),
                 "prompt_version": prompt_version,
+                "cover": cover if cover is not None else {"art": "auto", "image_id": None},
                 "status": "outline_ready",
             },
         )
