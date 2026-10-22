@@ -25,6 +25,7 @@ from app.content.prompts import PromptLibrary
 from app.deps import get_services
 from app.main import create_app
 from app.worker import run_one
+from tests.fake_google import FakeTarget
 from tests.fakes import FakeLLM, FakeUsage, make_outline, make_problem
 from tests.memory import (
     MemoryAdBatches,
@@ -49,7 +50,7 @@ SETTINGS = Settings(_env_file=None, supabase_jwt_secret=SECRET, allowed_emails=[
 class AdsWorld:
     """API + worker + repos en memoria compartiendo el mismo estado."""
 
-    def __init__(self, responses=(), images=None) -> None:
+    def __init__(self, responses=(), images=None, drive=None) -> None:
         self.llm = FakeLLM(list(responses))
         prompts = PromptLibrary(SETTINGS.prompts_dir)
         content = ContentService(
@@ -70,6 +71,7 @@ class AdsWorld:
         self.proofs, self.jobs, self.storage = MemoryAdProofs(), MemoryJobs(), MemoryStorage()
         renderer = AdRenderer(SETTINGS.ad_templates_dir, SETTINGS.templates_dir)
         strategy = AdStrategyService(content)
+        self.drive = drive or FakeTarget(connected=False)
         self.images = images or ImageRouter(
             [], MemoryImageCache(), MemoryProviderUsage(), self.storage
         )
@@ -85,6 +87,7 @@ class AdsWorld:
             ad_creatives=self.creatives,
             ad_proofs=self.proofs,
             ad_images=self.images,
+            drive=self.drive,
             ads=lambda: AdDeps(
                 strategy=strategy,
                 renderer=renderer,
@@ -95,6 +98,7 @@ class AdsWorld:
                 storage=self.storage,
                 templates_dir=SETTINGS.templates_dir,
                 images=self.images,
+                sync_target=self.drive,
             ),
         )
         app = create_app()

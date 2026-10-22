@@ -11,7 +11,7 @@ import time
 from collections.abc import Awaitable, Callable
 from uuid import UUID
 
-from app.ads.jobs import AdDeps, run_ad_plan, run_ad_render
+from app.ads.jobs import AdDeps, run_ad_drive, run_ad_plan, run_ad_render
 from app.config import get_settings
 from app.deps import Services, build_services
 from app.pipeline.drive_sync import run_upload
@@ -32,6 +32,7 @@ HANDLERS: dict[str, Callable[[dict, PipelineDeps], Awaitable[None]]] = {
 AD_HANDLERS: dict[str, Callable[[dict, AdDeps], Awaitable[None]]] = {
     "ad_plan": run_ad_plan,
     "ad_render": run_ad_render,
+    "ad_drive": run_ad_drive,
 }
 POLL_SECONDS = 2.0
 # Cada tanto se reencolan las subidas a Google Drive que quedaron pendientes o fallidas.
@@ -55,6 +56,8 @@ async def fail_batch(services: Services, job: dict) -> None:
     """Un lote cuyo job cayó no puede quedar en «planificando» o «componiendo» para siempre."""
     try:
         batch = await services.ad_batches.get(job["batch_id"])
+        if job["kind"] == "ad_drive":
+            return  # la copia a Drive no cambia el estado del lote (queda en `drive`)
         if batch["status"] in ("planning", "rendering"):
             # Con creativos ya planificados vuelve a revisión; sin ellos, a error.
             has_copy = bool(await services.ad_creatives.list_for_batch(batch["id"]))

@@ -43,6 +43,7 @@ class AdDeps:
     templates_dir: Any  # Path
     prompt_version: str = ""
     images: ImageRouter | None = None
+    sync_target: Any = None  # destino externo (Google Drive); None = sin copia
 
 
 def available_templates(deps: "AdDeps", brief: AdBrief, proofs: list[AdProof]) -> list[str]:
@@ -345,3 +346,64 @@ def recheck(
         needs_proof=needs_proof,
     )
     return errors, rules.policy_verdict(draft, brief, proofs)
+
+
+# ───────────────────────── copia a Google Drive ─────────────────────────
+
+DRIVE_CONCURRENCY = 3
+
+
+async def run_ad_drive(job: dict, deps: AdDeps) -> None:
+    """Copia a Drive las imágenes compuestas del lote y su CSV. Storage sigue siendo la fuente."""
+    from app.ads.export import build_csv, drive_folder
+    from app.storage.google_drive import NotConnected
+
+    target = deps.sync_target
+    if target is None:
+        raise RuntimeError("no hay destino de sincronización configurado")
+    user_id = UUID(job["user_id"])
+    batch = await deps.batches.get(job["batch_id"], user_id)
+    brief = batch_brief(batch)
+    folder = drive_folder(batch, brief.product_name)
+    creatives = [
+        c
+        for c in await deps.creatives.list_for_batch(batch["id"])
+        if c["status"] == "rendered" and c.get("storage_path")
+    ]
+    state = {"status": "uploading", "total": len(creatives) + 1, "uploaded": 0, "failed": 0}
+    await deps.batches.update(batch["id"], drive={**state, "folder": folder})
+    semaphore = asyncio.Semaphore(DRIVE_CONCURRENCY)
+
+    async def one(c: dict) -> None:
+        async with semaphore:
+            try:
+                data = await deps.storage.download(c["storage_path"])
+                relative = f"{deps.renderer.ratios[c['ratio']].folder}/{c['filename']}"
+                remote = await target.upload(user_id, f"{folder}/{relative}", data, PNG)
+            except NotConnected:
+                raise
+            except Exception as exc:
+                logger.warning("falló la subida de un creativo: %s", type(exc).__name__)
+                state["failed"] += 1
+                return
+            await deps.creatives.update(c["id"], remote_id=remote.id, remote_url=remote.url)
+            state["uploaded"] += 1
+
+    try:
+        await asyncio.gather(*(one(c) for c in creatives))
+        try:
+            csv = build_csv(batch["market"], creatives)
+            await target.upload(user_id, f"{folder}/copys.csv", csv, "text/csv")
+            state["uploaded"] += 1
+        except NotConnected:
+            raise
+        except Exception as exc:
+            logger.warning("falló la subida del CSV: %s", type(exc).__name__)
+            state["failed"] += 1
+    except Exception:
+        await deps.batches.update(batch["id"], drive={**state, "status": "error", "folder": folder})
+        raise
+    status = "error" if state["failed"] else "done"
+    await deps.batches.update(batch["id"], drive={**state, "status": status, "folder": folder})
+    if state["failed"]:
+        raise RuntimeError(f"{state['failed']} archivo(s) sin subir")

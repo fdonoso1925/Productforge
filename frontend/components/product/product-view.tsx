@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, FileArchive, Languages, Palette, RefreshCw } from "lucide-react";
+import { Download, FileArchive, Languages, Megaphone, Palette, RefreshCw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { ErrorBox, Loading } from "@/components/wizard/step-nav";
@@ -129,6 +129,13 @@ export function ProductView({ productId }: { productId: string }) {
               <Languages aria-hidden />
               {ta("duplicate", { market: tm(otherMarket(product.market)) })}
             </Button>
+            <Link
+              href={`/ads/new?product=${product.id}`}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border bg-background px-2.5 text-sm font-medium hover:bg-muted"
+            >
+              <Megaphone className="size-4" aria-hidden />
+              {ta("createAds")}
+            </Link>
           </div>
           {panel === "remodel" && <RemodelPanel product={product} items={items} onClose={() => setPanel(null)} />}
           {panel === "duplicate" && <DuplicatePanel product={product} onClose={() => setPanel(null)} />}

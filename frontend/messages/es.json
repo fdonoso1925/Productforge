@@ -22,7 +22,8 @@
     "newProduct": "Nuevo paquete",
     "newProductHint": "Elige un nicho y en menos de 2 minutos tienes el paquete en camino.",
     "history": "Ver historial",
-    "settings": "Ajustes"
+    "settings": "Ajustes",
+    "ads": "Anuncios (Meta Ads)"
   },
   "locale": {
     "switch": "Ver en português"
@@ -250,7 +251,8 @@
       "duplicateConfirm": "Crear versión en {market}",
       "regenerate": "Regenerar",
       "regenerateConfirm": "¿Seguro? Usa IA",
-      "working": "Creando…"
+      "working": "Creando…",
+      "createAds": "Crear anuncios"
     },
     "versions": {
       "title": "Versiones",
@@ -365,6 +367,229 @@
         "denied": "Cancelaste la autorización: no se conectó nada.",
         "error": "No se pudo conectar con Google. Asegúrate de dejar marcado el permiso de Drive e inténtalo de nuevo."
       }
+    }
+  },
+  "ads": {
+    "list": {
+      "title": "Creativos para Meta Ads",
+      "hint": "Lotes de anuncios: ángulos, textos, semáforo de políticas e imágenes listas para subir.",
+      "new": "Nuevo lote",
+      "empty": "Aún no hay lotes. Crea uno a partir de un paquete o de un brief manual.",
+      "drafts": "{count, plural, one {# borrador} other {# borradores}}",
+      "formats": "formatos"
+    },
+    "fromProduct": "Crear anuncios",
+    "status": {
+      "planning": "Escribiendo textos",
+      "review": "Para revisar",
+      "rendering": "Componiendo",
+      "ready": "Listo",
+      "error": "Error"
+    },
+    "policy": {
+      "green": "Seguro",
+      "yellow": "Revisar",
+      "red": "Riesgo",
+      "greenHint": "No se detectó nada que choque con las políticas de Meta. No garantiza la aprobación.",
+      "yellowHint": "Hay algo que conviene ajustar antes de publicar.",
+      "redHint": "Probablemente incumple una política de Meta: corrígelo antes de publicar."
+    },
+    "proofs": {
+      "title": "Pruebas reales",
+      "hint": "Testimonios, cifras o experiencia que sean REALES. Los anuncios solo pueden citar lo que cargues aquí; sin pruebas no aparecen los ángulos de prueba social.",
+      "kind": "Tipo",
+      "kinds": {
+        "testimonial": "Testimonio",
+        "stat": "Dato o cifra",
+        "authority": "Autoridad"
+      },
+      "author": "Autor (opcional, tal como quieres que aparezca)",
+      "text": "Texto exacto de la prueba",
+      "add": "Agregar prueba",
+      "remove": "Quitar prueba"
+    },
+    "wizard": {
+      "title": "Nuevo lote de anuncios",
+      "back": "Mis lotes",
+      "steps": {
+        "brief": "Producto",
+        "avatars": "Público",
+        "angles": "Ángulos y formatos"
+      },
+      "confirmAi": "Confirmar (usa IA)",
+      "create": "Crear lote",
+      "brief": {
+        "source": "Origen del producto",
+        "fromProduct": "De un paquete mío",
+        "manual": "Manual",
+        "product": "Paquete",
+        "productHint": "Se usan su nombre, problema, público, promesa y bonus. El precio y la urgencia solo entran si los escribes abajo.",
+        "market": "Mercado",
+        "niche": "Nicho",
+        "product_name": "Nombre del producto",
+        "problem": "Problema que resuelve",
+        "audience": "Público",
+        "promise": "Promesa",
+        "bonuses": "Bonus (uno por línea)",
+        "bonusesHint": "Plantilla de captura\nGuía de respuestas rápidas",
+        "price": "Precio real",
+        "priceHint": "Solo si existe. Vacío = los anuncios no mencionan precio.",
+        "urgency": "Urgencia real",
+        "urgencyHint": "Solo una fecha o lanzamiento verdadero. Vacío = sin urgencia en los textos."
+      },
+      "avatars": {
+        "hint": "Elige a quién le hablarán los anuncios (1 a 3 funcionan bien). Cada avatar cambia el lenguaje y el dolor del texto.",
+        "loading": "Proponiendo avatares…",
+        "pain": "Dolor",
+        "desire": "Deseo",
+        "regenerate": "Proponer otros"
+      },
+      "angles": {
+        "hint": "Cada ángulo es una forma distinta de vender. Ajusta el avatar y cuántas variaciones quieres de cada uno.",
+        "loading": "Buscando los mejores ángulos…",
+        "remove": "Quitar ángulo",
+        "avatar": "Avatar",
+        "count": "Variaciones",
+        "variations": "{count, plural, one {# variación} other {# variaciones}}",
+        "add": "Agregar otro ángulo",
+        "choose": "Elegir…",
+        "summary": "{drafts, plural, one {# borrador} other {# borradores}} → {images, plural, one {# imagen} other {# imágenes}} en total. Las imágenes no usan IA: solo los textos."
+      },
+      "formats": {
+        "title": "Formatos",
+        "hint": "Cada borrador se compone en todos los formatos que marques, con su zona segura.",
+        "4x5": "Feed 4:5 (1080×1350)",
+        "9x16": "Stories y Reels 9:16 (1080×1920)",
+        "1x1": "Cuadrado 1:1 (1080×1080)"
+      },
+      "template": {
+        "label": "Plantilla visual (colores y tipografías)",
+        "hint": "Por defecto, la del paquete, para que los anuncios combinen con el producto."
+      },
+      "issues": {
+        "tooMany": "Demasiados ángulos: quita alguno.",
+        "tooManyCreatives": "Máximo {max} borradores por lote.",
+        "duplicate": "Hay un ángulo repetido con el mismo avatar."
+      }
+    },
+    "batch": {
+      "title": "Lote de anuncios",
+      "back": "Mis lotes",
+      "planning": "Escribiendo los textos…",
+      "planningHint": "La IA arma el copy, revisa las políticas de Meta y puntúa cada creativo.",
+      "planningProgress": "{done} de {total} ángulos listos",
+      "planFailed": "No se pudo escribir ningún creativo. Vuelve a intentarlo desde un lote nuevo.",
+      "jobFailed": "El último trabajo falló. Lo ya hecho se conserva; puedes reintentar.",
+      "summary": "{drafts, plural, one {# borrador} other {# borradores}} · {rendered} de {total} imágenes compuestas",
+      "reviewHint": "Revisa los textos y el semáforo, edita lo que quieras y luego compón las imágenes. Componer no usa IA.",
+      "render": "{count, plural, =0 {Nada por componer} one {Componer # imagen} other {Componer # imágenes}}",
+      "export": "Descargar ZIP + CSV",
+      "exportReady": "{count} imágenes listas:",
+      "downloadZip": "ZIP con imágenes y copys",
+      "downloadCsv": "CSV de copys",
+      "rendering": "Componiendo imágenes… {done} de {total}",
+      "score": "Pre-score {score}/10",
+      "policyNotes": "{count, plural, =0 {Detalle} one {# observación de políticas} other {# observaciones de políticas}}",
+      "rewrite": "Reescritura sugerida",
+      "improve": "Para mejorar",
+      "edit": "Editar texto",
+      "renderGroup": "Componer",
+      "discard": "Descartar",
+      "discardConfirm": "¿Descartar?",
+      "notRendered": "Sin componer",
+      "renderError": "Error al componer"
+    },
+    "editor": {
+      "title": "Editar texto",
+      "hint": "Editar y volver a componer no usa IA. El semáforo se recalcula con las mismas reglas.",
+      "imageHeadline": "Titular de la imagen",
+      "imageSub": "Subtítulo de la imagen",
+      "kicker": "Etiqueta",
+      "imageCta": "Botón de la imagen",
+      "bullets": "Lista",
+      "bulletsHint": "Una línea por ítem. En «antes y después» y «comparación»: la primera mitad es el antes y la segunda el después.",
+      "note": "Nota",
+      "quote": "Cita del testimonio",
+      "quoteHint": "Debe ser textual (o un fragmento) de una prueba real que cargaste.",
+      "mark": "Marca de la lista",
+      "markCheck": "✓ Beneficios",
+      "markCross": "✗ Errores a evitar",
+      "adsManager": "Texto en Ads Manager",
+      "primaryShort": "Texto principal corto",
+      "primaryLong": "Texto principal largo",
+      "adHeadline": "Titular",
+      "description": "Descripción",
+      "cta": "Botón de llamada a la acción",
+      "ctas": {
+        "LEARN_MORE": "Más información",
+        "SHOP_NOW": "Comprar ahora",
+        "GET_OFFER": "Obtener oferta",
+        "DOWNLOAD": "Descargar",
+        "SIGN_UP": "Registrarte"
+      },
+      "words": "{n}/{max} palabras",
+      "chars": "{n}/{max} caracteres",
+      "cancel": "Cancelar",
+      "save": "Guardar y recomponer",
+      "saving": "Guardando…",
+      "issues": {
+        "headlineEmpty": "El titular de la imagen no puede estar vacío.",
+        "imageHeadlineWords": "El titular de la imagen tiene {n} palabras (máximo {max}).",
+        "imageSubWords": "El subtítulo tiene {n} palabras (máximo {max}).",
+        "kickerWords": "La etiqueta tiene {n} palabras (máximo {max}).",
+        "ctaWords": "El botón tiene {n} palabras (máximo {max}).",
+        "bulletWords": "Un ítem de la lista tiene {n} palabras (máximo {max}).",
+        "noteMax": "La nota tiene {n} caracteres (máximo {max}).",
+        "primaryShortMax": "El texto principal corto tiene {n} caracteres (máximo {max}).",
+        "headlineMax": "El titular del anuncio tiene {n} caracteres (máximo {max}).",
+        "descriptionMax": "La descripción tiene {n} caracteres (máximo {max}).",
+        "primaryLongRange": "El texto principal largo tiene {n} caracteres (entre {min} y {max}).",
+        "bulletsRange": "Esta plantilla necesita entre {min} y {max} ítems (hay {n}).",
+        "bulletsPaired": "Esta plantilla necesita 2 o 4 ítems: antes y después (hay {n}).",
+        "noteRequired": "La plantilla de nota necesita el texto de la nota."
+      }
+    },
+    "drive": {
+      "notConnected": "Google Drive no está conectado",
+      "connectLink": "Conectar en Ajustes",
+      "none": "Aún no copiado a Drive",
+      "files": "{uploaded} de {total} archivos en Drive",
+      "syncing": "Copiando…",
+      "failed": "{count, plural, one {# archivo falló} other {# archivos fallaron}}",
+      "retry": "Reintentar",
+      "again": "Copiar de nuevo",
+      "copy": "Copiar a Google Drive",
+      "openFolder": "Abrir carpeta"
+    },
+    "angleNames": {
+      "dolor": "Dolor",
+      "mecanismo": "Solución / mecanismo",
+      "transformacion": "Transformación / resultado",
+      "persona": "Persona / identificación",
+      "objecion": "Objeción",
+      "curiosidad": "Curiosidad / secreto",
+      "mito": "Mito vs. verdad",
+      "error": "Error común",
+      "lista": "Lista / beneficios",
+      "oferta": "Oferta / precio",
+      "autoridad": "Autoridad / prueba",
+      "urgencia": "Urgencia / oportunidad",
+      "comparacion": "Comparación",
+      "nativo": "Nativo / UGC"
+    },
+    "templates": {
+      "headline_bold": "Titular grande",
+      "photo_headline": "Foto + titular",
+      "product_mockup": "Mockup del producto",
+      "note": "Nota",
+      "text_post": "Post de texto",
+      "notification": "Notificación",
+      "checklist": "Lista",
+      "before_after": "Antes y después",
+      "comparison": "Comparación",
+      "question": "Pregunta",
+      "testimonial": "Testimonio",
+      "offer_stack": "Oferta apilada"
     }
   }
 }

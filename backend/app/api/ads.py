@@ -462,3 +462,117 @@ def image_status(services: ServicesDep) -> dict[str, Any]:
         "photo_templates": any(t.uses_image for t in services.ad_renderer.templates.values())
         and bool(services.ad_images.active()),
     }
+
+
+# ───────────────────────────── entrega: URLs, ZIP/CSV y Drive ─────────────────────────────
+
+
+async def rendered_creatives(services, batch_id: UUID) -> list[dict]:
+    return [
+        c
+        for c in await services.ad_creatives.list_for_batch(batch_id)
+        if c["status"] == "rendered" and c.get("storage_path")
+    ]
+
+
+@router.post("/batches/{batch_id}/urls")
+async def creative_urls(batch_id: UUID, user: User, services: ServicesDep) -> dict[str, str]:
+    """URLs firmadas (10 min) de todas las imágenes compuestas del lote, para la galería."""
+    await owned_batch(services, batch_id, user)
+    creatives = await rendered_creatives(services, batch_id)
+    urls = await asyncio.gather(
+        *(services.storage.signed_url(c["storage_path"], SIGNED_URL_SECONDS) for c in creatives)
+    )
+    return {c["id"]: url for c, url in zip(creatives, urls, strict=True)}
+
+
+class ExportOut(BaseModel):
+    zip_url: str
+    csv_url: str
+    zip_name: str
+    images: int
+
+
+@router.post("/batches/{batch_id}/export")
+async def export_batch(batch_id: UUID, user: User, services: ServicesDep) -> ExportOut:
+    """ZIP con las imágenes por formato + CSV de copys para Ads Manager (y créditos de fotos)."""
+    from app.ads import export
+
+    batch = await owned_batch(services, batch_id, user)
+    creatives = await rendered_creatives(services, batch_id)
+    if not creatives:
+        raise HTTPException(status.HTTP_409_CONFLICT, "aún no hay imágenes compuestas")
+    brief_ = ad_jobs.batch_brief(batch)
+    blobs = await asyncio.gather(*(services.storage.download(c["storage_path"]) for c in creatives))
+    folders = {r.id: r.folder for r in services.ad_renderer.ratios.values()}
+    try:
+        data = export.build_zip(
+            batch["market"],
+            creatives,
+            {c["id"]: b for c, b in zip(creatives, blobs, strict=True)},
+            folders,
+        )
+    except export.ExportTooLarge:
+        raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, "el lote pesa demasiado") from None
+    name = export.batch_slug(batch, brief_.product_name)
+    base = f"{user.id}/ads/{batch_id}/export/{name}"
+    await services.storage.upload(f"{base}.zip", data, "application/zip")
+    await services.storage.upload(
+        f"{base}.csv", export.build_csv(batch["market"], creatives), "text/csv"
+    )
+    return ExportOut(
+        zip_url=await services.storage.signed_url(f"{base}.zip", SIGNED_URL_SECONDS),
+        csv_url=await services.storage.signed_url(f"{base}.csv", SIGNED_URL_SECONDS),
+        zip_name=f"{name}.zip",
+        images=len(creatives),
+    )
+
+
+class DriveOut(BaseModel):
+    connected: bool
+    status: str  # none | uploading | done | error
+    total: int = 0
+    uploaded: int = 0
+    failed: int = 0
+    folder_url: str | None = None
+
+
+@router.get("/batches/{batch_id}/drive")
+async def batch_drive(batch_id: UUID, user: User, services: ServicesDep) -> DriveOut:
+    batch = await owned_batch(services, batch_id, user)
+    state = batch.get("drive") or {}
+    connected = await services.drive.is_connected(user.id)
+    syncing = bool(await services.jobs.active_for_batch(batch_id, kind="ad_drive"))
+    status_ = "uploading" if syncing else state.get("status", "none")
+    folder_url = None
+    if connected and status_ == "done" and state.get("folder"):
+        try:
+            folder_url = await services.drive.folder_url(user.id, state["folder"])
+        except Exception:
+            folder_url = None  # el enlace es un extra; no rompe el estado
+    return DriveOut(
+        connected=connected,
+        status=status_,
+        total=state.get("total", 0),
+        uploaded=state.get("uploaded", 0),
+        failed=state.get("failed", 0),
+        folder_url=folder_url,
+    )
+
+
+@router.post("/batches/{batch_id}/drive", status_code=status.HTTP_202_ACCEPTED)
+async def batch_to_drive(batch_id: UUID, user: User, services: ServicesDep) -> JobOut:
+    """Copia el lote a Google Drive (Storage sigue siendo el respaldo)."""
+    batch = await owned_batch(services, batch_id, user)
+    if not services.drive.configured():
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Google Drive no está configurado")
+    if not await services.drive.is_connected(user.id):
+        raise HTTPException(status.HTTP_409_CONFLICT, "conecta Google Drive en Ajustes")
+    if not await rendered_creatives(services, batch_id):
+        raise HTTPException(status.HTTP_409_CONFLICT, "aún no hay imágenes compuestas")
+    if await services.jobs.active_for_batch(UUID(batch["id"]), kind="ad_drive"):
+        raise HTTPException(status.HTTP_409_CONFLICT, "ya se está copiando a Drive")
+    job = await services.jobs.enqueue(
+        user_id=user.id, batch_id=batch_id, kind="ad_drive", payload={}
+    )
+    return JobOut(job_id=UUID(job["id"]))

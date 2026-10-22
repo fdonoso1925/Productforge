@@ -70,6 +70,7 @@ class Services:
             storage=self.storage,
             templates_dir=self.settings.templates_dir,
             images=self.ad_images,
+            sync_target=self.drive,
         )
 
     def pipeline(self) -> PipelineDeps:

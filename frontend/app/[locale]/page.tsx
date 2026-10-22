@@ -1,4 +1,4 @@
-import { History, Plus, Settings } from "lucide-react";
+import { History, Megaphone, Plus, Settings } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { LocaleSwitch } from "@/components/locale-switch";
 import { Link } from "@/i18n/navigation";
@@ -38,6 +38,13 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
             >
               <Plus className="size-4" aria-hidden />
               {t("newProduct")}
+            </Link>
+            <Link
+              href="/ads"
+              className="inline-flex w-fit items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted"
+            >
+              <Megaphone className="size-4" aria-hidden />
+              {t("ads")}
             </Link>
             <Link
               href="/history"

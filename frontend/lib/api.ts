@@ -1,6 +1,19 @@
 import { env } from "@/lib/env";
 import { createClient } from "@/lib/supabase/client";
 import type {
+  AdBrief,
+  AdCopy,
+  AdDrive,
+  AngleInfo,
+  AnglePick,
+  AngleSuggestion,
+  Avatar,
+  CreativeRow,
+  ImageCopy,
+  Proof,
+  Ratio,
+} from "@/lib/ads";
+import type {
   ArtChoice,
   CoverSpec,
   DriveStatus,
@@ -78,6 +91,23 @@ export type RemodelBody = {
   cover?: CoverSpec;
 };
 
+/** O un producto existente (con precio y urgencia reales opcionales) o un brief manual. */
+export type BriefSource = {
+  product_id?: string;
+  brief?: AdBrief;
+  price_text?: string;
+  real_urgency?: string;
+};
+
+export type BatchBody = BriefSource & {
+  avatars: Avatar[];
+  picks: AnglePick[];
+  ratios: Ratio[];
+  template_id?: string;
+};
+
+export type AdExport = { zip_url: string; csv_url: string; zip_name: string; images: number };
+
 export const api = {
   proposeProblems: (niche: string, market: Market, reference?: SalesReference | null) =>
     call<{ problems: Problem[] }>("/problems", {
@@ -132,6 +162,45 @@ export const api = {
   /** Muestra de un estilo con la paleta de la plantilla (SVG público). */
   artPreviewUrl: (style: string, templateId: string) =>
     `${env.apiUrl}/cover/art/${style}.svg?template=${encodeURIComponent(templateId)}&background=true`,
+  // ── Creativos para Meta Ads ──
+  adsBrief: (source: BriefSource) =>
+    call<AdBrief>("/ads/brief", { method: "POST", body: JSON.stringify(source) }),
+  adsAvatars: (source: BriefSource) =>
+    call<{ brief: AdBrief; avatars: Avatar[] }>("/ads/avatars", {
+      method: "POST",
+      body: JSON.stringify(source),
+    }),
+  adsAngles: (source: BriefSource & { avatars: Avatar[]; count?: number }) =>
+    call<{ available: AngleInfo[]; suggestions: AngleSuggestion[] }>("/ads/angles", {
+      method: "POST",
+      body: JSON.stringify(source),
+    }),
+  adsCreateBatch: (body: BatchBody) =>
+    call<{ batch_id: string; job_id: string }>("/ads/batches", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  adsRender: (batchId: string, creativeIds: string[] = []) =>
+    call<{ job_id: string }>(`/ads/batches/${batchId}/render`, {
+      method: "POST",
+      body: JSON.stringify({ creative_ids: creativeIds }),
+    }),
+  adsUrls: (batchId: string) => call<Record<string, string>>(`/ads/batches/${batchId}/urls`, { method: "POST" }),
+  adsEdit: (creativeId: string, body: { image?: ImageCopy; ad?: AdCopy }) =>
+    call<CreativeRow>(`/ads/creatives/${creativeId}`, { method: "PUT", body: JSON.stringify(body) }),
+  adsRenderOne: (creativeId: string) =>
+    call<CreativeRow>(`/ads/creatives/${creativeId}/render`, { method: "POST" }),
+  adsDiscard: (creativeId: string) =>
+    call<CreativeRow>(`/ads/creatives/${creativeId}/discard`, { method: "POST" }),
+  adsExport: (batchId: string) => call<AdExport>(`/ads/batches/${batchId}/export`, { method: "POST" }),
+  adsDrive: (batchId: string) => call<AdDrive>(`/ads/batches/${batchId}/drive`),
+  adsDriveStart: (batchId: string) =>
+    call<{ job_id: string }>(`/ads/batches/${batchId}/drive`, { method: "POST" }),
+  adsProofs: (productId?: string) =>
+    call<Proof[]>(`/ads/proofs${productId ? `?product_id=${productId}` : ""}`),
+  adsAddProof: (body: { kind: Proof["kind"]; text: string; author?: string | null; product_id?: string | null }) =>
+    call<Proof>("/ads/proofs", { method: "POST", body: JSON.stringify(body) }),
+  adsDeleteProof: (proofId: string) => call<void>(`/ads/proofs/${proofId}`, { method: "DELETE" }),
   downloadUrl: (fileId: string) => call<{ url: string }>(`/files/${fileId}/download`),
   templates: async (): Promise<TemplateInfo[]> => {
     const response = await fetch(`${env.apiUrl}/templates`);
