@@ -4,6 +4,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { routing } from "@/i18n/routing";
 import { env } from "@/lib/env";
 import { isPublicPath, LOGIN_PATH } from "@/lib/public-paths";
+import { authState, hasAuthCookie, sessionCookieOptions } from "@/lib/supabase/session";
 
 const intl = createIntlMiddleware(routing);
 
@@ -14,6 +15,7 @@ export async function proxy(request: NextRequest) {
 
   // Refresca la sesión de Supabase y escribe las cookies nuevas en la respuesta.
   const supabase = createServerClient(env.supabaseUrl, env.supabaseAnonKey, {
+    cookieOptions: sessionCookieOptions(),
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (toSet) => {
@@ -21,8 +23,16 @@ export async function proxy(request: NextRequest) {
       },
     },
   });
-  const { data } = await supabase.auth.getClaims();
-  const signedIn = Boolean(data?.claims);
+  let state = authState(await supabase.auth.getClaims());
+  if (state === "unknown") {
+    // Supabase no respondió (red, lentitud): se reintenta una vez antes de dudar de la sesión.
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    state = authState(await supabase.auth.getClaims());
+  }
+  // Un fallo de red NO es «sin sesión»: con la cookie presente se deja pasar. Es solo la puerta
+  // de la interfaz; el backend y RLS siguen exigiendo un token válido en cada dato.
+  const signedIn =
+    state === "signed-in" || (state === "unknown" && hasAuthCookie(request.cookies.getAll().map((c) => c.name)));
 
   const { pathname } = request.nextUrl;
   const locale = pathname.split("/")[1] || routing.defaultLocale;

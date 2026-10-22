@@ -8,7 +8,8 @@ export function SignOutButton({ label }: { label: string }) {
   const router = useRouter();
 
   async function signOut() {
-    await createClient().auth.signOut();
+    // Solo este navegador: el cierre global desconectaría también tus otros dispositivos.
+    await createClient().auth.signOut({ scope: "local" });
     router.replace("/login");
     router.refresh();
   }
