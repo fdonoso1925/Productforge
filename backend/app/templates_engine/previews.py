@@ -20,7 +20,9 @@ THUMB_W = 360  # ancho de cada página en la miniatura
 
 
 def preview_png(template: Template) -> bytes:
-    ctx = RenderContext(market="es-LATAM", role="main", slug="preview", product_name="ProductForge")
+    ctx = RenderContext(
+        market="es-LATAM", role="main", slug="preview", product_name="Productos Aurora"
+    )
     cover = {"title": GUIDE.title, "subtitle": GUIDE.subtitle, "promise": GUIDE.promise}
     pdf = render_pdf(template, "guide", ctx, GUIDE, cover)
     pages = [Image.open(io.BytesIO(pdf_page_to_png(pdf, i, THUMB_W))) for i in (0, 3)]

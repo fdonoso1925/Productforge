@@ -33,6 +33,7 @@ export function inputsKey(s: WizardState): string {
 
 export function Wizard({ niches, defaultMarket }: { niches: Niche[]; defaultMarket: Market }) {
   const t = useTranslations("wizard");
+  const tApp = useTranslations("app");
   const [step, setStep] = useState(0);
   const [state, setState] = useState<WizardState>({
     market: defaultMarket,
@@ -63,7 +64,7 @@ export function Wizard({ niches, defaultMarket }: { niches: Niche[]; defaultMark
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
           <Link href="/" className="text-sm text-muted-foreground hover:underline">
-            ProductForge
+            {tApp("name")}
           </Link>
         </div>
         <ol className="grid grid-cols-5 gap-2" aria-label={t("title")}>

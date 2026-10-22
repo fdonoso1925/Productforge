@@ -10,7 +10,7 @@ const geistSans = Geist({ variable: "--font-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "ProductForge",
+  title: "Productos Aurora",
   description: "Generador de productos digitales low ticket",
 };
 

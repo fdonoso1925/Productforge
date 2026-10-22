@@ -304,7 +304,7 @@ def mind_map_xmind(content: MindMapContent) -> bytes:
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("content.json", json.dumps(sheet, ensure_ascii=False))
-        z.writestr("metadata.json", json.dumps({"creator": {"name": "ProductForge"}}))
+        z.writestr("metadata.json", json.dumps({"creator": {"name": "Productos Aurora"}}))
         z.writestr(
             "manifest.json", json.dumps({"file-entries": {"content.json": {}, "metadata.json": {}}})
         )
@@ -430,7 +430,7 @@ def concept_map_drawio(content: ConceptMapContent) -> str:
             f'target={quoteattr("n-" + r.target)}><mxGeometry relative="1" as="geometry"/></mxCell>'
         )
     return (
-        f'<mxfile host="ProductForge"><diagram name={quoteattr(content.title)}>'
+        f'<mxfile host="Productos Aurora"><diagram name={quoteattr(content.title)}>'
         f"<mxGraphModel><root>{''.join(cells)}</root></mxGraphModel></diagram></mxfile>\n"
     )
 

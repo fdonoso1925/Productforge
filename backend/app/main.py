@@ -49,7 +49,7 @@ def create_app() -> FastAPI:
         if settings.environment == "production"
         else {}
     )
-    app = FastAPI(title="ProductForge API", version="0.7.0", lifespan=lifespan, **docs)
+    app = FastAPI(title="Productos Aurora API", version="0.7.0", lifespan=lifespan, **docs)
     app.add_middleware(
         BodyLimitMiddleware,
         max_bytes=settings.max_body_bytes,

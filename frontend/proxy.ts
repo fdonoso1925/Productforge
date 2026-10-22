@@ -23,16 +23,28 @@ export async function proxy(request: NextRequest) {
       },
     },
   });
-  let state = authState(await supabase.auth.getClaims());
+  const hadCookie = hasAuthCookie(request.cookies.getAll().map((c) => c.name));
+  let claims = await supabase.auth.getClaims();
+  let state = authState(claims);
   if (state === "unknown") {
     // Supabase no respondió (red, lentitud): se reintenta una vez antes de dudar de la sesión.
     await new Promise((resolve) => setTimeout(resolve, 300));
-    state = authState(await supabase.auth.getClaims());
+    claims = await supabase.auth.getClaims();
+    state = authState(claims);
+  }
+  if (hadCookie && state !== "signed-in") {
+    // Diagnóstico: por qué una sesión con cookie dejó de valer (sin tokens ni datos personales).
+    console.warn("[auth] sesión con cookie no verificada", {
+      state,
+      error: claims.error?.name,
+      status: claims.error?.status,
+      message: claims.error?.message?.slice(0, 120),
+    });
   }
   // Un fallo de red NO es «sin sesión»: con la cookie presente se deja pasar. Es solo la puerta
   // de la interfaz; el backend y RLS siguen exigiendo un token válido en cada dato.
   const signedIn =
-    state === "signed-in" || (state === "unknown" && hasAuthCookie(request.cookies.getAll().map((c) => c.name)));
+    state === "signed-in" || (state === "unknown" && hadCookie);
 
   const { pathname } = request.nextUrl;
   const locale = pathname.split("/")[1] || routing.defaultLocale;

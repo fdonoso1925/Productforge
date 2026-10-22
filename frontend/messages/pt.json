@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "ProductForge",
+    "name": "Productos Aurora",
     "tagline": "Produtos digitais low ticket que resolvem um problema específico."
   },
   "login": {
@@ -297,7 +297,7 @@
   "privacy": {
     "title": "Política de privacidade",
     "updated": "Última atualização: outubro de 2026",
-    "intro": "O ProductForge é uma ferramenta pessoal para gerar pacotes de produtos digitais. Esta página explica quais dados ele usa e para quê.",
+    "intro": "O Productos Aurora é uma ferramenta pessoal para gerar pacotes de produtos digitais. Esta página explica quais dados ele usa e para quê.",
     "contact": "Contato: {email}",
     "back": "Voltar ao início",
     "sections": [
@@ -347,7 +347,7 @@
     "subtitle": "Conexões da sua conta.",
     "drive": {
       "title": "Google Drive",
-      "description": "Copia cada pacote para o seu Google Drive. O ProductForge só enxerga as pastas e arquivos que ele mesmo cria, nunca o resto do seu Drive.",
+      "description": "Copia cada pacote para o seu Google Drive. O Productos Aurora só enxerga as pastas e arquivos que ele mesmo cria, nunca o resto do seu Drive.",
       "folderHint": "Os arquivos ficam em Meu Drive › ProductForge, organizados por mercado, nicho e data.",
       "notConfigured": "O backend ainda não tem as credenciais do Google (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET e TOKEN_ENCRYPTION_KEY). Os passos estão no CLAUDE.md, seção Google Drive.",
       "connected": "Conectado como {account}",

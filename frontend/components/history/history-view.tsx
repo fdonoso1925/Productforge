@@ -42,6 +42,7 @@ async function query(filters: HistoryFilters, limit: number) {
 
 export function HistoryView() {
   const t = useTranslations("history");
+  const tApp = useTranslations("app");
   const tf = useTranslations("formats");
   const tm = useTranslations("markets");
   const [filters, setFilters] = useState<HistoryFilters>(EMPTY_FILTERS);
@@ -92,7 +93,7 @@ export function HistoryView() {
           <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
         <Link href="/" className="text-sm text-muted-foreground hover:underline">
-          ProductForge
+          {tApp("name")}
         </Link>
       </header>
 
