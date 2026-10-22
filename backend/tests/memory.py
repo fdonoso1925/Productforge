@@ -292,3 +292,35 @@ class MemoryConnections:
 
     async def delete(self, user_id, provider: str) -> None:
         self.rows.pop((str(user_id), provider), None)
+
+
+@dataclass
+class MemoryImageCache:
+    rows: dict[str, dict] = field(default_factory=dict)
+
+    async def get(self, scene_hash: str) -> dict | None:
+        return self.rows.get(scene_hash)
+
+    async def put(self, row: dict) -> None:
+        self.rows[row["scene_hash"]] = row
+
+
+@dataclass
+class MemoryProviderUsage:
+    rows: dict[tuple[str, str], dict] = field(default_factory=dict)
+
+    async def get(self, provider: str, day) -> dict | None:
+        return self.rows.get((provider, str(day)))
+
+    async def add(self, provider: str, day, *, requests: int, cost_usd: float) -> None:
+        row = self.rows.setdefault(
+            (provider, str(day)), {"requests": 0, "cost_usd": 0.0, "exhausted": False}
+        )
+        row["requests"] += requests
+        row["cost_usd"] += cost_usd
+
+    async def mark_exhausted(self, provider: str, day) -> None:
+        row = self.rows.setdefault(
+            (provider, str(day)), {"requests": 0, "cost_usd": 0.0, "exhausted": False}
+        )
+        row["exhausted"] = True

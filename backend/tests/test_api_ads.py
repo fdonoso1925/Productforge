@@ -8,6 +8,7 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 from PIL import Image
 
+from app.ads.images.router import ImageRouter
 from app.ads.jobs import AdDeps
 from app.ads.render import AdRenderer
 from app.ads.repo import AdBatchRepo
@@ -29,8 +30,10 @@ from tests.memory import (
     MemoryAdBatches,
     MemoryAdCreatives,
     MemoryAdProofs,
+    MemoryImageCache,
     MemoryJobs,
     MemoryProducts,
+    MemoryProviderUsage,
     MemoryStorage,
 )
 from tests.test_ads_strategy import avatar, draft, green, score
@@ -46,7 +49,7 @@ SETTINGS = Settings(_env_file=None, supabase_jwt_secret=SECRET, allowed_emails=[
 class AdsWorld:
     """API + worker + repos en memoria compartiendo el mismo estado."""
 
-    def __init__(self, responses=()) -> None:
+    def __init__(self, responses=(), images=None) -> None:
         self.llm = FakeLLM(list(responses))
         prompts = PromptLibrary(SETTINGS.prompts_dir)
         content = ContentService(
@@ -67,6 +70,9 @@ class AdsWorld:
         self.proofs, self.jobs, self.storage = MemoryAdProofs(), MemoryJobs(), MemoryStorage()
         renderer = AdRenderer(SETTINGS.ad_templates_dir, SETTINGS.templates_dir)
         strategy = AdStrategyService(content)
+        self.images = images or ImageRouter(
+            [], MemoryImageCache(), MemoryProviderUsage(), self.storage
+        )
         self.services = SimpleNamespace(
             settings=SETTINGS,
             prompts=prompts,
@@ -78,6 +84,7 @@ class AdsWorld:
             ad_batches=self.batches,
             ad_creatives=self.creatives,
             ad_proofs=self.proofs,
+            ad_images=self.images,
             ads=lambda: AdDeps(
                 strategy=strategy,
                 renderer=renderer,
@@ -87,6 +94,7 @@ class AdsWorld:
                 jobs=self.jobs,
                 storage=self.storage,
                 templates_dir=SETTINGS.templates_dir,
+                images=self.images,
             ),
         )
         app = create_app()
@@ -177,12 +185,8 @@ def test_the_ad_endpoints_require_a_session() -> None:
 def test_templates_endpoint_lists_templates_and_ratios_with_safe_zones() -> None:
     w = AdsWorld()
     data = w.client.get("/ads/templates").json()
-    assert {t["id"] for t in data["templates"]} == {
-        "headline_bold",
-        "product_mockup",
-        "checklist",
-        "note",
-    }
+    assert len(data["templates"]) == 12
+    assert {t["id"] for t in data["templates"] if t["uses_image"]} == {"photo_headline"}
     assert {r["id"] for r in data["ratios"]} == {"4x5", "9x16", "1x1"}
 
 

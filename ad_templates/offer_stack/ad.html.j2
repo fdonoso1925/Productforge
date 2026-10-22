@@ -1,0 +1,18 @@
+<style>
+.h { font-size: {{ fs.headline }}px; }
+ul.l { list-style: none; margin: 34px 0 0 0; padding: 0; }
+ul.l li { display: flex; align-items: center; margin-top: 18px; font-size: {{ fs.item }}px; line-height: 1.18; font-weight: 700; }
+.pl { flex: none; width: 56px; height: 56px; border-radius: 28px; margin-right: 24px; position: relative; background: {{ c.accent }}; }
+.pl i, .pl b { position: absolute; background: {{ c.accent_fg }}; border-radius: 3px; }
+.pl i { left: 14px; top: 25px; width: 28px; height: 6px; }
+.pl b { left: 25px; top: 14px; width: 6px; height: 28px; }
+.price { margin-top: 34px; font-family: '{{ f.heading }}'; font-weight: {{ f.heading_weight }}; font-size: {{ fs.price }}px; color: {{ c.accent_text }}; }
+.cta { align-self: flex-start; margin-top: 30px; }
+</style>
+<div class="safe">
+  {% if copy.kicker %}<div class="kicker">{{ copy.kicker }}</div>{% endif %}
+  <div class="h">{{ copy.headline }}</div>
+  <ul class="l">{% for item in copy.bullets %}<li><span class="pl"><i></i><b></b></span><span>{{ item }}</span></li>{% endfor %}</ul>
+  {% if copy.price_text %}<div class="price">{{ copy.price_text }}</div>{% endif %}
+  {% if copy.cta_text %}<div class="cta">{{ copy.cta_text }}</div>{% endif %}
+</div>

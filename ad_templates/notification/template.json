@@ -1,0 +1,8 @@
+{
+  "id": "notification",
+  "name": "Notificación",
+  "description": "Tarjetas con aspecto de notificación del celular (genéricas, sin marcas ni interfaces reconocibles).",
+  "uses_image": false,
+  "uses_mockup": false,
+  "scheme": "light"
+}

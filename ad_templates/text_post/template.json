@@ -1,0 +1,8 @@
+{
+  "id": "text_post",
+  "name": "Post de texto",
+  "description": "Texto sobre fondo claro con una barra de color, de aspecto nativo y poco publicitario.",
+  "uses_image": false,
+  "uses_mockup": false,
+  "scheme": "light"
+}

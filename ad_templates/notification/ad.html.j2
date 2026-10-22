@@ -1,0 +1,20 @@
+<style>
+.card { background: #FFFFFF; border: 3px solid {{ c.border }}; border-radius: 44px; padding: 44px 48px; margin-top: 26px; color: #111827; }
+.head { display: flex; align-items: center; margin-bottom: 22px; }
+.ico { flex: none; width: 70px; height: 70px; border-radius: 20px; background: {{ c.accent }}; margin-right: 24px; }
+.ttl { font-size: {{ fs.kicker }}px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #4B5563; }
+.body { font-family: '{{ f.body }}'; font-weight: 700; font-size: {{ fs.headline }}px; line-height: 1.2; }
+.card.second { opacity: 0.92; }
+.card.second .body { font-weight: 400; font-size: {{ fs.sub }}px; line-height: 1.3; }
+.cta { align-self: flex-start; margin-top: 46px; }
+</style>
+<div class="safe">
+  <div class="card">
+    <div class="head"><div class="ico"></div><div class="ttl">{{ copy.kicker or product_name }}</div></div>
+    <div class="body">{{ copy.headline }}</div>
+  </div>
+  {% if copy.subheadline %}
+  <div class="card second"><div class="body">{{ copy.subheadline }}</div></div>
+  {% endif %}
+  {% if copy.cta_text %}<div class="cta">{{ copy.cta_text }}</div>{% endif %}
+</div>

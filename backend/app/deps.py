@@ -9,9 +9,16 @@ from typing import Annotated
 
 from fastapi import Depends
 
+from app.ads.images.router import ImageRouter, build_router
 from app.ads.jobs import AdDeps
 from app.ads.render import AdRenderer
-from app.ads.repo import AdBatchRepo, AdCreativeRepo, AdProofRepo
+from app.ads.repo import (
+    AdBatchRepo,
+    AdCreativeRepo,
+    AdImageCacheRepo,
+    AdProofRepo,
+    ProviderUsageRepo,
+)
 from app.ads.strategy import AdStrategyService
 from app.config import Settings, get_settings
 from app.content.claude_client import ClaudeClient
@@ -50,6 +57,7 @@ class Services:
     ad_batches: AdBatchRepo
     ad_creatives: AdCreativeRepo
     ad_proofs: AdProofRepo
+    ad_images: ImageRouter
 
     def ads(self) -> AdDeps:
         return AdDeps(
@@ -61,6 +69,7 @@ class Services:
             jobs=self.jobs,
             storage=self.storage,
             templates_dir=self.settings.templates_dir,
+            images=self.ad_images,
         )
 
     def pipeline(self) -> PipelineDeps:
@@ -100,6 +109,7 @@ def build_services(settings: Settings) -> Services:
         ConnectionRepo(db),
         TokenCipher(settings.token_encryption_key) if settings.token_encryption_key else None,
     )
+    storage = SupabaseStorage(settings.supabase_url, settings.supabase_service_role_key)
     return Services(
         settings=settings,
         prompts=prompts,
@@ -108,7 +118,7 @@ def build_services(settings: Settings) -> Services:
         items=ItemRepo(db),
         files=files,
         jobs=jobs,
-        storage=SupabaseStorage(settings.supabase_url, settings.supabase_service_role_key),
+        storage=storage,
         drive=drive,
         upload_queue=UploadQueue(drive, jobs, files),
         ad_strategy=AdStrategyService(content),
@@ -116,6 +126,7 @@ def build_services(settings: Settings) -> Services:
         ad_batches=AdBatchRepo(db),
         ad_creatives=AdCreativeRepo(db),
         ad_proofs=AdProofRepo(db),
+        ad_images=build_router(settings, AdImageCacheRepo(db), ProviderUsageRepo(db), storage),
     )
 
 

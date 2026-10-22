@@ -1,0 +1,8 @@
+{
+  "id": "comparison",
+  "name": "Comparación",
+  "description": "Dos columnas: la forma habitual frente al método, fila por fila.",
+  "uses_image": false,
+  "uses_mockup": false,
+  "scheme": "light"
+}

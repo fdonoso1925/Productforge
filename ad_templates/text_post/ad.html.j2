@@ -1,0 +1,14 @@
+<style>
+.tp { border-left: 16px solid {{ c.accent }}; padding-left: 48px; }
+.t { font-family: '{{ f.body }}'; font-weight: 700; font-size: {{ fs.headline }}px; line-height: 1.16; letter-spacing: -0.01em; }
+.s { font-size: {{ fs.sub }}px; line-height: 1.3; margin-top: 34px; opacity: 0.8; }
+.link { margin-top: 44px; font-size: {{ fs.cta }}px; font-weight: 700; color: {{ c.accent_text }}; text-decoration: underline; }
+</style>
+<div class="safe">
+  <div class="tp">
+    {% if copy.kicker %}<div class="kicker">{{ copy.kicker }}</div>{% endif %}
+    <div class="t">{{ copy.headline }}</div>
+    {% if copy.subheadline %}<div class="s">{{ copy.subheadline }}</div>{% endif %}
+    {% if copy.cta_text %}<div class="link">{{ copy.cta_text }}</div>{% endif %}
+  </div>
+</div>

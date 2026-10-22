@@ -24,6 +24,23 @@ from app.templates_engine.fonts import font_path
 from app.templates_engine.model import Template
 
 LANG = {"pt-BR": "pt-BR", "es-LATAM": "es"}
+# Rótulos fijos de las plantillas de comparación (el texto de la IA va en las listas).
+LABELS = {
+    "es-LATAM": {
+        "before": "Antes",
+        "after": "Después",
+        "usual": "Lo de siempre",
+        "method": "Con el método",
+    },
+    "pt-BR": {
+        "before": "Antes",
+        "after": "Depois",
+        "usual": "O de sempre",
+        "method": "Com o método",
+    },
+}
+MIN_VEIL, MAX_VEIL = 0.35, 0.9
+FULL_BLEED = 0.9  # un objeto de imagen que cubre tanto de la página es el fondo, no contenido
 SUCCESS, DANGER = "#16A34A", "#DC2626"
 MIN_TEXT_CONTRAST = 4.5
 LARGE_TEXT_CONTRAST = 3.0
@@ -60,6 +77,10 @@ class RenderReport:
     outside: list[
         str
     ]  # qué quedó fuera de la zona segura aun después de reducir (idealmente vacío)
+
+
+class MissingImage(ValueError):
+    """La plantilla necesita una foto de fondo y no se entregó ninguna."""
 
 
 class AdTemplate(BaseModel):
@@ -109,6 +130,37 @@ def readable(fg: str, bg: str, *candidates: str, minimum: float = MIN_TEXT_CONTR
     return max(options, key=lambda o: contrast(luminance(hex_rgb(o)), bg_l))
 
 
+def photo_veil(jpeg: bytes, bg: str, fg: str, spec: RatioSpec) -> float:
+    """Opacidad mínima del velo (color `bg`) para que el texto `fg` se lea sobre la foto.
+
+    Se mira la banda donde va el texto (la zona segura) y se exige contraste con el 90 % de sus
+    píxeles más claros (o más oscuros si el texto es oscuro): una mancha clara detrás de una
+    palabra la vuelve ilegible aunque el promedio sea oscuro."""
+    from PIL import Image
+
+    image = Image.open(io.BytesIO(jpeg)).convert("RGB").resize((54, 96), Image.Resampling.BILINEAR)
+    pad = spec.pad
+    y0 = round(96 * pad["top"] / spec.height)
+    y1 = round(96 * (spec.height - pad["bottom"]) / spec.height)
+    pixels = list(image.crop((0, y0, 54, max(y1, y0 + 1))).get_flattened_data())
+    text_l, veil = luminance(hex_rgb(fg)), hex_rgb(bg)
+
+    def worst(alpha: float) -> float:
+        lums = sorted(
+            luminance(
+                tuple(round((1 - alpha) * c + alpha * v) for c, v in zip(px, veil, strict=True))
+            )
+            for px in pixels
+        )
+        probe = lums[int(len(lums) * 0.9)] if text_l > 0.5 else lums[int(len(lums) * 0.1)]
+        return contrast(text_l, probe)
+
+    alpha = MIN_VEIL
+    while alpha < MAX_VEIL and worst(alpha) < MIN_TEXT_CONTRAST:
+        alpha = round(alpha + 0.05, 2)
+    return min(alpha, MAX_VEIL)
+
+
 def scheme_colors(template: Template, scheme: str) -> dict[str, str]:
     """Paleta del anuncio a partir de la plantilla del producto, con el contraste garantizado."""
     p = template.palette
@@ -151,9 +203,20 @@ def font_sizes(
     w = spec.width
     wide = spec.id == "1x1"
     steps = [(16, 1.0), (26, 0.86), (40, 0.72), (56, 0.60), (80, 0.52), (999, 0.46)]
-    base = {"headline_bold": 0.118, "product_mockup": 0.078, "checklist": 0.084, "note": 0.1}[
-        template_id
-    ]
+    base = {
+        "headline_bold": 0.118,
+        "photo_headline": 0.108,
+        "product_mockup": 0.078,
+        "checklist": 0.084,
+        "note": 0.1,
+        "text_post": 0.085,
+        "notification": 0.062,
+        "before_after": 0.072,
+        "comparison": 0.07,
+        "question": 0.115,
+        "testimonial": 0.07,
+        "offer_stack": 0.078,
+    }[template_id]
     if wide:
         base *= 0.9
     if template_id == "product_mockup" and wide:
@@ -202,8 +265,12 @@ def content_outside_safe_zone(pdf: bytes, spec: RatioSpec) -> list[str]:
         textpage = page.get_textpage()
         for i in range(textpage.count_rects()):
             boxes.append(("texto", textpage.get_rect(i)))
+        page_area = page.get_width() * height_pt
         for obj in page.get_objects(filter=[pdfium_c.FPDF_PAGEOBJ_IMAGE]):
-            boxes.append(("imagen", obj.get_bounds()))
+            bx0, by0, bx1, by1 = obj.get_bounds()
+            if (bx1 - bx0) * (by1 - by0) >= FULL_BLEED * page_area:
+                continue  # la foto de fondo ocupa toda la página a propósito
+            boxes.append(("imagen", (bx0, by0, bx1, by1)))
         out = []
         for kind, (x_min, y_min, x_max, y_max) in boxes:
             x0, x1 = x_min / PT_PER_PX, x_max / PT_PER_PX
@@ -254,6 +321,7 @@ class AdRenderer:
         market: Market,
         product_name: str = "",
         mockup_png: bytes | None = None,
+        bg_jpeg: bytes | None = None,
     ) -> tuple[bytes, RenderReport]:
         """PDF de una página del anuncio y un informe.
 
@@ -263,6 +331,8 @@ class AdRenderer:
             raise KeyError(f"plantilla de anuncio desconocida: {template_id}")
         spec = self.ratios[ratio]
         tpl = self.templates[template_id]
+        if tpl.uses_image and bg_jpeg is None:
+            raise MissingImage(template_id)
         c = scheme_colors(product_template, tpl.scheme)
         c["mk"] = DANGER if copy.mark == "cross" else SUCCESS
         faces = product_template.font_faces()
@@ -272,6 +342,8 @@ class AdRenderer:
         mockup_uri = (
             "data:image/png;base64," + base64.b64encode(mockup_png).decode() if mockup_png else None
         )
+        bg_uri = "data:image/jpeg;base64," + base64.b64encode(bg_jpeg).decode() if bg_jpeg else None
+        veil = photo_veil(bg_jpeg, c["bg"], c["fg"], spec) if bg_jpeg else 0.0
         page = self._env.get_template("page.html.j2")
         pdf = b""
         outside: list[str] = []
@@ -295,6 +367,11 @@ class AdRenderer:
                 ratio=spec.id,
                 template_id=template_id,
                 mockup_uri=mockup_uri,
+                bg_uri=bg_uri,
+                veil=veil,
+                labels=LABELS[market],
+                danger=DANGER,
+                success=SUCCESS,
                 mock=mock,
                 col_w=spec.width - 2 * spec.pad["side"] - mock["w"] - 40,
                 product_name=product_name,

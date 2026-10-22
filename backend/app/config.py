@@ -52,7 +52,17 @@ class Settings(BaseSettings):
     # Clave Fernet que cifra los tokens OAuth en la base.
     token_encryption_key: str = ""
 
-    @field_validator("allowed_emails", "cors_origins", mode="before")
+    # Creativos para Meta Ads: proveedores de imagen (claves solo en el backend).
+    # El orden manda; sin clave un proveedor queda fuera. Gemini no tiene cuota gratis para
+    # imágenes: solo se usa si `gemini_daily_usd_cap` > 0 (tope diario en USD, 0 = apagado).
+    image_providers: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["pixabay"])
+    gemini_api_key: str = ""
+    pixabay_api_key: str = ""
+    gemini_image_model: str = "gemini-3.1-flash-lite-image"
+    gemini_image_price_usd: float = 0.034
+    gemini_daily_usd_cap: float = 0.0
+
+    @field_validator("allowed_emails", "cors_origins", "image_providers", mode="before")
     @classmethod
     def _split_csv(cls, value: object) -> object:
         if isinstance(value, str):

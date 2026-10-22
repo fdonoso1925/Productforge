@@ -1,5 +1,5 @@
 {
-  "_nota": "Medidas y zonas seguras de Meta. Se leen de aquí para poder actualizarlas sin tocar código. Los valores salen de guías de terceros (no se pudo consultar la Ads Guide oficial): verifícalos con el Safe Zone Guardrail de Ads Manager antes de publicar a escala.",
+  "_nota": "Medidas y zonas seguras de Meta. Se leen de aquí para poder actualizarlas sin tocar código. Verificados en la Ads Guide oficial de Meta (Feed 4:5 y Reels 9:16, 2026): 4:5 recomendado 1440x1800 (mín. 600x750), 9:16 recomendado 1440x2560 (mín. 500 de ancho), JPG o PNG, máx. 30 MB, zonas seguras de 9:16 = 14 % arriba, 35 % abajo y 6 % a los lados. Aquí se compone a 1080 y la exportación hires escala x1,3333 hasta 1440. Meta no publica zona segura para Feed: se usa un margen prudente. Titular recomendado en Feed: 27 caracteres.",
   "max_file_mb": 30,
   "hires_scale": 1.3333,
   "ratios": {

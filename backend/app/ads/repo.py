@@ -1,6 +1,7 @@
 """Repositorios del módulo Creativos (tablas `ad_*`). Solo el backend escribe, con la service role,
 así que cada consulta que nace de un request filtra por `user_id`."""
 
+from datetime import date
 from typing import Any
 from uuid import UUID
 
@@ -75,3 +76,41 @@ class AdProofRepo:
 
     async def delete(self, proof_id: UUID, user_id: UUID) -> None:
         await self._db.delete("ad_proofs", id=eq(proof_id), user_id=eq(user_id))
+
+
+class AdImageCacheRepo:
+    """Caché de imágenes base por escena (tabla `ad_image_cache`, solo backend)."""
+
+    def __init__(self, db: SupabaseRest) -> None:
+        self._db = db
+
+    async def get(self, scene_hash: str) -> Row | None:
+        rows = await self._db.select("ad_image_cache", scene_hash=eq(scene_hash))
+        return rows[0] if rows else None
+
+    async def put(self, row: Row) -> None:
+        await self._db.upsert("ad_image_cache", row, on_conflict="scene_hash")
+
+
+class ProviderUsageRepo:
+    """Consumo diario por proveedor (tabla `ad_provider_usage`)."""
+
+    def __init__(self, db: SupabaseRest) -> None:
+        self._db = db
+
+    async def get(self, provider: str, day: date) -> Row | None:
+        rows = await self._db.select("ad_provider_usage", provider=eq(provider), day=eq(day))
+        return rows[0] if rows else None
+
+    async def add(self, provider: str, day: date, *, requests: int, cost_usd: float) -> None:
+        await self._db.rpc(
+            "ad_usage_add",
+            {"p_provider": provider, "p_day": str(day), "p_requests": requests, "p_cost": cost_usd},
+        )
+
+    async def mark_exhausted(self, provider: str, day: date) -> None:
+        await self._db.upsert(
+            "ad_provider_usage",
+            {"provider": provider, "day": str(day), "exhausted": True},
+            on_conflict="provider,day",
+        )

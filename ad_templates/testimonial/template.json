@@ -1,0 +1,8 @@
+{
+  "id": "testimonial",
+  "name": "Testimonio",
+  "description": "Cita textual de un testimonio REAL cargado por el usuario, con su autor. Nunca se inventa.",
+  "uses_image": false,
+  "uses_mockup": false,
+  "scheme": "light"
+}

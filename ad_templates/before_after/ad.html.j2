@@ -1,0 +1,30 @@
+{% set half = (copy.bullets | length) // 2 %}
+<style>
+.h { font-size: {{ fs.headline }}px; margin-bottom: 8px; }
+.panel { border-radius: 36px; padding: 34px 44px 38px 44px; margin-top: 26px; }
+.panel.b { background: #F3F4F6; color: #1F2937; border: 3px solid {{ c.border }}; }
+.panel.a { background: {{ c.accent }}; color: {{ c.accent_fg }}; }
+.lab { font-size: {{ fs.kicker }}px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 8px; }
+ul.l { list-style: none; margin: 0; padding: 0; }
+ul.l li { display: flex; align-items: center; margin-top: 18px; font-size: {{ fs.bullet }}px; line-height: 1.2; font-weight: 700; }
+.mk { flex: none; width: 52px; height: 52px; border-radius: 26px; margin-right: 22px; position: relative; }
+.mk.no { background: {{ danger }}; }
+.mk.yes { background: #FFFFFF; }
+.mk.yes i { position: absolute; left: 19px; top: 7px; width: 10px; height: 23px; border: solid {{ success }}; border-width: 0 6px 6px 0; transform: rotate(45deg); }
+.mk.no i, .mk.no b { position: absolute; left: 23px; top: 10px; width: 6px; height: 32px; background: #FFFFFF; border-radius: 3px; }
+.mk.no i { transform: rotate(45deg); }
+.mk.no b { transform: rotate(-45deg); }
+.cta { align-self: flex-start; margin-top: 40px; }
+</style>
+<div class="safe">
+  <div class="h">{{ copy.headline }}</div>
+  <div class="panel b">
+    <div class="lab">{{ labels.before }}</div>
+    <ul class="l">{% for item in copy.bullets[:half] %}<li><span class="mk no"><i></i><b></b></span><span>{{ item }}</span></li>{% endfor %}</ul>
+  </div>
+  <div class="panel a">
+    <div class="lab">{{ labels.after }}</div>
+    <ul class="l">{% for item in copy.bullets[half:] %}<li><span class="mk yes"><i></i></span><span>{{ item }}</span></li>{% endfor %}</ul>
+  </div>
+  {% if copy.cta_text %}<div class="cta">{{ copy.cta_text }}</div>{% endif %}
+</div>

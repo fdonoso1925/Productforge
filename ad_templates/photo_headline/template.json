@@ -1,0 +1,8 @@
+{
+  "id": "photo_headline",
+  "name": "Foto + titular",
+  "description": "Foto de stock o generada a pantalla completa con un velo del color de marca y el titular encima.",
+  "uses_image": true,
+  "uses_mockup": false,
+  "scheme": "bold"
+}

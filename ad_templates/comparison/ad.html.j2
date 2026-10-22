@@ -1,0 +1,19 @@
+{% set half = (copy.bullets | length) // 2 %}
+<style>
+.h { font-size: {{ fs.headline }}px; margin-bottom: 30px; }
+table.cmp { width: 100%; border-collapse: separate; border-spacing: 0 14px; }
+table.cmp th { font-size: {{ fs.kicker }}px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; text-align: left; padding: 0 24px 6px 24px; }
+table.cmp th.m { color: {{ c.accent_text }}; }
+table.cmp td { font-size: {{ fs.bullet }}px; line-height: 1.22; font-weight: 700; padding: 26px 24px; width: 50%; vertical-align: middle; }
+table.cmp td.u { background: #F3F4F6; color: #374151; border-radius: 22px 0 0 22px; }
+table.cmp td.m { background: {{ c.accent }}; color: {{ c.accent_fg }}; border-radius: 0 22px 22px 0; }
+.cta { align-self: flex-start; margin-top: 36px; }
+</style>
+<div class="safe">
+  <div class="h">{{ copy.headline }}</div>
+  <table class="cmp">
+    <tr><th>{{ labels.usual }}</th><th class="m">{{ labels.method }}</th></tr>
+    {% for i in range(half) %}<tr><td class="u">{{ copy.bullets[i] }}</td><td class="m">{{ copy.bullets[half + i] }}</td></tr>{% endfor %}
+  </table>
+  {% if copy.cta_text %}<div class="cta">{{ copy.cta_text }}</div>{% endif %}
+</div>

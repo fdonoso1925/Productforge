@@ -13,6 +13,8 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from app.ads import rules
+from app.ads.images.base import ImageRequest
+from app.ads.images.router import ImageRouter, RoutedImage
 from app.ads.naming import creative_filename, storage_path
 from app.ads.render import AdRenderer, product_mockup
 from app.ads.repo import AdBatchRepo, AdCreativeRepo, AdProofRepo
@@ -26,6 +28,7 @@ logger = logging.getLogger("productforge.ads")
 
 PNG = "image/png"
 RENDER_CONCURRENCY = 2
+FALLBACK_TEMPLATE = "headline_bold"  # sin imagen disponible, el anuncio sale solo con texto
 
 
 @dataclass
@@ -39,6 +42,23 @@ class AdDeps:
     storage: StorageProvider
     templates_dir: Any  # Path
     prompt_version: str = ""
+    images: ImageRouter | None = None
+
+
+def available_templates(deps: "AdDeps", brief: AdBrief, proofs: list[AdProof]) -> list[str]:
+    """Plantillas que este lote puede usar hoy: las que necesitan foto, solo con un proveedor de
+    imagen activo; la de oferta, solo con precio real; la de testimonio, solo con pruebas."""
+    has_images = bool(deps.images and deps.images.active())
+    out = []
+    for template_id, template in deps.renderer.templates.items():
+        if template.uses_image and not has_images:
+            continue
+        if template_id == "offer_stack" and not brief.price_text.strip():
+            continue
+        if template_id == "testimonial" and not proofs:
+            continue
+        out.append(template_id)
+    return out
 
 
 def proofs_from_rows(rows: list[dict]) -> list[AdProof]:
@@ -116,7 +136,7 @@ async def run_ad_plan(job: dict, deps: AdDeps) -> None:
         avatars=batch_avatars(batch),
         picks=picks,
         proofs=proofs,
-        templates=deps.renderer.available_ids(),
+        templates=available_templates(deps, brief, proofs),
         on_progress=progress,
     )
     await deps.creatives.delete_for_batch(batch["id"])
@@ -151,6 +171,7 @@ def compose_png(
     brief: AdBrief,
     market: str,
     mockup: bytes | None,
+    bg_jpeg: bytes | None = None,
     hires: bool = False,
 ) -> bytes:
     """PNG del creativo. Es CPU (WeasyPrint + pdfium): se llama desde un hilo."""
@@ -164,6 +185,7 @@ def compose_png(
         market=market,
         product_name=brief.product_name,
         mockup_png=mockup if renderer.templates[creative["template_id"]].uses_mockup else None,
+        bg_jpeg=bg_jpeg,
         hires=hires,
     )
 
@@ -174,6 +196,43 @@ def creative_path(renderer: AdRenderer, creative: dict, user_id: str, batch_id: 
     )
 
 
+def image_request(creative: dict, draft: CreativeDraft, niche: str) -> ImageRequest:
+    return ImageRequest(
+        prompt=draft.scene,
+        keywords=tuple(draft.stock_keywords),
+        aspect=creative["ratio"].replace("x", ":"),
+        sensitive=rules.is_sensitive(niche),
+    )
+
+
+async def switch_to_fallback(deps: AdDeps, batch: dict, creative: dict) -> None:
+    """Sin foto disponible el creativo pasa a la plantilla de solo texto (y cambia de nombre)."""
+    brief = batch_brief(batch)
+    taken = {c["filename"] for c in await deps.creatives.list_for_batch(batch["id"])}
+    version = 1
+    while True:
+        filename = creative_filename(
+            product_name=brief.product_name,
+            market=batch["market"],
+            angle=creative["angle"],
+            template_id=FALLBACK_TEMPLATE,
+            ratio=creative["ratio"],
+            version=version,
+        )
+        if filename not in taken:
+            break
+        version += 1
+    draft = draft_of(creative).model_copy(update={"template_id": FALLBACK_TEMPLATE})
+    values = {
+        "template_id": FALLBACK_TEMPLATE,
+        "filename": filename,
+        "version": version,
+        "copy": draft.model_dump(mode="json"),
+    }
+    await deps.creatives.update(creative["id"], **values)
+    creative.update(values)
+
+
 async def render_creative(
     deps: AdDeps,
     batch: dict,
@@ -182,8 +241,23 @@ async def render_creative(
     template: Template,
     mockup: bytes | None,
 ) -> str:
-    """Compone, sube y marca el creativo como renderizado. Devuelve la ruta en Storage."""
+    """Compone, sube y marca el creativo como renderizado. Devuelve la ruta en Storage.
+
+    Una plantilla con foto pide la imagen al router (caché → proveedores → tope diario). Si
+    ninguno puede, el creativo pasa a la plantilla de solo texto: el lote nunca se cae."""
     brief = batch_brief(batch)
+    user_id = UUID(batch["user_id"])
+    routed: RoutedImage | None = None
+    if deps.renderer.templates[creative["template_id"]].uses_image:
+        routed = (
+            await deps.images.get(
+                user_id=user_id, request=image_request(creative, draft_of(creative), batch["niche"])
+            )
+            if deps.images
+            else None
+        )
+        if routed is None:
+            await switch_to_fallback(deps, batch, creative)
     png = await asyncio.to_thread(
         compose_png,
         deps.renderer,
@@ -192,10 +266,19 @@ async def render_creative(
         brief=brief,
         market=batch["market"],
         mockup=mockup,
+        bg_jpeg=routed.jpeg if routed else None,
     )
     path = creative_path(deps.renderer, creative, batch["user_id"], batch["id"])
     await deps.storage.upload(path, png, PNG)
-    await deps.creatives.update(creative["id"], status="rendered", storage_path=path)
+    await deps.creatives.update(
+        creative["id"],
+        status="rendered",
+        storage_path=path,
+        image_provider=routed.provider if routed else None,
+        image_credit=routed.credit if routed else None,
+        base_image_path=routed.storage_path if routed else None,
+        image_cost_usd=0 if routed is None or routed.from_cache else routed.cost_usd,
+    )
     return path
 
 

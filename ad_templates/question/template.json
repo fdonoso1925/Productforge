@@ -1,0 +1,8 @@
+{
+  "id": "question",
+  "name": "Pregunta",
+  "description": "Una pregunta grande sobre color sólido, para frenar el scroll con curiosidad.",
+  "uses_image": false,
+  "uses_mockup": false,
+  "scheme": "bold"
+}

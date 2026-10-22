@@ -12,7 +12,7 @@ html, body { margin: 0; padding: 0; }
 /* Zona útil: respeta los márgenes seguros de cada formato (Stories y Reels tapan arriba y abajo). */
 .safe { position: absolute; top: {{ pad.top }}px; bottom: {{ pad.bottom }}px; left: {{ pad.side }}px; right: {{ pad.side }}px; display: flex; flex-direction: column; justify-content: center; }
 /* Ancho explícito: sin él WeasyPrint mide la altura del titular con otro ancho y el texto se pisa. */
-.safe > *:not(.cta) { width: {{ W - 2 * pad.side }}px; }
+.safe > *:not(.cta) { width: {{ W - 2 * pad.side }}px; box-sizing: border-box; }
 .h { font-family: '{{ f.heading }}'; font-weight: {{ f.heading_weight }}; line-height: 1.05; letter-spacing: -0.01em; }
 .kicker { font-family: '{{ f.body }}'; font-weight: 700; font-size: {{ fs.kicker }}px; letter-spacing: 0.14em; text-transform: uppercase; color: {{ c.accent_text }}; margin-bottom: 26px; }
 .sub { font-size: {{ fs.sub }}px; line-height: 1.28; margin-top: 30px; opacity: 0.92; }

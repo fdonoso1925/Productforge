@@ -18,7 +18,7 @@ from app.ads.render import (
     readable,
     scheme_colors,
 )
-from app.ads.schemas import ImageCopy
+from app.ads.schemas import TEMPLATE_IDS, ImageCopy
 from app.config import Settings
 from app.generators.cover_image import contrast, hex_rgb, luminance
 from app.templates_engine.model import list_templates, load_template
@@ -80,12 +80,12 @@ def test_specs_are_read_from_a_config_file() -> None:
     assert R.ratios["9x16"].pad["top"] == round(1920 * 0.14)
     assert R.ratios["9x16"].pad["bottom"] == round(1920 * 0.35)  # Stories y Reels tapan abajo
     assert R.ratios["4x5"].folder == "feed-4x5" and R.ratios["9x16"].folder == "stories-9x16"
-    assert "verifícalos" in R.specs["_nota"]  # los valores salen de guías de terceros
+    assert "Ads Guide oficial" in R.specs["_nota"]  # verificados contra la guía de Meta
 
 
-def test_the_four_phase_three_templates_are_available_without_any_image_provider() -> None:
-    assert set(R.available_ids()) == set(TEMPLATES)
-    assert not any(t.uses_image for t in R.templates.values())  # nada consume proveedor de imágenes
+def test_the_twelve_templates_exist_and_only_the_photo_one_needs_an_image() -> None:
+    assert set(R.available_ids()) == set(TEMPLATE_IDS) and len(R.templates) == 12
+    assert {t.id for t in R.templates.values() if t.uses_image} == {"photo_headline"}
     assert R.templates["product_mockup"].uses_mockup
 
 

@@ -1,0 +1,8 @@
+{
+  "id": "offer_stack",
+  "name": "Oferta apilada",
+  "description": "Lo que incluye el paquete, ítem por ítem, y el precio REAL del brief. Sin precios tachados ni descuentos inventados.",
+  "uses_image": false,
+  "uses_mockup": false,
+  "scheme": "bold"
+}

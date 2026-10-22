@@ -35,7 +35,8 @@ CTA_WORDS = 4
 BULLET_WORDS = 7
 BULLETS = (3, 5)
 NOTE_MAX = 220
-LIST_TEMPLATES = {"checklist", "product_mockup"}
+LIST_TEMPLATES = {"checklist", "product_mockup", "offer_stack", "before_after", "comparison"}
+PAIRED_TEMPLATES = {"before_after", "comparison"}  # mitad «antes» y mitad «después»
 ANGLES_RANGE = (5, 6)
 AVATARS_RANGE = (2, 3)
 
@@ -96,6 +97,28 @@ def check_angles(
 # ───────────────────────────── errores duros del copy ─────────────────────────────
 
 
+def _plain(text: str) -> str:
+    """Texto sin comillas ni espacios de más, para comparar citas."""
+    return " ".join(re.sub(r"[«»“”\"']", "", text).split()).lower()
+
+
+def check_testimonial(draft: CreativeDraft, proofs: list[AdProof]) -> list[str]:
+    """Un testimonio solo puede ser una cita textual de una prueba REAL del usuario."""
+    proof = next((p for p in proofs if p.id == draft.proof_id), None)
+    if proof is None:
+        return ["La plantilla testimonial exige proof_id con una prueba real de proofs."]
+    errors = []
+    quote = _plain(draft.image.note)
+    if not quote or quote not in _plain(proof.text):
+        errors.append(
+            "image.note debe ser una cita textual (o un fragmento) del texto de la prueba."
+        )
+    author = draft.image.subheadline.strip()
+    if author and author != (proof.author or "").strip():
+        errors.append("image.subheadline solo puede ser el autor de la prueba, tal cual (o vacío).")
+    return errors
+
+
 def check_draft(
     draft: CreativeDraft,
     *,
@@ -126,8 +149,21 @@ def check_draft(
         if words(bullet) > BULLET_WORDS:
             e.append(f"image.bullets[{i}] supera {BULLET_WORDS} palabras.")
     lo, hi = BULLETS
-    if draft.template_id == "checklist" and not lo <= len(img.bullets) <= hi:
-        e.append(f"La plantilla checklist necesita entre {lo} y {hi} bullets.")
+    if draft.template_id in ("checklist", "offer_stack") and not lo <= len(img.bullets) <= hi:
+        e.append(f"La plantilla {draft.template_id} necesita entre {lo} y {hi} bullets.")
+    if draft.template_id in PAIRED_TEMPLATES and len(img.bullets) not in (2, 4):
+        e.append(
+            f"La plantilla {draft.template_id} necesita 2 o 4 bullets: la primera mitad es "
+            "«antes / lo de siempre» y la segunda «después / con el método»."
+        )
+    if draft.template_id == "offer_stack" and not brief.price_text.strip():
+        e.append("La plantilla offer_stack exige un precio real en el brief; usa otra plantilla.")
+    if draft.template_id == "photo_headline" and (
+        not draft.scene.strip() or not 2 <= len(draft.stock_keywords) <= 3
+    ):
+        e.append("photo_headline necesita scene y 2 o 3 stock_keywords en inglés.")
+    if draft.template_id == "testimonial":
+        e += check_testimonial(draft, proofs)
     if draft.template_id != "checklist" and len(img.bullets) > hi:
         e.append(f"image.bullets no puede pasar de {hi} ítems.")
     if draft.template_id == "note" and not img.note.strip():

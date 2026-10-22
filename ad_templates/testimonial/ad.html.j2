@@ -1,0 +1,18 @@
+<style>
+.h { font-size: {{ (fs.headline * 0.62) | round | int }}px; margin-bottom: 30px; }
+.qcard { background: #FFFFFF; border: 3px solid {{ c.border }}; border-radius: 40px; padding: 30px 52px 50px 52px; color: #111827; }
+.qm { font-family: '{{ f.heading }}'; font-weight: {{ f.heading_weight }}; font-size: 170px; line-height: 0.9; height: 96px; color: {{ c.accent_text }}; }
+.q { font-size: {{ fs.note }}px; line-height: 1.24; font-weight: 500; }
+.who { margin-top: 30px; font-size: {{ fs.sub }}px; font-weight: 700; color: #4B5563; }
+.cta { align-self: flex-start; margin-top: 44px; }
+</style>
+<div class="safe">
+  {% if copy.kicker %}<div class="kicker">{{ copy.kicker }}</div>{% endif %}
+  <div class="h">{{ copy.headline }}</div>
+  <div class="qcard">
+    <div class="qm">&ldquo;</div>
+    <div class="q">{{ copy.note or copy.headline }}</div>
+    {% if copy.subheadline %}<div class="who">&mdash; {{ copy.subheadline }}</div>{% endif %}
+  </div>
+  {% if copy.cta_text %}<div class="cta">{{ copy.cta_text }}</div>{% endif %}
+</div>

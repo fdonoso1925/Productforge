@@ -449,3 +449,16 @@ async def delete_proof(proof_id: UUID, user: User, services: ServicesDep) -> Non
 
 
 __all__ = ["Market", "router"]
+
+
+@router.get("/images/status")
+def image_status(services: ServicesDep) -> dict[str, Any]:
+    """Qué proveedores de imagen están activos hoy (sin claves ni costos internos)."""
+    return {
+        "providers": [
+            {"name": p.name, "kind": p.kind, "enabled": p.enabled()}
+            for p in services.ad_images.providers
+        ],
+        "photo_templates": any(t.uses_image for t in services.ad_renderer.templates.values())
+        and bool(services.ad_images.active()),
+    }

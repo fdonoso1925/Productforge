@@ -1,0 +1,8 @@
+{
+  "id": "before_after",
+  "name": "Antes y después",
+  "description": "Dos bloques: lo que pasa hoy (✗) y cómo queda con el método (✓). Sin imágenes de personas ni resultados.",
+  "uses_image": false,
+  "uses_mockup": false,
+  "scheme": "light"
+}
