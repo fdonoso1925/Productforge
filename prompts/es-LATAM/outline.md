@@ -7,6 +7,8 @@ El paquete tiene:
 
 Formatos disponibles: $formats.
 
+Si en los datos hay `sales_page_reference`, piensa el paquete para ese público: el principal resuelve su dolor principal (`main_pain`) en el plazo de su promesa, los bonus pueden eliminar sus objeciones (`objections`) y el nombre y los títulos deben ser originales, nunca los de la página. Mejora su enfoque (`angle`) con algo más específico.
+
 Para cada pieza: título comercial (no genérico), promesa en una frase con plazo, índice con las secciones en orden, páginas estimadas y, en `related_items`, los títulos de las otras piezas que cita.
 
 `product_name` es el nombre comercial del paquete completo.

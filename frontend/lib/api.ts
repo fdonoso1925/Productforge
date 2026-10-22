@@ -9,6 +9,8 @@ import type {
   PackageOutline,
   Problem,
   ProductDrive,
+  ReferenceResult,
+  SalesReference,
   TemplateInfo,
 } from "@/lib/types";
 
@@ -63,6 +65,7 @@ export type OutlineRequest = {
   tone?: string | null;
   audience_override?: string | null;
   cover_art?: ArtChoice;
+  reference?: SalesReference;
 };
 
 /** Solo viajan los campos que cambian: omitir `tone` lo conserva, `null` lo borra. */
@@ -76,11 +79,14 @@ export type RemodelBody = {
 };
 
 export const api = {
-  proposeProblems: (niche: string, market: Market) =>
+  proposeProblems: (niche: string, market: Market, reference?: SalesReference | null) =>
     call<{ problems: Problem[] }>("/problems", {
       method: "POST",
-      body: JSON.stringify({ niche, market }),
+      body: JSON.stringify({ niche, market, ...(reference ? { reference } : {}) }),
     }),
+  /** Lee una página de ventas (URL) o su texto pegado y la resume como inspiración. Usa IA. */
+  analyzeReference: (body: { market: Market; url?: string; text?: string }) =>
+    call<ReferenceResult>("/reference", { method: "POST", body: JSON.stringify(body) }),
   buildOutline: (body: OutlineRequest) =>
     call<{ product_id: string; outline: PackageOutline }>("/outline", {
       method: "POST",

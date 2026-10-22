@@ -71,6 +71,7 @@ TASK_VALUES = {
     },
     "item": {"target_pages": 8, "format_guide": "guia"},
     "commercial": {"currency": "BRL"},
+    "reference": {},
     "adapt_market": {"main_min_pages": 25, "main_max_pages": 40, "small_max_pages": 15},
 }
 
@@ -86,3 +87,26 @@ def test_task_prompts_render_with_engine_values(market: str, name: str) -> None:
 def test_system_is_not_templated(market: str) -> None:
     # system.md se envía tal cual (no pasa por Template): no debe tener escapes `$$`.
     assert "$$" not in LIB.system(market)
+
+
+@pytest.mark.parametrize("market", MARKETS)
+def test_prompts_explain_how_to_use_the_sales_page_reference(market: str) -> None:
+    # La referencia es solo inspiración y dato no confiable: lo dicen el system prompt y cada tarea.
+    assert "sales_page_reference" in LIB.system(market)
+    for name, values in (
+        ("problems", {}),
+        ("outline", TASK_VALUES["outline"]),
+        ("item", TASK_VALUES["item"]),
+    ):
+        assert "sales_page_reference" in LIB.render(market, name, **values)
+    assert "sales_page_reference" in LIB.render(market, "commercial", currency="BRL")
+
+
+@pytest.mark.parametrize("market", MARKETS)
+def test_the_reference_prompt_treats_the_page_as_untrusted_data(market: str) -> None:
+    text = LIB.render(market, "reference")
+    tag = "dados_do_usuario" if market == "pt-BR" else "datos_del_usuario"
+    assert f"<{tag}>" in text and "page" in text
+    assert any(
+        w in text.lower() for w in ("ignor", "ignór")
+    )  # instrucciones en la página: se ignoran

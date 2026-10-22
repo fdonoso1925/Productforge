@@ -98,6 +98,8 @@ def child_row(parent: Row, **overrides: Any) -> Row:
         "prompt_version": parent["prompt_version"],
         "status": "generating",
     }
+    if parent.get("reference"):  # la columna solo se toca cuando hay referencia
+        row["reference"] = parent["reference"]
     row.update(overrides)
     return row
 
@@ -116,24 +118,24 @@ class ProductRepo:
         prompt_version: str,
         cover: dict | None = None,
     ) -> UUID:
-        [row] = await self._db.insert(
-            "products",
-            {
-                "user_id": str(user_id),
-                "title": outline.product_name,
-                "niche": request.niche,
-                "problem": request.problem.model_dump(),
-                "market": request.market,
-                "main_format": request.main_format.value,
-                "template_id": template_id,
-                "tone": request.tone,
-                "audience_override": request.audience_override,
-                "outline": outline.model_dump(mode="json"),
-                "prompt_version": prompt_version,
-                "cover": cover if cover is not None else {"art": "auto", "image_id": None},
-                "status": "outline_ready",
-            },
-        )
+        values = {
+            "user_id": str(user_id),
+            "title": outline.product_name,
+            "niche": request.niche,
+            "problem": request.problem.model_dump(),
+            "market": request.market,
+            "main_format": request.main_format.value,
+            "template_id": template_id,
+            "tone": request.tone,
+            "audience_override": request.audience_override,
+            "outline": outline.model_dump(mode="json"),
+            "prompt_version": prompt_version,
+            "cover": cover if cover is not None else {"art": "auto", "image_id": None},
+            "status": "outline_ready",
+        }
+        if request.reference:  # la columna solo se toca cuando hay referencia
+            values["reference"] = request.reference.model_dump(mode="json")
+        [row] = await self._db.insert("products", values)
         return UUID(row["id"])
 
     async def get(self, product_id: UUID, user_id: UUID | None = None) -> Row:

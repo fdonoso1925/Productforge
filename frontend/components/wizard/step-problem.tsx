@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api";
+import { referenceKey } from "@/lib/reference";
 import { problemSchema } from "@/lib/schemas";
 import type { Problem } from "@/lib/types";
 import { ErrorBox, Loading, StepNav } from "./step-nav";
@@ -33,14 +34,14 @@ export function StepProblem({ state, update, nav }: StepProps) {
   // Pide los 5 problemas cuando faltan. El ref evita una segunda llamada (y su costo)
   // si React monta el efecto dos veces en modo estricto.
   useEffect(() => {
-    const key = `${state.market}|${state.niche}|${attempt}`;
+    const key = `${state.market}|${state.niche}|${referenceKey(state.reference)}|${attempt}`;
     if (state.problems !== null || requested.current === key) return;
     requested.current = key;
-    api.proposeProblems(state.niche, state.market).then(
+    api.proposeProblems(state.niche, state.market, state.reference).then(
       ({ problems }) => update({ problems, problem: problems[0] ?? null }),
       (e) => setError(e instanceof Error ? e.message : String(e)),
     );
-  }, [state.problems, state.niche, state.market, attempt, update]);
+  }, [state.problems, state.niche, state.market, state.reference, attempt, update]);
 
   const load = () => {
     setError(null);

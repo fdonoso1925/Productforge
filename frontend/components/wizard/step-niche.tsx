@@ -4,7 +4,8 @@ import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { nicheSchema } from "@/lib/schemas";
-import type { Market, Niche } from "@/lib/types";
+import type { Market, Niche, SalesReference } from "@/lib/types";
+import { ReferencePanel } from "./reference-panel";
 import { StepNav } from "./step-nav";
 import type { StepProps } from "./wizard";
 
@@ -17,7 +18,7 @@ export function StepNiche({ niches, state, update, nav }: StepProps & { niches: 
   const valid = nicheSchema.safeParse(state.niche).success;
 
   // Cambiar nicho o mercado invalida los problemas propuestos.
-  const set = (patch: { niche?: string; market?: Market }) =>
+  const set = (patch: { niche?: string; market?: Market; reference?: SalesReference | null }) =>
     update({ ...patch, problems: null, problem: null });
 
   return (
@@ -32,7 +33,7 @@ export function StepNiche({ niches, state, update, nav }: StepProps & { niches: 
               key={m}
               type="button"
               aria-pressed={state.market === m}
-              onClick={() => set({ market: m, niche: "" })}
+              onClick={() => set({ market: m, niche: "", reference: null })}
               className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
                 state.market === m ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"
               }`}
@@ -72,6 +73,17 @@ export function StepNiche({ niches, state, update, nav }: StepProps & { niches: 
           onChange={(e) => set({ niche: e.target.value })}
         />
       </div>
+
+      <ReferencePanel
+        // La referencia se resume en el idioma del mercado: cambiar de mercado la descarta (arriba).
+        key={state.market}
+        market={state.market}
+        value={state.reference}
+        onChange={(reference) =>
+          // Sin nicho escrito, el de la página sirve de punto de partida.
+          set({ reference, ...(reference && !state.niche.trim() && reference.niche_hint ? { niche: reference.niche_hint.slice(0, 120) } : {}) })
+        }
+      />
 
       <StepNav onNext={nav.next} nextDisabled={!valid} />
     </section>

@@ -43,6 +43,7 @@ export function StepOutline({ state, update, nav }: StepProps) {
         main_format: state.format,
         template_id: state.templateId,
         cover_art: state.cover.art,
+        ...(state.reference ? { reference: state.reference } : {}),
       })
       .then(
         async ({ product_id, outline }) => {
@@ -54,7 +55,7 @@ export function StepOutline({ state, update, nav }: StepProps) {
         },
         (e) => setError(toError(e)),
       );
-  }, [current, key, attempt, state.niche, state.problem, state.market, state.format, state.templateId, state.cover, update]);
+  }, [current, key, attempt, state.niche, state.problem, state.market, state.format, state.templateId, state.cover, state.reference, update]);
 
   const build = () => {
     setError(null);

@@ -74,6 +74,31 @@ export type ArtStyle = (typeof ART_STYLES)[number];
 export type ArtChoice = "auto" | ArtStyle | "none";
 export type CoverSpec = { art: ArtChoice; image_id: string | null };
 
+/** Resumen de una página de ventas que sirve de inspiración (espejo de SalesReference del backend). */
+export type SalesReference = {
+  source_url: string | null;
+  niche_hint: string;
+  product_name: string;
+  audience: string;
+  main_pain: string;
+  pains: string[];
+  promise: string;
+  benefits: string[];
+  objections: string[];
+  price_text: string;
+  guarantee: string;
+  bonuses: string[];
+  tone: string;
+  angle: string;
+  key_terms: string[];
+};
+
+export type ReferenceResult = {
+  reference: SalesReference;
+  page: { title: string; chars: number; truncated: boolean; source: "url" | "text" };
+  looks_like_sales_page: boolean;
+};
+
 export type Niche = { id: string; slug: string; name: string; market: Market };
 
 export type ProductRow = {
@@ -90,6 +115,8 @@ export type ProductRow = {
   audience_override: string | null;
   /** {} en los productos anteriores a las portadas (se ven sin arte). */
   cover: Partial<CoverSpec>;
+  /** Página de ventas que inspiró el paquete (null si no hubo). */
+  reference?: SalesReference | null;
   parent_product_id: string | null;
   root_product_id: string | null;
   created_at: string;

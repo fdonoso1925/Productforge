@@ -9,3 +9,5 @@ Crie a ficha comercial do pacote descrito em <dados_do_usuario>, pronta para pub
 - short_description: até 500 caracteres, direta.
 - benefit_bullets: 5 a 8 benefícios concretos (resultado, não característica).
 - ad_hooks: exatamente 3 ganchos para anúncios, cada um com um ângulo diferente (dor, curiosidade, prova).
+
+Se nos dados houver `sales_page_reference` com preço (`price_text`), use-o apenas como âncora da faixa de preços; não copie a oferta, os nomes nem as garantias dela.

@@ -136,6 +136,37 @@
       "objection": "Objeción que elimina",
       "generate": "Generar paquete",
       "invalid": "Revisa los campos marcados."
+    },
+    "reference": {
+      "title": "Página de ventas de referencia (opcional)",
+      "hint": "Si ya hay una página que vende sobre este nicho o problema, pega su dirección: se resume su público, dolores, promesa y tono, y eso inspira los problemas y todo el paquete.",
+      "urlLabel": "Dirección de la página",
+      "urlPlaceholder": "https://ejemplo.com/oferta",
+      "analyze": "Analizar página",
+      "analyzeText": "Analizar texto",
+      "analyzing": "Analizando…",
+      "analyzingHint": "Se lee la página y la IA la resume. Tarda unos segundos.",
+      "pasteInstead": "¿No carga? Pega el texto de la página",
+      "useUrl": "Mejor usar la dirección",
+      "textLabel": "Texto de la página",
+      "textPlaceholder": "Copia el texto de la página de ventas (títulos, beneficios, oferta…) y pégalo aquí.",
+      "textHint": "Mínimo {min} caracteres.",
+      "errorGeneric": "No se pudo analizar la página. Intenta de nuevo.",
+      "errorTip": "Si la página bloquea las lecturas automáticas o se arma con JavaScript, pega su texto.",
+      "based": "Basado en una página de referencia",
+      "pastedText": "texto pegado",
+      "remove": "Quitar",
+      "notSales": "No parece una página de ventas con una oferta clara. Revisa que el resumen tenga sentido antes de seguir.",
+      "truncated": "La página era muy larga: se analizó solo la primera parte.",
+      "original": "Solo se usa de inspiración: el contenido que se genera es original, no una copia de esa página.",
+      "fields": {
+        "audience": "Público",
+        "mainPain": "Problema",
+        "promise": "Promesa",
+        "angle": "Enfoque",
+        "tone": "Tono",
+        "pains": "Dolores"
+      }
     }
   },
   "cover": {

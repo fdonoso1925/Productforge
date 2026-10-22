@@ -78,6 +78,15 @@ Si pierdes `TOKEN_ENCRYPTION_KEY`, los tokens guardados quedan ilegibles: basta 
 - **Cambiar la portada es gratis (sin IA):** remodelar con otra portada crea una versión hija y solo re-maqueta (`plan_remodel` no cambia). Aplica a PDF (guía, checklist, blueprint, planner, swipe file) y a la portada del EPUB; mapas, XLSX y DOCX/PPTX no llevan portada de plantilla.
 - Frontend: `CoverPicker` (`components/cover/`) en el último paso del asistente y en el panel de remodelar; `lib/cover.ts`.
 
+### Página de ventas de referencia (opcional, paso 1 del asistente)
+
+- Flujo: `POST /reference {url | text, market}` lee la página, la IA la **resume** en un `SalesReference` (público, dolores, promesa, tono, ángulo, vocabulario; `schemas/reference.py`) y el cliente lo devuelve en `POST /problems` y `POST /outline`. Se guarda en `products.reference` (jsonb, nulo = sin referencia; la columna solo se escribe cuando hay una, y `child_row` la copia a versiones y duplicados). `package_request()` la incluye, así que **todas** las llamadas (problemas, outline, cada pieza, ficha comercial) llevan `sales_page_reference` dentro de `<datos_del_usuario>`; la URL no viaja a la IA.
+- **Es inspiración, no copia**: los prompts nativos (`system.md`, `problems.md`, `outline.md`, `item.md`, `commercial.md`, nuevo `reference.md`) piden contenido original, sin frases, títulos ni nombres de la página, y mantienen las reglas de honestidad. Del texto ajeno solo se guarda el resumen, nunca la página.
+- **Lectura segura de URLs (`app/web/safe_fetch.py`, SSRF)**: solo http/https en puertos 80/443, sin usuario:clave; el nombre se resuelve ANTES y todas las direcciones deben ser públicas (nada de loopback, privadas, link-local/metadatos de la nube, CGNAT); se conecta a la IP ya validada (con `Host` y SNI del nombre, anti DNS-rebinding); las redirecciones se siguen a mano y cada salto se revalida; tope de 1,5 MB **ya descomprimido**, 20 s en total, solo HTML/texto, sin proxies del entorno. Si tocas esto, corre `tests/test_safe_fetch.py` (77 casos).
+- **Texto no confiable (`app/web/extract.py`)**: stdlib `html.parser`; descarta scripts, navegación, pie, formularios y todo lo oculto (`hidden`, `aria-hidden`, `display:none`, tamaño/opacidad 0…) y caracteres invisibles, que es donde se esconden instrucciones para la IA. Aun así el texto va como dato delimitado (`wrap_user_data`) y `reference.md` ordena ignorar instrucciones dentro de la página. Páginas armadas con JavaScript (casi sin texto) se rechazan con la sugerencia de pegar el texto (`text` en vez de `url`).
+- La salida de la IA se recorta a los límites duros de `SalesReference` (`to_reference`); lo que manda el cliente se valida estricto (422).
+- Frontend: `components/wizard/reference-panel.tsx` (URL o texto pegado, tarjeta con el resumen), `lib/reference.ts`; cambiar de mercado la descarta y cambiarla rehace problemas y outline (`inputsKey`).
+
 ### Motor de contenido (`backend/app/content/`)
 
 - `schemas/`: Pydantic del paquete (`Problem`, `PackageOutline`, `CommercialSheet`) y un schema por formato (`FORMAT_SCHEMAS`).

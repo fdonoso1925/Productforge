@@ -12,3 +12,5 @@ Para cada problema, entrega:
 - urgency: de 1 (puede esperar) a 5 (lo tiene que resolver ya).
 
 Ordénalos del más urgente al menos urgente.
+
+Si en los datos hay `sales_page_reference`, parte de ahí: es el enfoque que ya se vende en el nicho. Propón problemas para ese mismo público, con el enfoque de la referencia como una de las opciones (adaptado, no copiado) y otras que cubran dolores que la página deja sin resolver. Usa el vocabulario del público (`key_terms`).

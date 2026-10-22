@@ -4,7 +4,7 @@ Un directorio por mercado. El contenido se genera **nativo** en cada idioma: est
 archivos no son traducciones entre sí; cada uno está escrito para su público.
 
 - `system.md`: rol y principios, común a todas las llamadas del mercado (se cachea).
-- `problems.md`, `outline.md`, `item.md`, `commercial.md`: una tarea cada uno.
+- `problems.md`, `outline.md`, `item.md`, `commercial.md`, `reference.md`: una tarea cada uno. `reference.md` resume una página de ventas externa; el resto menciona `sales_page_reference` (solo como inspiración, el contenido es original).
 - `formats/<formato>.md`: guía específica que se agrega a `item.md` según el formato.
 
 Variables `$nombre` (sintaxis `string.Template`): solo valores que pone el sistema

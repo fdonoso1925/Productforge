@@ -7,6 +7,8 @@ O pacote tem:
 
 Formatos disponíveis: $formats.
 
+Se nos dados houver `sales_page_reference`, pense o pacote para esse público: o principal resolve a dor principal dele (`main_pain`) no prazo da promessa, os bônus podem eliminar as objeções (`objections`) e o nome e os títulos precisam ser originais, nunca os da página. Melhore o enfoque dela (`angle`) com algo mais específico.
+
 Para cada peça: título comercial (não genérico), promessa em uma frase com prazo, índice com as seções em ordem, páginas estimadas e, em `related_items`, os títulos das outras peças que ela cita.
 
 `product_name` é o nome comercial do pacote inteiro.

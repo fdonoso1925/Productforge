@@ -9,6 +9,7 @@ from app.content.schemas.package import (
     Problem,
     ProblemProposals,
 )
+from app.content.schemas.reference import SalesPageAnalysis, SalesReference, to_reference
 
 __all__ = [
     "AdaptedPackage",
@@ -23,4 +24,7 @@ __all__ = [
     "ProblemProposals",
     "ProductContent",
     "Role",
+    "SalesPageAnalysis",
+    "SalesReference",
+    "to_reference",
 ]

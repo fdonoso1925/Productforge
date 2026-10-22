@@ -8,6 +8,7 @@ el error se le devuelve como feedback concreto.
 from pydantic import BaseModel, Field
 
 from app.content.schemas.common import Format, Market, Role
+from app.content.schemas.reference import SalesReference
 
 
 class Problem(BaseModel):
@@ -33,6 +34,8 @@ class PackageRequest(BaseModel):
     main_format: Format
     tone: str | None = Field(default=None, max_length=200)
     audience_override: str | None = Field(default=None, max_length=300)
+    # Resumen de una página de ventas que sirve de inspiración (nunca de texto a copiar).
+    reference: SalesReference | None = None
 
 
 class ItemOutline(BaseModel):

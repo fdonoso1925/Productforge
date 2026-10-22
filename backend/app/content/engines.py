@@ -26,6 +26,9 @@ from app.content.schemas import (
     PackageRequest,
     Problem,
     ProblemProposals,
+    SalesPageAnalysis,
+    SalesReference,
+    to_reference,
 )
 from app.content.schemas.common import BONUS_FORMATS, CURRENCY
 
@@ -64,13 +67,41 @@ class ContentService:
     usage: UsageSink
     config: EngineConfig
 
-    async def propose_problems(self, *, user_id: UUID, niche: str, market: Market) -> list[Problem]:
+    async def analyze_reference(
+        self, *, user_id: UUID, market: Market, page: dict, source_url: str | None
+    ) -> tuple[SalesReference, bool]:
+        """Resume una página de ventas (texto de un tercero) en un `SalesReference`.
+
+        El texto va como dato delimitado, nunca como instrucción; la salida se recorta a los
+        límites duros del schema.
+        """
+        analysis = await self._call(
+            user_id=user_id,
+            product_id=None,
+            market=market,
+            task=self.prompts.render(market, "reference"),
+            data={"page": page},
+            schema=SalesPageAnalysis,
+            model=self.config.model_outline,
+            max_tokens=4_000,
+            check=lambda _: [],
+        )
+        return to_reference(analysis, source_url), analysis.is_sales_page
+
+    async def propose_problems(
+        self,
+        *,
+        user_id: UUID,
+        niche: str,
+        market: Market,
+        reference: SalesReference | None = None,
+    ) -> list[Problem]:
         result = await self._call(
             user_id=user_id,
             product_id=None,
             market=market,
             task=self.prompts.render(market, "problems"),
-            data={"niche": niche},
+            data={"niche": niche, **_reference_data(reference)},
             schema=ProblemProposals,
             model=self.config.model_outline,
             max_tokens=8_000,
@@ -263,10 +294,18 @@ class ContentService:
         raise ContentRejected(errors)
 
 
+def _reference_data(reference: SalesReference | None) -> dict:
+    """La referencia viaja dentro de los datos delimitados; la URL no le sirve a la IA."""
+    if reference is None:
+        return {}
+    return {"sales_page_reference": reference.model_dump(exclude={"source_url"})}
+
+
 def _request_data(request: PackageRequest) -> dict:
     return {
         "niche": request.niche,
         "problem": request.problem.model_dump(),
         "tone": request.tone,
         "audience_override": request.audience_override,
+        **_reference_data(request.reference),
     }

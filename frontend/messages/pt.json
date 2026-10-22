@@ -136,6 +136,37 @@
       "objection": "Objeção que elimina",
       "generate": "Gerar pacote",
       "invalid": "Revise os campos marcados."
+    },
+    "reference": {
+      "title": "Página de vendas de referência (opcional)",
+      "hint": "Se já existe uma página que vende sobre este nicho ou problema, cole o endereço: resumimos o público, as dores, a promessa e o tom, e isso inspira os problemas e todo o pacote.",
+      "urlLabel": "Endereço da página",
+      "urlPlaceholder": "https://exemplo.com/oferta",
+      "analyze": "Analisar página",
+      "analyzeText": "Analisar texto",
+      "analyzing": "Analisando…",
+      "analyzingHint": "A página é lida e a IA a resume. Leva alguns segundos.",
+      "pasteInstead": "Não carrega? Cole o texto da página",
+      "useUrl": "Prefiro usar o endereço",
+      "textLabel": "Texto da página",
+      "textPlaceholder": "Copie o texto da página de vendas (títulos, benefícios, oferta…) e cole aqui.",
+      "textHint": "Mínimo de {min} caracteres.",
+      "errorGeneric": "Não foi possível analisar a página. Tente de novo.",
+      "errorTip": "Se a página bloqueia leituras automáticas ou é montada com JavaScript, cole o texto dela.",
+      "based": "Baseado em uma página de referência",
+      "pastedText": "texto colado",
+      "remove": "Remover",
+      "notSales": "Não parece uma página de vendas com uma oferta clara. Confira se o resumo faz sentido antes de continuar.",
+      "truncated": "A página era muito longa: só a primeira parte foi analisada.",
+      "original": "Serve só de inspiração: o conteúdo gerado é original, não uma cópia dessa página.",
+      "fields": {
+        "audience": "Público",
+        "mainPain": "Problema",
+        "promise": "Promessa",
+        "angle": "Enfoque",
+        "tone": "Tom",
+        "pains": "Dores"
+      }
     }
   },
   "cover": {
