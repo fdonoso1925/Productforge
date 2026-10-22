@@ -104,6 +104,36 @@ def strip_chapter_number(title: str) -> str:
     return cleaned or title
 
 
+COVER_SUBTITLE_MAX = 220
+COVER_PROMISE_MAX = 170
+
+
+def shorten(text: str, limit: int) -> str:
+    """Recorta en el último fin de oración (o palabra) que quepa y agrega «…».
+
+    La portada tiene un hueco fijo para el subtítulo y la promesa: un texto largo (p. ej. el
+    resumen de un blueprint) se metería bajo el mockup. El texto completo sigue en el interior.
+    """
+    text = " ".join(text.split())
+    if len(text) <= limit:
+        return text
+    window = text[:limit]
+    ends = [window.rfind(mark) for mark in (". ", "! ", "? ")]
+    cut = max(ends)
+    if cut >= limit * 0.5:
+        return window[: cut + 1]  # oración completa: ya cierra con su punto
+    space = window.rfind(" ")
+    return (window[:space] if space > 0 else window).rstrip(" ,;:–-") + "…"
+
+
+def fit_cover_text(cover: dict) -> dict:
+    """Copia de los textos de portada con subtítulo y promesa dentro de su hueco."""
+    fitted = dict(cover)
+    fitted["subtitle"] = shorten(str(fitted.get("subtitle") or ""), COVER_SUBTITLE_MAX)
+    fitted["promise"] = shorten(str(fitted.get("promise") or ""), COVER_PROMISE_MAX)
+    return fitted
+
+
 def slugify(text: str, max_length: int = 60) -> str:
     ascii_text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
     slug = re.sub(r"[^a-z0-9]+", "-", ascii_text.lower()).strip("-")

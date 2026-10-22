@@ -325,3 +325,45 @@ def test_cover_spec_rejects_unknown_fields_and_styles() -> None:
     with pytest.raises(ValueError):
         CoverSpec.model_validate({"art": "topo", "url": "http://x"})
     assert SimpleNamespace  # evita que el import quede huérfano si se limpia el archivo
+
+
+# ───────────────────── textos largos en la portada ─────────────────────
+
+
+def test_shorten_keeps_short_text_and_cuts_long_text_cleanly() -> None:
+    from app.generators.base import fit_cover_text, shorten
+
+    assert shorten("Texto corto.", 220) == "Texto corto."
+    assert shorten("  muchos   espacios \n aquí ", 220) == "muchos espacios aquí"
+    long = "Primera oración que cierra bien. " + "palabra " * 60
+    cut = shorten(long, 100)
+    assert cut == "Primera oración que cierra bien." or (cut.endswith("…") and len(cut) <= 101)
+    flowing = "una " * 100
+    assert shorten(flowing, 50).endswith("…") and len(shorten(flowing, 50)) <= 51
+    assert shorten("x" * 300, 50) == "x" * 50 + "…"  # sin espacios: corta igual
+    sentences = "Esta es una oración completa de prueba. " * 10
+    assert shorten(sentences, 120).endswith(".")  # prefiere cerrar una oración
+    fitted = fit_cover_text({"title": "t", "subtitle": "s" * 500, "promise": "p " * 200})
+    assert len(fitted["subtitle"]) <= 221 and len(fitted["promise"]) <= 171
+    assert fitted["title"] == "t"  # el título no se toca
+
+
+def test_a_long_blueprint_overview_stays_out_of_the_cover_but_is_in_the_document() -> None:
+    from app.generators.pdf import BlueprintPdf
+    from app.generators.samples import BLUEPRINT
+
+    tail = "ULTIMAFRASEDELRESUMEN"
+    overview = ("Este resumen explica el sistema completo con muchos detalles. " * 12) + tail
+    content = BLUEPRINT.model_copy(update={"overview": overview})
+    pdf = BlueprintPdf().generate(content, TPL, cover_ctx())[0].content
+    document = pypdfium2.PdfDocument(pdf)
+    try:
+        first = document[0].get_textpage().get_text_range()
+        rest = " ".join(
+            document[i].get_textpage().get_text_range() for i in range(1, len(document))
+        )
+    finally:
+        document.close()
+    assert tail not in first  # la portada solo lleva un resumen corto…
+    assert len(first) < len(overview)
+    assert tail in rest.replace("\r\n", "").replace(" ", "")  # …y el texto completo sigue dentro

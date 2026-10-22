@@ -14,6 +14,7 @@ from app.generators.base import (
     FileArtifact,
     RenderContext,
     artifact,
+    fit_cover_text,
     register,
     strip_chapter_number,
 )
@@ -37,7 +38,7 @@ def render_pdf(template: Template, kind: str, ctx: RenderContext, content, cover
         **ctx.cover_extra,
         **cover,
     }
-    html = template.render_html(kind, c=content, ctx=ctx, cover=cover)
+    html = template.render_html(kind, c=content, ctx=ctx, cover=fit_cover_text(cover))
     return html_to_pdf(html, template.base_dir)
 
 

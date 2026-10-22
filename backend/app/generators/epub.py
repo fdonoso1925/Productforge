@@ -9,7 +9,7 @@ from ebooklib import epub
 
 from app.content.schemas import Format
 from app.content.schemas.formats import GuideContent
-from app.generators.base import FileArtifact, RenderContext, artifact, register
+from app.generators.base import FileArtifact, RenderContext, artifact, fit_cover_text, register
 from app.generators.pdf import without_chapter_numbers
 from app.generators.render import html_to_pdf, pdf_page_to_png
 from app.templates_engine.model import Template
@@ -25,7 +25,7 @@ def cover_png(template: Template, ctx: RenderContext, cover: dict, width: int = 
         **ctx.cover_extra,
         **cover,
     }
-    html = template.render_html("cover_page", c=None, ctx=ctx, cover=cover)
+    html = template.render_html("cover_page", c=None, ctx=ctx, cover=fit_cover_text(cover))
     return pdf_page_to_png(html_to_pdf(html, template.base_dir), width=width)
 
 
