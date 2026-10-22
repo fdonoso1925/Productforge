@@ -1,0 +1,8 @@
+{
+  "id": "checklist",
+  "name": "Checklist / lista",
+  "description": "Lista de beneficios (✓) o de errores a evitar (✗).",
+  "uses_image": false,
+  "uses_mockup": false,
+  "scheme": "light"
+}

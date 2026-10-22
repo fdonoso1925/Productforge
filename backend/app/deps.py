@@ -9,6 +9,10 @@ from typing import Annotated
 
 from fastapi import Depends
 
+from app.ads.jobs import AdDeps
+from app.ads.render import AdRenderer
+from app.ads.repo import AdBatchRepo, AdCreativeRepo, AdProofRepo
+from app.ads.strategy import AdStrategyService
 from app.config import Settings, get_settings
 from app.content.claude_client import ClaudeClient
 from app.content.engines import ContentService, EngineConfig
@@ -41,6 +45,23 @@ class Services:
     storage: SupabaseStorage
     drive: GoogleDrive
     upload_queue: UploadQueue
+    ad_strategy: AdStrategyService
+    ad_renderer: AdRenderer
+    ad_batches: AdBatchRepo
+    ad_creatives: AdCreativeRepo
+    ad_proofs: AdProofRepo
+
+    def ads(self) -> AdDeps:
+        return AdDeps(
+            strategy=self.ad_strategy,
+            renderer=self.ad_renderer,
+            batches=self.ad_batches,
+            creatives=self.ad_creatives,
+            proofs=self.ad_proofs,
+            jobs=self.jobs,
+            storage=self.storage,
+            templates_dir=self.settings.templates_dir,
+        )
 
     def pipeline(self) -> PipelineDeps:
         return PipelineDeps(
@@ -90,6 +111,11 @@ def build_services(settings: Settings) -> Services:
         storage=SupabaseStorage(settings.supabase_url, settings.supabase_service_role_key),
         drive=drive,
         upload_queue=UploadQueue(drive, jobs, files),
+        ad_strategy=AdStrategyService(content),
+        ad_renderer=AdRenderer(settings.ad_templates_dir, settings.templates_dir),
+        ad_batches=AdBatchRepo(db),
+        ad_creatives=AdCreativeRepo(db),
+        ad_proofs=AdProofRepo(db),
     )
 
 

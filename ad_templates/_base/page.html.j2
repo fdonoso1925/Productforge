@@ -1,0 +1,27 @@
+{# Página de un anuncio: CSS común + el cuerpo de la plantilla elegida. Texto siempre escapado. #}
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="utf-8">
+<style>
+{% for face in faces %}@font-face { font-family: '{{ face.family }}'; font-weight: {{ face.weight }}; src: url('{{ face.url }}'); }
+{% endfor %}
+@page { size: {{ W }}px {{ H }}px; margin: 0; }
+html, body { margin: 0; padding: 0; }
+.ad { position: relative; width: {{ W }}px; height: {{ H }}px; overflow: hidden; background: {{ c.bg }}; color: {{ c.fg }}; font-family: '{{ f.body }}'; }
+/* Zona útil: respeta los márgenes seguros de cada formato (Stories y Reels tapan arriba y abajo). */
+.safe { position: absolute; top: {{ pad.top }}px; bottom: {{ pad.bottom }}px; left: {{ pad.side }}px; right: {{ pad.side }}px; display: flex; flex-direction: column; justify-content: center; }
+/* Ancho explícito: sin él WeasyPrint mide la altura del titular con otro ancho y el texto se pisa. */
+.safe > *:not(.cta) { width: {{ W - 2 * pad.side }}px; }
+.h { font-family: '{{ f.heading }}'; font-weight: {{ f.heading_weight }}; line-height: 1.05; letter-spacing: -0.01em; }
+.kicker { font-family: '{{ f.body }}'; font-weight: 700; font-size: {{ fs.kicker }}px; letter-spacing: 0.14em; text-transform: uppercase; color: {{ c.accent_text }}; margin-bottom: 26px; }
+.sub { font-size: {{ fs.sub }}px; line-height: 1.28; margin-top: 30px; opacity: 0.92; }
+.cta { display: inline-block; background: {{ c.accent }}; color: {{ c.accent_fg }}; font-family: '{{ f.body }}'; font-weight: 700; font-size: {{ fs.cta }}px; padding: 22px 46px; border-radius: 18px; }
+</style>
+</head>
+<body>
+<div class="ad ratio-{{ ratio }}">
+{% include template_id ~ "/ad.html.j2" %}
+</div>
+</body>
+</html>

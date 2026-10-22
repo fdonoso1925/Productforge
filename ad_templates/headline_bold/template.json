@@ -1,0 +1,8 @@
+{
+  "id": "headline_bold",
+  "name": "Headline bold",
+  "description": "Solo texto grande sobre color sólido. No usa imagen de IA ni de stock.",
+  "uses_image": false,
+  "uses_mockup": false,
+  "scheme": "bold"
+}

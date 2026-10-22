@@ -1,0 +1,128 @@
+{
+  "dolor": {
+    "name": "Dolor",
+    "description": "Nombra la situación frustrante tal como la vive el público, sin afirmar nada sobre la persona que ve el anuncio.",
+    "when": "Cuando el problema es evidente y emocional y el público ya lo reconoce.",
+    "hook": "Una situación concreta y cotidiana en una frase corta, en tercera persona o impersonal.",
+    "examples": ["El sueldo se acaba antes del día 20", "Pagar el mínimo de la tarjeta y que la deuda no baje"],
+    "templates": ["headline_bold", "photo_headline", "question"],
+    "needs": null
+  },
+  "mecanismo": {
+    "name": "Solución / mecanismo",
+    "description": "El «cómo» único del producto: el método, el paso o el sistema que lo hace distinto.",
+    "when": "Cuando el producto tiene un método con nombre o un proceso fácil de explicar.",
+    "hook": "El método + el tiempo o el esfuerzo mínimo que exige.",
+    "examples": ["El método de 3 cuentas para ordenar tu quincena en 15 minutos", "Un plan de pago en 7 días, paso a paso"],
+    "templates": ["product_mockup", "checklist", "headline_bold"],
+    "needs": null
+  },
+  "transformacion": {
+    "name": "Transformación / resultado",
+    "description": "El después deseado, concreto, medible y con plazo realista.",
+    "when": "Cuando el resultado es específico y verificable.",
+    "hook": "Resultado concreto + plazo, sin prometer garantías.",
+    "examples": ["Un plan para bajar tu deuda un 20 % en 90 días", "De la quincena en rojo a un presupuesto que alcanza"],
+    "templates": ["headline_bold", "product_mockup", "photo_headline"],
+    "needs": null
+  },
+  "persona": {
+    "name": "Persona / identificación",
+    "description": "Habla a un público específico («para quienes…») sin afirmar atributos personales de quien mira.",
+    "when": "Cuando hay un público muy definido por su oficio, etapa o contexto.",
+    "hook": "«Para [público] que quiere [objetivo]».",
+    "examples": ["Para quienes trabajan por cuenta propia y quieren ordenar sus pedidos", "Para equipos pequeños que quieren dejar de perder fechas"],
+    "templates": ["headline_bold", "note", "photo_headline"],
+    "needs": null
+  },
+  "objecion": {
+    "name": "Objeción",
+    "description": "Derriba la excusa principal que frena la compra.",
+    "when": "Cuando hay una objeción dominante (tiempo, dinero, complejidad, «ya probé todo»).",
+    "hook": "«Aunque [objeción], [resultado posible]».",
+    "examples": ["Aunque tengas poco tiempo, 15 minutos al día alcanzan", "Sin planillas complicadas: una hoja y 3 pasos"],
+    "templates": ["headline_bold", "note", "checklist"],
+    "needs": null
+  },
+  "curiosidad": {
+    "name": "Curiosidad / secreto",
+    "description": "Un dato o un detalle poco conocido que abre una pregunta.",
+    "when": "Cuando hay un dato verificable y sorprendente sobre el tema.",
+    "hook": "Una pregunta o afirmación incompleta que pide ser resuelta.",
+    "examples": ["El detalle de tu fatura que casi nadie revisa", "Lo que cambia cuando pagas la deuda más cara primero"],
+    "templates": ["question", "headline_bold", "note"],
+    "needs": null
+  },
+  "mito": {
+    "name": "Mito vs. verdad",
+    "description": "Contrasta una creencia común con lo que realmente funciona.",
+    "when": "Cuando hay una creencia equivocada muy extendida en el nicho.",
+    "hook": "«Mito: … / Realidad: …».",
+    "examples": ["Mito: hay que ganar más para salir de deudas. Realidad: primero ordenar lo que entra", "Mito: ahorrar es para quienes ganan bien"],
+    "templates": ["comparison", "headline_bold", "checklist"],
+    "needs": null
+  },
+  "error": {
+    "name": "Error común",
+    "description": "El error que más se comete al intentar resolver el problema y cómo evitarlo.",
+    "when": "Cuando el público suele equivocarse en el mismo punto.",
+    "hook": "«El error que frena [resultado]» (sin cifras inventadas).",
+    "examples": ["El error que hace que el presupuesto no dure el mes", "3 errores al ordenar tus pedidos por chat"],
+    "templates": ["checklist", "headline_bold", "note"],
+    "needs": null
+  },
+  "lista": {
+    "name": "Lista / beneficios",
+    "description": "Una lista corta y concreta de beneficios, pasos o ideas.",
+    "when": "Cuando el producto se explica bien en 3 a 5 puntos.",
+    "hook": "«N cosas que [resultado]» con N entre 3 y 5.",
+    "examples": ["5 pasos para armar tu plan de pago", "Lo que incluye: guía, planilla y guiones"],
+    "templates": ["checklist", "product_mockup", "headline_bold"],
+    "needs": null
+  },
+  "oferta": {
+    "name": "Oferta / precio",
+    "description": "Lo que incluye el paquete (principal + bonus) frente a un precio bajo. Solo con el precio real.",
+    "when": "Cuando el precio es un argumento y está definido.",
+    "hook": "El paquete completo + el precio real, sin descuentos inventados.",
+    "examples": ["Guía + planilla + guiones por un solo pago", "Todo el sistema por USD 12"],
+    "templates": ["offer_stack", "product_mockup", "headline_bold"],
+    "needs": "price"
+  },
+  "autoridad": {
+    "name": "Autoridad / prueba",
+    "description": "Respalda la promesa con datos o testimonios REALES que entregó el usuario.",
+    "when": "Solo si existen pruebas cargadas: testimonios, cifras o experiencia verificables.",
+    "hook": "La prueba real, tal cual la entregó el usuario.",
+    "examples": ["«Lo apliqué en una semana y entendí mis gastos» — A. M.", "Método aplicado durante 6 años con familias reales"],
+    "templates": ["testimonial", "headline_bold", "note"],
+    "needs": "proof"
+  },
+  "urgencia": {
+    "name": "Urgencia / oportunidad",
+    "description": "Una oportunidad con fecha o condición real (lanzamiento, precio de lanzamiento).",
+    "when": "Solo si existe una urgencia REAL y verificable. Nunca contadores ni «últimas unidades» falsos.",
+    "hook": "La condición real y su fecha.",
+    "examples": ["Precio de lanzamiento hasta el viernes", "Primera edición con bonus incluido"],
+    "templates": ["headline_bold", "offer_stack", "notification"],
+    "needs": "real_urgency"
+  },
+  "comparacion": {
+    "name": "Comparación",
+    "description": "El método frente a la forma tradicional de resolver el problema.",
+    "when": "Cuando la alternativa habitual es claramente peor en tiempo o esfuerzo.",
+    "hook": "«Antes: … / Con el método: …» en términos de proceso, no de personas.",
+    "examples": ["Llevar todo en el chat vs. una sola lista de pendientes", "Pagar al azar vs. un orden de pago claro"],
+    "templates": ["comparison", "checklist", "headline_bold"],
+    "needs": null
+  },
+  "nativo": {
+    "name": "Nativo / UGC",
+    "description": "Se ve como contenido orgánico (una nota, una publicación), menos «anuncio».",
+    "when": "Para probar un tono cercano y menos publicitario.",
+    "hook": "Una frase corta, escrita como la diría una persona en una nota o un post.",
+    "examples": ["Anoté mis gastos una semana y me sorprendí", "Nota para mí: ordenar los pedidos en un solo lugar"],
+    "templates": ["note", "text_post", "notification"],
+    "needs": null
+  }
+}

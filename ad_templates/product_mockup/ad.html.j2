@@ -1,0 +1,46 @@
+<style>
+.row { display: flex; flex-direction: {% if ratio == '1x1' %}row{% else %}column{% endif %}; align-items: {% if ratio == '1x1' %}center{% else %}flex-start{% endif %}; justify-content: center; }
+.col { display: flex; flex-direction: column; align-items: flex-start; {% if ratio == '1x1' %}width: {{ col_w }}px; flex: none; margin-right: 40px;{% endif %} }
+.h { font-size: {{ fs.headline }}px; }
+.sub { margin-top: 16px; font-size: {{ fs.sub }}px; }
+.mock-wrap { position: relative; width: {{ mock.w }}px; height: {{ mock.h }}px; flex: none; margin: {% if ratio == '1x1' %}0{% else %}30px auto 12px auto{% endif %}; }
+.mock-shadow { position: absolute; left: 22px; top: 26px; width: {{ mock.w - 28 }}px; height: {{ mock.h - 28 }}px; background: {{ c.fg }}; opacity: 0.22; transform: rotate(-4deg); border-radius: 8px; }
+.mock { position: absolute; left: 0; top: 0; width: {{ mock.w - 28 }}px; height: {{ mock.h - 28 }}px; transform: rotate(-4deg); border: 2px solid {{ c.border }}; border-radius: 8px; }
+.mock-fallback { position: absolute; left: 0; top: 0; width: {{ mock.w - 80 }}px; height: {{ mock.h - 80 }}px; padding: 26px; transform: rotate(-4deg); background: {{ c.accent }}; color: {{ c.accent_fg }}; font-family: '{{ f.heading }}'; font-weight: {{ f.heading_weight }}; font-size: 36px; line-height: 1.1; border-radius: 8px; }
+ul.b { list-style: none; margin: 8px 0 0 0; padding: 0; }
+ul.b li { display: flex; align-items: center; font-size: {{ fs.bullet }}px; margin-top: 14px; line-height: 1.2; }
+.dot { flex: none; width: 38px; height: 38px; border-radius: 19px; background: {{ c.accent }}; margin-right: 18px; position: relative; }
+.dot i { position: absolute; left: 13px; top: 6px; width: 8px; height: 17px; border: solid {{ c.accent_fg }}; border-width: 0 4px 4px 0; transform: rotate(45deg); }
+.price { font-family: '{{ f.heading }}'; font-weight: {{ f.heading_weight }}; font-size: {{ fs.price }}px; margin-top: 24px; color: {{ c.accent_text }}; }
+.cta { margin-top: 20px; }
+</style>
+{% macro details() %}
+  {% if copy.bullets %}<ul class="b">{% for b in copy.bullets %}<li><span class="dot"><i></i></span><span>{{ b }}</span></li>{% endfor %}</ul>{% endif %}
+  {% if copy.price_text %}<div class="price">{{ copy.price_text }}</div>{% endif %}
+  {% if copy.cta_text %}<div class="cta">{{ copy.cta_text }}</div>{% endif %}
+{% endmacro %}
+{% macro mockup_block() %}
+  <div class="mock-wrap">
+    <div class="mock-shadow"></div>
+    {% if mockup_uri %}<img class="mock" src="{{ mockup_uri }}">{% else %}<div class="mock-fallback">{{ product_name }}</div>{% endif %}
+  </div>
+{% endmacro %}
+<div class="safe">
+  <div class="row">
+    {% if ratio == '1x1' %}
+      <div class="col">
+        {% if copy.kicker %}<div class="kicker">{{ copy.kicker }}</div>{% endif %}
+        <div class="h">{{ copy.headline }}</div>
+        {% if copy.subheadline %}<div class="sub">{{ copy.subheadline }}</div>{% endif %}
+        {{ details() }}
+      </div>
+      {{ mockup_block() }}
+    {% else %}
+      {% if copy.kicker %}<div class="kicker">{{ copy.kicker }}</div>{% endif %}
+      <div class="h">{{ copy.headline }}</div>
+      {% if copy.subheadline %}<div class="sub">{{ copy.subheadline }}</div>{% endif %}
+      {{ mockup_block() }}
+      <div class="col">{{ details() }}</div>
+    {% endif %}
+  </div>
+</div>

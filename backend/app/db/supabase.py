@@ -263,11 +263,21 @@ class JobRepo:
     def __init__(self, db: SupabaseRest) -> None:
         self._db = db
 
-    async def enqueue(self, *, product_id: UUID, user_id: UUID, kind: str, payload: Row) -> Row:
+    async def enqueue(
+        self,
+        *,
+        user_id: UUID,
+        kind: str,
+        payload: Row,
+        product_id: UUID | None = None,
+        batch_id: UUID | None = None,
+    ) -> Row:
+        """Un job cuelga de un producto o, los de anuncios, de un lote (`batch_id`)."""
         [row] = await self._db.insert(
             "jobs",
             {
-                "product_id": str(product_id),
+                "product_id": str(product_id) if product_id else None,
+                "batch_id": str(batch_id) if batch_id else None,
                 "user_id": str(user_id),
                 "kind": kind,
                 "payload": payload,
@@ -284,6 +294,12 @@ class JobRepo:
 
     async def active_for_product(self, product_id: UUID, kind: str | None = None) -> list[Row]:
         filters = {"product_id": eq(product_id), "status": "in.(queued,running)"}
+        if kind:
+            filters["kind"] = eq(kind)
+        return await self._db.select("jobs", **filters)
+
+    async def active_for_batch(self, batch_id: UUID, kind: str | None = None) -> list[Row]:
+        filters = {"batch_id": eq(batch_id), "status": "in.(queued,running)"}
         if kind:
             filters["kind"] = eq(kind)
         return await self._db.select("jobs", **filters)

@@ -1,0 +1,8 @@
+{
+  "id": "product_mockup",
+  "name": "Mockup del producto",
+  "description": "Portada del producto, beneficios y llamada a la acción.",
+  "uses_image": false,
+  "uses_mockup": true,
+  "scheme": "light"
+}

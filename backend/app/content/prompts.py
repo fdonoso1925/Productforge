@@ -27,6 +27,19 @@ class PromptLibrary:
         text = _read(self.root / market / f"{name}.md")
         return Template(text).substitute({k: str(v) for k, v in values.items()})
 
+    # ── Módulo de creativos (prompts/<mercado>/ads/) ──
+
+    def ads_system(self, market: Market) -> str:
+        return _read(self.root / market / "ads" / "system.md")
+
+    def ads_policy(self, market: Market) -> str:
+        """Checklist de políticas de Meta: archivo editable, se inserta en la revisión."""
+        return _read(self.root / market / "ads" / "policy.md").strip()
+
+    def angle_library(self, market: Market) -> dict[str, dict]:
+        """Biblioteca de ángulos de venta (ids iguales en los dos mercados)."""
+        return json.loads(_read(self.root / market / "ads" / "angles.json"))
+
     def format_guide(self, market: Market, fmt: Format) -> str:
         return _read(self.root / market / "formats" / f"{fmt.value}.md")
 

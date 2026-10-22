@@ -87,6 +87,17 @@ Si pierdes `TOKEN_ENCRYPTION_KEY`, los tokens guardados quedan ilegibles: basta 
 - La salida de la IA se recorta a los límites duros de `SalesReference` (`to_reference`); lo que manda el cliente se valida estricto (422).
 - Frontend: `components/wizard/reference-panel.tsx` (URL o texto pegado, tarjeta con el resumen), `lib/reference.ts`; cambiar de mercado la descarta y cambiarla rehace problemas y outline (`inputsKey`).
 
+### Creativos para Meta Ads (fases 2 y 3; spec `prompt-modulo-creativos-meta-ads.md`, plan `PLAN-CREATIVOS.md`)
+
+- Flujo: brief (de un producto o manual) → avatares → ángulos → **lote** (job `ad_plan`: copy, semáforo de políticas 🟢🟡🔴 y pre-score por creativo) → el usuario revisa/edita el texto → composición (job `ad_render`, sin IA). Cada borrador se compone en 1–3 formatos (`4x5` 1080×1350, `9x16` 1080×1920, `1x1` 1080×1080) y comparte `group_id`.
+- `app/ads/`: `schemas.py` (Pydantic, todo lo que devuelve la IA), `rules.py` (largos, ángulos disponibles, semáforo por reglas; **precio, urgencia y pruebas solo entran si el usuario los da**: nunca se inventan testimonios, cifras ni marcas), `strategy.py` (`AdStrategyService` sobre `ContentService._call` con el system prompt propio `prompts/<mercado>/ads/system.md`), `render.py` (WeasyPrint → PDF → PNG con pdfium), `jobs.py` (handlers del worker + `AdDeps`), `repo.py`, `naming.py`.
+- Composición: `ad_templates/<id>/{template.json,ad.html.j2}` + `_base/page.html.j2`; 4 plantillas sin imagen de IA (`headline_bold`, `product_mockup`, `checklist`, `note`) que toman paleta y fuentes de la plantilla del producto. Los márgenes seguros y tamaños viven en `ad_templates/specs.json` (**valores de guías de terceros; verificar contra la guía oficial de Meta**). Si algo se sale de la zona segura se reduce el contenido y se reintenta (`SHRINKS`). WeasyPrint mide mal la altura de un titular que envuelve dentro de un flex sin ancho explícito (el texto se pisaba): `.safe > *:not(.cta)` lleva ancho fijo; `test_lines_of_text_never_overlap_whatever_the_wrapping` lo vigila.
+- Texto no confiable: el copy se escapa siempre (Jinja con autoescape); el brief viaja a la IA como dato delimitado (`wrap_user_data`), la URL de la referencia no.
+- Editar el texto de un creativo (`PUT /ads/creatives/{id}`) pasa por las mismas reglas y el mismo semáforo que el de la IA, actualiza sus otros formatos y recompone lo ya renderizado **sin llamar a la IA**.
+- Tablas `ad_batches`, `ad_creatives`, `ad_proofs` (migración `20261025000000_ads.sql`; RLS solo `select`); `jobs.product_id` pasa a ser opcional y se agrega `jobs.batch_id`. Archivos en Storage: `<user>/ads/<lote>/<formato>/<producto>_<mercado>_<angulo>_<plantilla>_<ratio>_v<n>.png`.
+- Endpoints (`app/api/ads.py`, prefijo `/ads`): `GET /templates`, `POST /brief|avatars|angles`, `POST|GET /batches`, `GET /batches/{id}`, `POST /batches/{id}/render`, `PUT /creatives/{id}`, `POST /creatives/{id}/render|discard`, `GET /creatives/{id}/url`, `GET|POST|DELETE /proofs`. Los que usan IA llevan `ai_rate_limit`.
+- Pendiente (no aprobado aún): proveedores de imágenes (Gemini con facturación / Pixabay), las otras 8 plantillas, UI del asistente y galería, ZIP/CSV/Drive, historial y resultados. Claves en `backend/.env` (`GEMINI_API_KEY`, `PIXABAY_API_KEY`, `IMAGE_PROVIDERS`); nunca en el frontend.
+
 ### Motor de contenido (`backend/app/content/`)
 
 - `schemas/`: Pydantic del paquete (`Problem`, `PackageOutline`, `CommercialSheet`) y un schema por formato (`FORMAT_SCHEMAS`).

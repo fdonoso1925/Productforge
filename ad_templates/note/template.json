@@ -1,0 +1,8 @@
+{
+  "id": "note",
+  "name": "Nota / post-it",
+  "description": "Texto estilo nota manuscrita, de aspecto nativo y menos publicitario.",
+  "uses_image": false,
+  "uses_mockup": false,
+  "scheme": "bold"
+}

@@ -268,6 +268,7 @@ class ContentService:
         model: str,
         max_tokens: int,
         check: Callable[[T], list[str]],
+        system: str | None = None,
     ) -> T:
         base_user = f"{task}\n\n{wrap_user_data(market, data)}"
         user = base_user
@@ -275,7 +276,7 @@ class ContentService:
         for _ in range(self.config.max_attempts):
             try:
                 result, usage = await self.llm.structured(
-                    system=self.prompts.system(market),
+                    system=system or self.prompts.system(market),
                     user=user,
                     schema=schema,
                     model=model,

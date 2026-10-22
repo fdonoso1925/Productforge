@@ -1,0 +1,10 @@
+{
+  "_nota": "Medidas y zonas seguras de Meta. Se leen de aquí para poder actualizarlas sin tocar código. Los valores salen de guías de terceros (no se pudo consultar la Ads Guide oficial): verifícalos con el Safe Zone Guardrail de Ads Manager antes de publicar a escala.",
+  "max_file_mb": 30,
+  "hires_scale": 1.3333,
+  "ratios": {
+    "4x5":  {"label": "Feed 4:5",        "width": 1080, "height": 1350, "safe": {"top": 0.045, "bottom": 0.045, "sides": 0.06}, "folder": "feed-4x5"},
+    "9x16": {"label": "Stories y Reels 9:16", "width": 1080, "height": 1920, "safe": {"top": 0.14,  "bottom": 0.35,  "sides": 0.06}, "folder": "stories-9x16"},
+    "1x1":  {"label": "Cuadrado 1:1",    "width": 1080, "height": 1080, "safe": {"top": 0.06,  "bottom": 0.06,  "sides": 0.06}, "folder": "cuadrado-1x1"}
+  }
+}

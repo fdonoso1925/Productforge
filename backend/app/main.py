@@ -8,7 +8,7 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import catalog, content, cover, drive, products
+from app.api import ads, catalog, content, cover, drive, products
 from app.auth import CurrentUser, get_current_user
 from app.config import get_settings
 from app.content.claude_client import LLMError
@@ -70,6 +70,7 @@ def create_app() -> FastAPI:
     app.include_router(drive.product_router)
     app.include_router(catalog.router)
     app.include_router(cover.router)
+    app.include_router(ads.router)
 
     @app.exception_handler(ContentRejected)
     async def content_rejected(_: Request, exc: ContentRejected) -> JSONResponse:

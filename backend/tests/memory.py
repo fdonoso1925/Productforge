@@ -127,10 +127,11 @@ class MemoryFiles:
 class MemoryJobs:
     rows: dict[str, dict] = field(default_factory=dict)
 
-    async def enqueue(self, *, product_id, user_id, kind, payload) -> dict:
+    async def enqueue(self, *, user_id, kind, payload, product_id=None, batch_id=None) -> dict:
         row = {
             "id": str(uuid4()),
-            "product_id": str(product_id),
+            "product_id": str(product_id) if product_id else None,
+            "batch_id": str(batch_id) if batch_id else None,
             "user_id": str(user_id),
             "kind": kind,
             "payload": payload,
@@ -158,6 +159,94 @@ class MemoryJobs:
             and r["status"] in ("queued", "running")
             and (kind is None or r["kind"] == kind)
         ]
+
+    async def active_for_batch(self, batch_id, kind: str | None = None) -> list[dict]:
+        return [
+            r
+            for r in self.rows.values()
+            if r.get("batch_id") == str(batch_id)
+            and r["status"] in ("queued", "running")
+            and (kind is None or r["kind"] == kind)
+        ]
+
+
+@dataclass
+class MemoryAdBatches:
+    rows: dict[str, dict] = field(default_factory=dict)
+
+    async def create(self, row: dict) -> dict:
+        row = {"id": str(uuid4()), "created_at": "2026-01-01T00:00:00Z", **row}
+        self.rows[row["id"]] = row
+        return row
+
+    async def get(self, batch_id, user_id=None) -> dict:
+        row = self.rows.get(str(batch_id))
+        if not row or (user_id and row["user_id"] != str(user_id)):
+            raise NotFound(str(batch_id))
+        return row
+
+    async def update(self, batch_id, **values) -> None:
+        self.rows[str(batch_id)].update(values)
+
+    async def list_for_user(self, user_id, limit: int = 50) -> list[dict]:
+        return [r for r in self.rows.values() if r["user_id"] == str(user_id)][:limit]
+
+
+@dataclass
+class MemoryAdCreatives:
+    rows: dict[str, dict] = field(default_factory=dict)
+
+    async def insert_many(self, rows: list[dict]) -> list[dict]:
+        created = []
+        for row in rows:
+            row = {
+                "id": str(uuid4()),
+                "status": "planned",
+                "storage_path": None,
+                "created_at": "2026-01-01T00:00:00Z",
+                **row,
+            }
+            self.rows[row["id"]] = row
+            created.append(row)
+        return created
+
+    async def list_for_batch(self, batch_id) -> list[dict]:
+        return [r for r in self.rows.values() if r["batch_id"] == str(batch_id)]
+
+    async def get(self, creative_id, user_id) -> dict:
+        row = self.rows.get(str(creative_id))
+        if not row or row["user_id"] != str(user_id):
+            raise NotFound(str(creative_id))
+        return row
+
+    async def update(self, creative_id, **values) -> None:
+        self.rows[str(creative_id)].update(values)
+
+    async def delete_for_batch(self, batch_id) -> None:
+        self.rows = {k: v for k, v in self.rows.items() if v["batch_id"] != str(batch_id)}
+
+
+@dataclass
+class MemoryAdProofs:
+    rows: dict[str, dict] = field(default_factory=dict)
+
+    async def list(self, user_id, product_id=None) -> list[dict]:
+        return [
+            r
+            for r in self.rows.values()
+            if r["user_id"] == str(user_id)
+            and (r["product_id"] is None or r["product_id"] == str(product_id))
+        ]
+
+    async def add(self, row: dict) -> dict:
+        row = {"id": str(uuid4()), **row}
+        self.rows[row["id"]] = row
+        return row
+
+    async def delete(self, proof_id, user_id) -> None:
+        row = self.rows.get(str(proof_id))
+        if row and row["user_id"] == str(user_id):
+            del self.rows[str(proof_id)]
 
 
 @dataclass

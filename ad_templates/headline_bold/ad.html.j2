@@ -1,0 +1,14 @@
+<style>
+.bar { position: absolute; left: 0; top: 0; bottom: 0; width: 18px; background: {{ c.accent }}; }
+.blob { position: absolute; right: -170px; bottom: -170px; width: 560px; height: 560px; border-radius: 280px; background: {{ c.accent }}; opacity: 0.16; }
+.h { font-size: {{ fs.headline }}px; }
+.cta { align-self: flex-start; margin-top: 52px; }
+</style>
+<div class="bar"></div>
+<div class="blob"></div>
+<div class="safe">
+  {% if copy.kicker %}<div class="kicker">{{ copy.kicker }}</div>{% endif %}
+  <div class="h">{{ copy.headline }}</div>
+  {% if copy.subheadline %}<div class="sub">{{ copy.subheadline }}</div>{% endif %}
+  {% if copy.cta_text %}<div class="cta">{{ copy.cta_text }}</div>{% endif %}
+</div>

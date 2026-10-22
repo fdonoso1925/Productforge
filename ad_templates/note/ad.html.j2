@@ -1,0 +1,21 @@
+<style>
+.stage { position: absolute; top: {{ pad.top }}px; bottom: {{ pad.bottom }}px; left: {{ pad.side }}px; right: {{ pad.side }}px; display: flex; align-items: center; justify-content: center; }
+.sheet { position: relative; width: 100%; }
+.shadow { position: absolute; left: 22px; top: 26px; right: -22px; bottom: -26px; background: #000000; opacity: 0.28; transform: rotate(-2deg); }
+.paper { position: relative; background: #FFF2A6; padding: 78px 70px 84px 70px; transform: rotate(-2deg); color: #1F2937; }
+.tape { position: absolute; left: 50%; top: -34px; width: 190px; height: 60px; margin-left: -95px; background: #FFFFFF; opacity: 0.55; transform: rotate(3deg); }
+.txt { font-family: 'Caveat'; font-weight: 700; font-size: {{ fs.note }}px; line-height: 1.1; }
+.sign { margin-top: 38px; font-family: 'Caveat'; font-weight: 700; font-size: {{ fs.sign }}px; color: #374151; }
+.kick { position: absolute; left: {{ pad.side }}px; right: {{ pad.side }}px; font-size: {{ fs.kicker }}px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: {{ c.accent_text }}; }
+</style>
+{% if copy.kicker %}<div class="kick" style="top: {{ pad.top }}px;">{{ copy.kicker }}</div>{% endif %}
+<div class="stage">
+  <div class="sheet">
+    <div class="shadow"></div>
+    <div class="paper">
+      <div class="tape"></div>
+      <div class="txt">{{ copy.note or copy.headline }}</div>
+      {% if copy.subheadline %}<div class="sign">{{ copy.subheadline }}</div>{% endif %}
+    </div>
+  </div>
+</div>

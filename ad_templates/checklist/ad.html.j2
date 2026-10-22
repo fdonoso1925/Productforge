@@ -1,0 +1,21 @@
+<style>
+.top { position: absolute; left: 0; right: 0; top: 0; height: 16px; background: {{ c.accent }}; }
+.h { font-size: {{ fs.headline }}px; }
+ul.l { list-style: none; margin: 40px 0 0 0; padding: 0; }
+ul.l li { display: flex; align-items: center; margin-top: 26px; font-size: {{ fs.item }}px; line-height: 1.18; font-weight: 700; }
+.mk { flex: none; width: 72px; height: 72px; border-radius: 36px; margin-right: 28px; position: relative; background: {{ mk_color }}; }
+.mk.check i { position: absolute; left: 26px; top: 10px; width: 14px; height: 32px; border: solid #FFFFFF; border-width: 0 8px 8px 0; transform: rotate(45deg); }
+.mk.cross i, .mk.cross b { position: absolute; left: 33px; top: 14px; width: 8px; height: 44px; background: #FFFFFF; border-radius: 4px; }
+.mk.cross i { transform: rotate(45deg); }
+.mk.cross b { transform: rotate(-45deg); }
+.cta { align-self: flex-start; margin-top: 50px; }
+</style>
+<div class="top"></div>
+<div class="safe">
+  {% if copy.kicker %}<div class="kicker">{{ copy.kicker }}</div>{% endif %}
+  <div class="h">{{ copy.headline }}</div>
+  <ul class="l">
+    {% for item in copy.bullets %}<li><span class="mk {{ copy.mark }}"><i></i>{% if copy.mark == 'cross' %}<b></b>{% endif %}</span><span>{{ item }}</span></li>{% endfor %}
+  </ul>
+  {% if copy.cta_text %}<div class="cta">{{ copy.cta_text }}</div>{% endif %}
+</div>
