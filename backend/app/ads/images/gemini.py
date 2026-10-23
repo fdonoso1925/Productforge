@@ -14,6 +14,9 @@ from app.ads.images.base import (
 )
 
 BASE = "https://generativelanguage.googleapis.com/v1beta/models"
+MAX_INLINE_B64 = (
+    40 * 1024 * 1024
+)  # una imagen de anuncio pesa unos MB: más es una respuesta anómala
 
 
 class GeminiImageProvider:
@@ -68,6 +71,8 @@ class GeminiImageProvider:
             for part in candidate.get("content", {}).get("parts", []):
                 inline = part.get("inlineData") or part.get("inline_data")
                 if inline and inline.get("data"):
+                    if len(inline["data"]) > MAX_INLINE_B64:
+                        raise ProviderRejected("Gemini devolvió una imagen demasiado grande")
                     return ProviderImage(
                         data=base64.b64decode(inline["data"]),
                         mime=inline.get("mimeType") or inline.get("mime_type") or "image/png",

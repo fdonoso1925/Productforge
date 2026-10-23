@@ -42,6 +42,13 @@ El documento pide Playwright (Chromium). Prueba hecha con tu stack: **1080×1350
 - El degradado con transparencia deja una banda visible en pdfium → se compone el velo como PNG o con tramos escalonados.
 - Sin `backdrop-filter` ni `mix-blend-mode`: las 12 plantillas se diseñan sin ellos.
 
+> **Estado (fases 1 a 7 completas).** Fases 2 y 3 (estrategia + composición), 4 (proveedores de imagen y
+> 12 plantillas), 5 (asistente, galería, ZIP/CSV y Drive), 6 (resultados, aprendizaje, iteraciones y
+> duplicado a otro idioma) y 7 (endurecimiento) están implementadas y probadas. Decisiones tomadas:
+> WeasyPrint en vez de Playwright, Google Drive en vez de OneDrive, Pixabay por defecto y Gemini
+> apagado salvo que se fije un tope diario en USD (`GEMINI_DAILY_USD_CAP`). Specs de Meta verificados
+> en la Ads Guide oficial. Pendiente a futuro (no implementado, solo preparado): Meta Marketing API.
+
 ## 4. Plan por fases
 
 | Fase | Entrega | Gasto de imágenes |

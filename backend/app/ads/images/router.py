@@ -91,6 +91,31 @@ class ImageRouter:
     def active(self) -> list[str]:
         return [p.name for p in self.providers if p.enabled()]
 
+    async def status(self) -> list[dict]:
+        """Estado de cada proveedor hoy, para mostrarlo en la UI: sin claves, solo cifras de uso.
+
+        Pixabay es gratis (sin gasto); un proveedor de pago muestra lo gastado y su tope."""
+        day = self.today()
+        out = []
+        for provider in self.providers:
+            row = await self._usage.get(provider.name, day) or {}
+            paid = provider.unit_cost() > 0 or provider.kind == "generate"
+            out.append(
+                {
+                    "name": provider.name,
+                    "kind": provider.kind,
+                    "enabled": provider.enabled(),
+                    "free": not paid,
+                    "requests_today": int(row.get("requests") or 0),
+                    "spent_today_usd": round(float(row.get("cost_usd") or 0), 4),
+                    "daily_cap_usd": float(getattr(provider, "daily_cap", 0) or 0)
+                    if paid
+                    else None,
+                    "exhausted": bool(row.get("exhausted")),
+                }
+            )
+        return out
+
     async def _within_budget(self, provider: ImageProvider, day: date) -> bool:
         cost = provider.unit_cost()
         if cost <= 0:

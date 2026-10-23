@@ -53,6 +53,19 @@ Dos servicios del mismo repo y la misma imagen (`backend/Dockerfile`, contexto =
    | `GOOGLE_REDIRECT_URI` | `https://<api>.up.railway.app/storage/drive/callback` |
    | `TOKEN_ENCRYPTION_KEY` | la misma clave Fernet que usas en local (si la cambias, hay que reconectar Drive) |
 
+   **Creativos para Meta Ads** (opcional; sin estas variables el módulo igual funciona con plantillas
+   de solo texto):
+
+   | Variable | Valor |
+   |---|---|
+   | `PIXABAY_API_KEY` | clave gratis de https://pixabay.com/api/docs/ (fotos de stock) |
+   | `IMAGE_PROVIDERS` | `pixabay` (por defecto). `gemini,pixabay` solo si quieres imágenes generadas |
+   | `GEMINI_API_KEY` | solo si usas Gemini (**cobra**: no hay cuota gratis para imágenes) |
+   | `GEMINI_DAILY_USD_CAP` | tope diario en USD. **`0` = Gemini apagado aunque haya clave** (por defecto) |
+
+   Las claves viven solo en el backend. `GEMINI_IMAGE_MODEL` y `GEMINI_IMAGE_PRICE_USD` tienen
+   valores por defecto (ver `.env.example`).
+
    Opcionales: `CLAUDE_MODEL_OUTLINE`, `CLAUDE_MODEL_CONTENT`, `CLAUDE_EFFORT`,
    `RATE_LIMIT_PER_MINUTE`, `RATE_LIMIT_PER_HOUR`. Si tu proyecto Supabase usa el secreto JWT legacy
    (HS256), agrega `SUPABASE_JWT_SECRET`; con claves asimétricas (lo normal hoy) se deja vacío.
@@ -101,6 +114,8 @@ compartido), hace falta un dominio propio apuntando a Netlify; sin eso, la recon
 - `https://<api>.up.railway.app/health` → `{"status":"ok"}`; `/docs` → 404 (apagado en producción).
 - Login en Netlify, crear un paquete corto, ver el progreso y descargar el ZIP.
 - Subida a Drive: el paquete muestra «Drive: N de N archivos».
+- Anuncios: en `/ads` aparece la línea «Fotos: Pixabay (gratis) · Gemini apagado (sin gasto)»; crea un
+  lote corto, compón las imágenes y descarga el ZIP + CSV.
 - Logs de Railway: sin tokens ni claves; el callback de Google no muestra `code` ni `state`.
 
 ## Qué hacer si algo falla
@@ -113,4 +128,7 @@ compartido), hace falta un dominio propio apuntando a Netlify; sin eso, la recon
 | Los paquetes quedan «en cola» | no hay servicio `worker` (o `WORKER_INLINE=false` sin worker) |
 | Drive: `redirect_uri_mismatch` | la URI de Railway no está en el cliente OAuth, o `GOOGLE_REDIRECT_URI` difiere en una letra |
 | Drive pide reconectar cada semana | la app de Google sigue en modo *Prueba* (sección 4) |
-| 429 al generar | el freno por usuario (30/min, 300/h por defecto); sube `RATE_LIMIT_*` si lo necesitas |
+| 429 al generar | el freno por usuario (30/min, 300/h por defecto); sube `RATE_LIMIT_*` si lo necesitas. Componer, exportar, importar y Drive tienen su propio cupo, aparte del de IA |
+| `api` no arranca y dice `AD_TEMPLATES_DIR no existe` | la imagen no trae `ad_templates/` (revisa que el `Dockerfile` la copie y que el build use la raíz como contexto) |
+| `IMAGE_PROVIDERS tiene proveedores desconocidos` | solo existen `pixabay` y `gemini` |
+| Los anuncios salen sin fotos | falta `PIXABAY_API_KEY` (o Pixabay sin resultados): el creativo pasa solo a la plantilla de texto, no es un error |

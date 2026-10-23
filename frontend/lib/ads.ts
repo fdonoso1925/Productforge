@@ -359,6 +359,17 @@ export type Insights = {
   winner_angles: string[];
 };
 
+export type ImageProviderStatus = {
+  name: string;
+  kind: "search" | "generate";
+  enabled: boolean;
+  free: boolean;
+  requests_today: number;
+  spent_today_usd: number;
+  daily_cap_usd: number | null;
+  exhausted: boolean;
+};
+
 export type ImportReport = {
   rows: number;
   matched: number;

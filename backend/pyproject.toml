@@ -43,6 +43,7 @@ ignore = ["S101"] # assert
 [tool.ruff.lint.per-file-ignores]
 "app/ads/rules.py" = ["E501"] # tablas de expresiones regulares por mercado: una línea por patrón
 "tests/test_ads_results.py" = ["E501"] # CSV y cabeceras de Ads Manager en una línea
+"tests/test_rls_integration.py" = ["E501"] # filas de ejemplo de cada tabla en una línea
 "tests/**" = ["S105", "S106", "S314", "S318", "S603", "S607"] # secretos de prueba, XML propio, soffice
 
 [tool.pytest.ini_options]

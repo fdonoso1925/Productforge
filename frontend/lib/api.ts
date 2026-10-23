@@ -10,6 +10,7 @@ import type {
   Avatar,
   CreativeRow,
   ImageCopy,
+  ImageProviderStatus,
   ImportReport,
   Insights,
   Proof,
@@ -230,6 +231,8 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ market }),
     }),
+  adsImagesStatus: () =>
+    call<{ providers: ImageProviderStatus[]; photo_templates: boolean }>("/ads/images/status"),
   adsTemplates: () =>
     call<{ templates: { id: string; uses_image: boolean }[]; ratios: { id: Ratio }[] }>("/ads/templates"),
   adsProofs: (productId?: string) =>

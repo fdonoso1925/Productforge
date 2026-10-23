@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -157,6 +158,50 @@ class TestProductionConfig:
 
     def test_development_never_blocks(self) -> None:
         ensure_production_ready(Settings(_env_file=None))
+
+    @pytest.mark.parametrize(
+        ("override", "fragment"),
+        [
+            ({"image_providers": "pixabay,dall-e"}, "desconocidos"),
+            ({"gemini_daily_usd_cap": -1}, "negativos"),
+            ({"gemini_image_price_usd": -0.5}, "negativos"),
+            ({"image_providers": "gemini", "gemini_daily_usd_cap": 2}, "GEMINI_API_KEY"),
+        ],
+    )
+    def test_image_provider_misconfiguration_blocks_production(
+        self, override: dict, fragment: str
+    ) -> None:
+        assert any(fragment in p for p in production_problems(prod_settings(**override)))
+
+    def test_valid_image_configurations_pass(self) -> None:
+        assert production_problems(prod_settings(image_providers="pixabay")) == []
+        assert production_problems(prod_settings(image_providers="gemini,pixabay")) == []  # tope 0
+        paid = prod_settings(
+            image_providers="gemini,pixabay", gemini_daily_usd_cap=1, gemini_api_key="k"
+        )
+        assert production_problems(paid) == []
+
+    def test_missing_content_folders_block_production(self, tmp_path) -> None:
+        """La imagen Docker se arma con carpetas copiadas: si falta una, mejor no arrancar."""
+        problems = production_problems(
+            prod_settings(prompts_dir=tmp_path, templates_dir=tmp_path, ad_templates_dir=tmp_path)
+        )
+        for name in ("PROMPTS_DIR", "TEMPLATES_DIR", "AD_TEMPLATES_DIR"):
+            assert any(name in p for p in problems)
+
+    def test_the_docker_image_ships_every_content_folder_and_points_the_settings_at_them(
+        self,
+    ) -> None:
+        dockerfile = (Path(__file__).resolve().parents[2] / "backend" / "Dockerfile").read_text(
+            encoding="utf-8"
+        )
+        for folder, variable in (
+            ("prompts", "PROMPTS_DIR"),
+            ("templates", "TEMPLATES_DIR"),
+            ("ad_templates", "AD_TEMPLATES_DIR"),
+        ):
+            assert f"COPY {folder} ./{folder}" in dockerfile, folder
+            assert f"{variable}=/app/{folder}" in dockerfile, variable
 
     @pytest.mark.parametrize(
         ("override", "fragment"),

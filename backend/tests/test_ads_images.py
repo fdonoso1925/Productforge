@@ -625,9 +625,17 @@ def test_image_status_lists_providers_without_secrets() -> None:
     router, *_ = make_router(Fake("pixabay", on=True), Fake("gemini", "generate", on=False))
     w = AdsWorld(images=router)
     data = w.client.get("/ads/images/status").json()
-    assert data["providers"] == [
-        {"name": "pixabay", "kind": "search", "enabled": True},
-        {"name": "gemini", "kind": "generate", "enabled": False},
-    ]
+    by_name = {p["name"]: p for p in data["providers"]}
+    assert by_name["pixabay"] == {
+        "name": "pixabay",
+        "kind": "search",
+        "enabled": True,
+        "free": True,
+        "requests_today": 0,
+        "spent_today_usd": 0,
+        "daily_cap_usd": None,
+        "exhausted": False,
+    }
+    assert by_name["gemini"]["enabled"] is False and by_name["gemini"]["free"] is False
     assert data["photo_templates"] is True
     assert "key" not in str(data).lower()

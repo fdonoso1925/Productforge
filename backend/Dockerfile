@@ -1,4 +1,4 @@
-# Contexto de build: la RAÍZ del repo (necesita backend/, prompts/ y templates/).
+# Contexto de build: la RAÍZ del repo (necesita backend/, prompts/, templates/ y ad_templates/).
 #   docker build -f backend/Dockerfile .
 FROM python:3.12-slim
 
@@ -11,7 +11,7 @@ COPY --from=ghcr.io/astral-sh/uv:0.10.11 /uv /usr/local/bin/uv
 
 WORKDIR /app
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy PYTHONUNBUFFERED=1 \
-    PROMPTS_DIR=/app/prompts TEMPLATES_DIR=/app/templates
+    PROMPTS_DIR=/app/prompts TEMPLATES_DIR=/app/templates AD_TEMPLATES_DIR=/app/ad_templates
 
 COPY backend/pyproject.toml backend/uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
@@ -19,6 +19,7 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY backend/app ./app
 COPY prompts ./prompts
 COPY templates ./templates
+COPY ad_templates ./ad_templates
 
 RUN useradd --create-home appuser
 USER appuser

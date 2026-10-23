@@ -7,6 +7,7 @@ guarda quién la hizo y su licencia. En temas sensibles no se usan fotos con per
 
 import time
 from typing import ClassVar
+from urllib.parse import urlparse
 
 import httpx
 
@@ -28,6 +29,24 @@ PEOPLE_TAGS = {
     "kid", "baby", "face", "portrait", "couple", "family", "mother", "father", "mom", "dad",
     "student", "doctor", "patient", "model", "selfie", "crowd", "team", "hand", "hands",
 }  # fmt: skip
+TRUSTED_HOST = "pixabay.com"
+
+
+def trusted_image_url(url: object) -> bool:
+    """Solo se descarga de pixabay.com por https: la URL viene en la respuesta de la API y no se
+    debe poder usar para que el servidor llame a otro lado (SSRF)."""
+    if not isinstance(url, str):
+        return False
+    parsed = urlparse(url)
+    host = (parsed.hostname or "").lower()
+    return (
+        parsed.scheme == "https"
+        and parsed.port in (None, 443)
+        and not parsed.username
+        and (host == TRUSTED_HOST or host.endswith("." + TRUSTED_HOST))
+    )
+
+
 ORIENTATION = {"4:5": "vertical", "9:16": "vertical", "1:1": "all"}
 
 
@@ -91,7 +110,7 @@ class PixabayProvider:
         if not request.keywords:
             raise ProviderRejected("sin palabras clave")
         hits = await self._search(request)
-        usable = [h for h in hits if h.get("largeImageURL")]
+        usable = [h for h in hits if trusted_image_url(h.get("largeImageURL"))]
         if request.sensitive:
             usable = [h for h in usable if not self.has_people(h)]
         if not usable:

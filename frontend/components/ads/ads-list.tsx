@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { ImagesStatus } from "./images-status";
 import { ErrorBox, Loading } from "@/components/wizard/step-nav";
 import { Link } from "@/i18n/navigation";
 import type { BatchRow } from "@/lib/ads";
@@ -74,6 +75,7 @@ export function AdsList() {
           </Link>
         </div>
       </header>
+      <ImagesStatus />
       <div className="grid gap-3 sm:grid-cols-3">
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("list.search")} aria-label={t("list.search")} />
         <select

@@ -25,7 +25,7 @@ from app.auth import CurrentUser, get_current_user
 from app.content.schemas import Market
 from app.db.supabase import NotFound
 from app.deps import ServicesDep
-from app.security import ai_rate_limit
+from app.security import ai_rate_limit, work_rate_limit
 
 router = APIRouter(prefix="/ads")
 User = Annotated[CurrentUser, Depends(get_current_user)]
@@ -69,7 +69,7 @@ def result_row(user_id: UUID, creative_id: str, body: ResultIn, source: str) -> 
     }
 
 
-@router.put("/creatives/{creative_id}/results")
+@router.put("/creatives/{creative_id}/results", dependencies=[Depends(work_rate_limit)])
 async def save_result(creative_id: UUID, body: ResultIn, user: User, services: ServicesDep) -> dict:
     """Carga a mano las métricas de un día de un creativo (reemplaza lo de ese día)."""
     creative = await owned_creative(services, creative_id, user)
@@ -103,7 +103,7 @@ async def read_limited(request: Request, limit: int) -> bytes:
     return b"".join(chunks)
 
 
-@router.post("/results/import")
+@router.post("/results/import", dependencies=[Depends(work_rate_limit)])
 async def import_results(request: Request, user: User, services: ServicesDep) -> dict[str, Any]:
     """Importa el CSV de Ads Manager (el body ES el archivo) y lo empareja por nombre de archivo."""
     data = await read_limited(request, results_import.MAX_BYTES)
@@ -213,7 +213,11 @@ class VariantIn(BaseModel):
         return self
 
 
-@router.post("/creatives/{creative_id}/variant", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/creatives/{creative_id}/variant",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(work_rate_limit)],
+)
 async def variant(creative_id: UUID, body: VariantIn, user: User, services: ServicesDep) -> dict:
     """Mismo texto en otra plantilla, formato o foto. NO usa IA ni toca el original."""
     source = await owned_creative(services, creative_id, user)

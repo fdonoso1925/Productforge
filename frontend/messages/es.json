@@ -683,6 +683,13 @@
         "ctr": "Ordenado por CTR (aún no hay compras que comparar)",
         "none": "Aún sin datos suficientes para ordenar"
       }
+    },
+    "images": {
+      "title": "Fotos",
+      "free": "{name} (gratis)",
+      "off": "{name} apagado (sin gasto)",
+      "paid": "{name}: hoy US$ {spent} de US$ {cap}",
+      "exhausted": "sin cuota hoy, se usa la reserva"
     }
   }
 }

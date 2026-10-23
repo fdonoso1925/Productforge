@@ -7,6 +7,7 @@ API; con una sola réplica (lo normal en Railway para esto) es exacto.
 
 import logging
 import math
+import re
 import time
 from collections import deque
 from collections.abc import Sequence
@@ -60,6 +61,27 @@ def ai_rate_limit(
         (settings.rate_limit_per_hour, 3600.0),
     ]
     wait = limiter.check(f"ai:{user.id}", limits)
+    if wait:
+        raise HTTPException(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            "demasiadas solicitudes seguidas; espera un momento",
+            headers={"Retry-After": str(wait)},
+        )
+
+
+def work_rate_limit(
+    user: Annotated[CurrentUser, Depends(get_current_user)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> None:
+    """Endpoints que gastan CPU, disco o red sin IA (componer imágenes, exportar, importar, Drive).
+
+    Bucket aparte del de IA: un loop en el navegador no puede tumbar el servidor ni agotar la
+    cuota de Google, y componer no consume el cupo de las llamadas a Claude."""
+    limits = [
+        (settings.rate_limit_per_minute, 60.0),
+        (settings.rate_limit_per_hour, 3600.0),
+    ]
+    wait = limiter.check(f"work:{user.id}", limits)
     if wait:
         raise HTTPException(
             status.HTTP_429_TOO_MANY_REQUESTS,
@@ -147,6 +169,40 @@ class RedactQueryFilter(logging.Filter):
         return True
 
 
+_SECRET_PATTERNS = [
+    # Claves en una query string (Pixabay va en `?key=`), sueltas como `key=…` o en cabeceras.
+    (
+        re.compile(r"(?i)((?<![A-Za-z0-9_])(?:key|api_key|apikey|access_token|token)=)[^&\s'\"]+"),
+        r"\g<1>***",
+    ),
+    (
+        re.compile(
+            r"(?i)((?:x-goog-api-key|authorization|apikey)['\"]?\s*[:=]\s*['\"]?)[^\s'\",]+"
+        ),
+        r"\g<1>***",
+    ),
+    # Formatos propios de cada proveedor, por si llegan sueltos en un mensaje.
+    (re.compile(r"sk-ant-[A-Za-z0-9_\-]{8,}"), "sk-ant-***"),
+    (re.compile(r"AIza[A-Za-z0-9_\-]{20,}"), "AIza***"),
+    (re.compile(r"\bAQ\.[A-Za-z0-9_\-]{20,}"), "AQ.***"),
+    (re.compile(r"eyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{5,}"), "eyJ***"),
+]
+
+
+def redact_secrets(text: str) -> str:
+    for pattern, replacement in _SECRET_PATTERNS:
+        text = pattern.sub(replacement, text)
+    return text
+
+
+class RedactingFormatter(logging.Formatter):
+    """Formateador que tapa claves y tokens aunque un proveedor los deje en un mensaje o en un
+    traceback (p. ej. la URL de una petición a Pixabay lleva `?key=`)."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        return redact_secrets(super().format(record))
+
+
 def configure_logging() -> None:
     access = logging.getLogger("uvicorn.access")
     if not any(isinstance(f, RedactQueryFilter) for f in access.filters):
@@ -158,7 +214,7 @@ def configure_logging() -> None:
     app_log = logging.getLogger("productforge")
     if not app_log.handlers:
         handler = logging.StreamHandler()
-        handler.setFormatter(logging.Formatter("%(levelname)s:     %(name)s - %(message)s"))
+        handler.setFormatter(RedactingFormatter("%(levelname)s:     %(name)s - %(message)s"))
         app_log.addHandler(handler)
         app_log.setLevel(logging.INFO)
         app_log.propagate = False
@@ -166,6 +222,41 @@ def configure_logging() -> None:
 
 def _is_local(url: str) -> bool:
     return "localhost" in url or "127.0.0.1" in url or "[::1]" in url
+
+
+def content_dir_problems(settings: Settings) -> list[str]:
+    """Las carpetas de prompts y plantillas viajan en la imagen: si falta alguna, el servicio
+    arrancaría y fallaría recién al primer uso (p. ej. `ad_templates/` sin copiar al Dockerfile)."""
+    expected = (
+        ("PROMPTS_DIR", settings.prompts_dir, "es-LATAM"),
+        ("TEMPLATES_DIR", settings.templates_dir, "_fonts"),
+        ("AD_TEMPLATES_DIR", settings.ad_templates_dir, "specs.json"),
+    )
+    return [
+        f"{name} no existe o está incompleta ({path})"
+        for name, path, marker in expected
+        if not (path / marker).exists()
+    ]
+
+
+KNOWN_IMAGE_PROVIDERS = {"pixabay", "gemini"}
+
+
+def image_provider_problems(settings: Settings) -> list[str]:
+    """Proveedores de imagen mal configurados (Gemini cobra: nada de gastar por accidente)."""
+    problems = []
+    unknown = [p for p in settings.image_providers if p not in KNOWN_IMAGE_PROVIDERS]
+    if unknown:
+        problems.append(f"IMAGE_PROVIDERS tiene proveedores desconocidos: {', '.join(unknown)}")
+    if settings.gemini_daily_usd_cap < 0 or settings.gemini_image_price_usd < 0:
+        problems.append("GEMINI_DAILY_USD_CAP y GEMINI_IMAGE_PRICE_USD no pueden ser negativos")
+    if (
+        "gemini" in settings.image_providers
+        and settings.gemini_daily_usd_cap > 0
+        and not settings.gemini_api_key
+    ):
+        problems.append("falta GEMINI_API_KEY (hay un tope diario de Gemini configurado)")
+    return problems
 
 
 def production_problems(settings: Settings) -> list[str]:
@@ -195,6 +286,7 @@ def production_problems(settings: Settings) -> list[str]:
             Fernet(settings.token_encryption_key.encode())
         except ValueError:
             problems.append("TOKEN_ENCRYPTION_KEY no es una clave Fernet válida")
+    problems += content_dir_problems(settings) + image_provider_problems(settings)
     return problems
 
 

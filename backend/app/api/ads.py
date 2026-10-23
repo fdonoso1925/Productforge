@@ -28,7 +28,7 @@ from app.auth import CurrentUser, get_current_user
 from app.content.schemas import Market, Problem
 from app.db.supabase import NotFound
 from app.deps import ServicesDep
-from app.security import ai_rate_limit
+from app.security import ai_rate_limit, work_rate_limit
 from app.templates_engine.model import list_templates
 
 router = APIRouter(prefix="/ads")
@@ -320,7 +320,11 @@ async def get_batch(batch_id: UUID, user: User, services: ServicesDep) -> dict:
     }
 
 
-@router.post("/batches/{batch_id}/render", status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/batches/{batch_id}/render",
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(work_rate_limit)],
+)
 async def render_batch(batch_id: UUID, body: RenderIn, user: User, services: ServicesDep) -> JobOut:
     """Compone las imágenes pendientes (todas o las indicadas). No usa IA."""
     batch = await owned_batch(services, batch_id, user)
@@ -342,7 +346,7 @@ async def batch_and_context(services, creative: dict, user: CurrentUser):
     return batch, ad_jobs.batch_brief(batch), await user_proofs(services, user, product_id)
 
 
-@router.put("/creatives/{creative_id}")
+@router.put("/creatives/{creative_id}", dependencies=[Depends(work_rate_limit)])
 async def edit_creative(creative_id: UUID, body: EditIn, user: User, services: ServicesDep) -> dict:
     """Edita el texto de un creativo (y de sus otros formatos) y recompone lo ya renderizado.
 
@@ -399,7 +403,7 @@ async def edit_creative(creative_id: UUID, body: EditIn, user: User, services: S
     return await services.ad_creatives.get(creative_id, user.id)
 
 
-@router.post("/creatives/{creative_id}/render")
+@router.post("/creatives/{creative_id}/render", dependencies=[Depends(work_rate_limit)])
 async def render_one(creative_id: UUID, user: User, services: ServicesDep) -> dict:
     creative = await owned_creative(services, creative_id, user)
     if creative["status"] == "discarded":
@@ -447,7 +451,9 @@ async def list_proofs(
     return await services.ad_proofs.list(user.id, product_id)
 
 
-@router.post("/proofs", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/proofs", status_code=status.HTTP_201_CREATED, dependencies=[Depends(work_rate_limit)]
+)
 async def add_proof(body: ProofIn, user: User, services: ServicesDep) -> dict:
     """Un testimonio o dato REAL. Es lo único que los anuncios pueden citar como prueba social."""
     if body.product_id:
@@ -472,13 +478,10 @@ __all__ = ["Market", "router"]
 
 
 @router.get("/images/status")
-def image_status(services: ServicesDep) -> dict[str, Any]:
-    """Qué proveedores de imagen están activos hoy (sin claves ni costos internos)."""
+async def image_status(services: ServicesDep) -> dict[str, Any]:
+    """Qué proveedores de imagen están activos hoy y cuánto se usó (sin claves)."""
     return {
-        "providers": [
-            {"name": p.name, "kind": p.kind, "enabled": p.enabled()}
-            for p in services.ad_images.providers
-        ],
+        "providers": await services.ad_images.status(),
         "photo_templates": any(t.uses_image for t in services.ad_renderer.templates.values())
         and bool(services.ad_images.active()),
     }
@@ -513,7 +516,7 @@ class ExportOut(BaseModel):
     images: int
 
 
-@router.post("/batches/{batch_id}/export")
+@router.post("/batches/{batch_id}/export", dependencies=[Depends(work_rate_limit)])
 async def export_batch(batch_id: UUID, user: User, services: ServicesDep) -> ExportOut:
     """ZIP con las imágenes por formato + CSV de copys para Ads Manager (y créditos de fotos)."""
     from app.ads import export
@@ -580,7 +583,11 @@ async def batch_drive(batch_id: UUID, user: User, services: ServicesDep) -> Driv
     )
 
 
-@router.post("/batches/{batch_id}/drive", status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/batches/{batch_id}/drive",
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(work_rate_limit)],
+)
 async def batch_to_drive(batch_id: UUID, user: User, services: ServicesDep) -> JobOut:
     """Copia el lote a Google Drive (Storage sigue siendo el respaldo)."""
     batch = await owned_batch(services, batch_id, user)
