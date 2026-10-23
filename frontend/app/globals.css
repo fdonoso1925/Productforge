@@ -126,6 +126,13 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* La lista desplegable de un <select> nativo no hereda el fondo transparente del control: sin
+     esto sale blanca con texto claro y no se lee. */
+  select option,
+  select optgroup {
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+  }
   html {
     @apply font-sans;
   }
