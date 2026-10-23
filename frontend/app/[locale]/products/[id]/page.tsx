@@ -1,8 +1,10 @@
 import { setRequestLocale } from "next-intl/server";
 import { ProductView } from "@/components/product/product-view";
 
-export default async function ProductPage({ params }: PageProps<"/[locale]/products/[id]">) {
+export default async function ProductPage({ params, searchParams }: PageProps<"/[locale]/products/[id]">) {
   const { locale, id } = await params;
+  const { ads } = await searchParams;
   setRequestLocale(locale);
-  return <ProductView productId={id} />;
+  // `?ads=1`: el usuario pidió, al crear el paquete, que le ofrezcamos los anuncios al terminar.
+  return <ProductView productId={id} offerAds={ads === "1"} />;
 }

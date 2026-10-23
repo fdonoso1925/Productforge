@@ -136,7 +136,9 @@
       "pages": "Páginas estimadas",
       "objection": "Objeção que elimina",
       "generate": "Gerar pacote",
-      "invalid": "Revise os campos marcados."
+      "invalid": "Revise os campos marcados.",
+      "adsAfter": "Ao terminar, me oferecer criar os anúncios",
+      "adsAfterHint": "Quando o pacote estiver pronto, proponho anúncios da Meta com diferentes ângulos de venda. É opcional e não gasta nada até você confirmar."
     },
     "reference": {
       "title": "Página de vendas de referência (opcional)",
@@ -269,6 +271,12 @@
       "retry": "Enviar agora",
       "retryFailed": "Tentar de novo",
       "openFolder": "Abrir pasta"
+    },
+    "ads": {
+      "title": "Anúncios para Meta Ads",
+      "titleNext": "Seu pacote está pronto: criamos os anúncios?",
+      "hint": "Gere criativos com diferentes ângulos de venda (dor, solução, transformação, objeção…), com texto, semáforo de políticas e imagens prontas para subir. Você escolhe os ângulos e quantas variações.",
+      "cta": "Criar anúncios"
     }
   },
   "history": {

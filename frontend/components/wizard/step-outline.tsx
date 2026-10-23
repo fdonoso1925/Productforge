@@ -22,6 +22,8 @@ export function StepOutline({ state, update, nav }: StepProps) {
   const router = useRouter();
   const [error, setError] = useState<{ message: string; errors: string[] } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Opcional: al terminar el paquete, ofrecer crear los anuncios con distintos ángulos.
+  const [offerAds, setOfferAds] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const requested = useRef<string | null>(null);
   const key = inputsKey(state);
@@ -100,7 +102,7 @@ export function StepOutline({ state, update, nav }: StepProps) {
         update({ built: { ...current, dirty: false } });
       }
       await api.generate(current.productId);
-      router.push(`/products/${current.productId}`);
+      router.push(`/products/${current.productId}${offerAds ? "?ads=1" : ""}`);
     } catch (e) {
       setError(toError(e));
       setSubmitting(false);
@@ -156,6 +158,19 @@ export function StepOutline({ state, update, nav }: StepProps) {
               </p>
             )}
           </div>
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border p-4 text-sm">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={offerAds}
+              onChange={(e) => setOfferAds(e.target.checked)}
+              disabled={submitting}
+            />
+            <span className="flex flex-col gap-1">
+              <span className="font-medium">{t("adsAfter")}</span>
+              <span className="text-muted-foreground">{t("adsAfterHint")}</span>
+            </span>
+          </label>
           {parsed && !parsed.success && (
             <p className="text-sm text-destructive">
               {t("invalid")} ({parsed.error.issues[0]?.path.join(" › ")})

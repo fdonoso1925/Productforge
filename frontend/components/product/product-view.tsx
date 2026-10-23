@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, FileArchive, Languages, Megaphone, Palette, RefreshCw } from "lucide-react";
+import { Download, FileArchive, Languages, Palette, RefreshCw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { ErrorBox, Loading } from "@/components/wizard/step-nav";
@@ -13,6 +13,7 @@ import { ApiError, api } from "@/lib/api";
 import { FORMAT_ICONS } from "@/lib/formats";
 import { createClient } from "@/lib/supabase/client";
 import type { FileRow, ItemRow, JobRow, ProductRow } from "@/lib/types";
+import { AdsOffer } from "./ads-offer";
 import { CommercialCard } from "./commercial-card";
 import { ConfirmButton } from "./confirm-button";
 import { DriveStatus } from "./drive-status";
@@ -24,7 +25,7 @@ const POLL_MS = 2500;
 
 type Data = { product: ProductRow; items: ItemRow[]; files: FileRow[]; job: JobRow | null };
 
-export function ProductView({ productId }: { productId: string }) {
+export function ProductView({ productId, offerAds = false }: { productId: string; offerAds?: boolean }) {
   const t = useTranslations("product");
   const ta = useTranslations("product.actions");
   const tc = useTranslations("common");
@@ -119,6 +120,7 @@ export function ProductView({ productId }: { productId: string }) {
             {zip && <DownloadButton file={zip} label={t("downloadZip")} primary />}
           </div>
           <DriveStatus productId={product.id} refreshKey={`${product.status}|${product.updated_at ?? ""}`} />
+          {product.status === "ready" && <AdsOffer productId={product.id} emphasis={offerAds} />}
 
           <div className="flex flex-wrap gap-3">
             <Button variant={panel === "remodel" ? "default" : "outline"} onClick={() => setPanel(panel === "remodel" ? null : "remodel")}>
@@ -129,13 +131,6 @@ export function ProductView({ productId }: { productId: string }) {
               <Languages aria-hidden />
               {ta("duplicate", { market: tm(otherMarket(product.market)) })}
             </Button>
-            <Link
-              href={`/ads/new?product=${product.id}`}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg border bg-background px-2.5 text-sm font-medium hover:bg-muted"
-            >
-              <Megaphone className="size-4" aria-hidden />
-              {ta("createAds")}
-            </Link>
           </div>
           {panel === "remodel" && <RemodelPanel product={product} items={items} onClose={() => setPanel(null)} />}
           {panel === "duplicate" && <DuplicatePanel product={product} onClose={() => setPanel(null)} />}
