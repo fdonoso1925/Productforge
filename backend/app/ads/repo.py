@@ -56,6 +56,9 @@ class AdCreativeRepo:
     async def delete_for_batch(self, batch_id: UUID | str) -> None:
         await self._db.delete("ad_creatives", batch_id=eq(batch_id))
 
+    async def list_for_user(self, user_id: UUID, limit: int = 5000) -> list[Row]:
+        return await self._db.select("ad_creatives", user_id=eq(user_id), limit=str(limit))
+
 
 class AdProofRepo:
     def __init__(self, db: SupabaseRest) -> None:
@@ -114,3 +117,33 @@ class ProviderUsageRepo:
             {"provider": provider, "day": str(day), "exhausted": True},
             on_conflict="provider,day",
         )
+
+
+class AdResultRepo:
+    """Resultados diarios por creativo (tabla `ad_results`). Importar de nuevo reemplaza el día."""
+
+    def __init__(self, db: SupabaseRest) -> None:
+        self._db = db
+
+    async def upsert_many(self, rows: list[Row]) -> int:
+        if not rows:
+            return 0
+        await self._db.upsert("ad_results", rows, on_conflict="creative_id,day")
+        return len(rows)
+
+    async def list_for_user(self, user_id: UUID, limit: int = 20000) -> list[Row]:
+        return await self._db.select("ad_results", user_id=eq(user_id), limit=str(limit))
+
+    async def list_for_creative(self, creative_id: UUID | str, user_id: UUID) -> list[Row]:
+        return await self._db.select(
+            "ad_results", creative_id=eq(creative_id), user_id=eq(user_id), order="day.desc"
+        )
+
+    async def get(self, result_id: UUID, user_id: UUID) -> Row:
+        rows = await self._db.select("ad_results", id=eq(result_id), user_id=eq(user_id))
+        if not rows:
+            raise NotFound(f"resultado {result_id}")
+        return rows[0]
+
+    async def delete(self, result_id: UUID, user_id: UUID) -> None:
+        await self._db.delete("ad_results", id=eq(result_id), user_id=eq(user_id))

@@ -83,6 +83,7 @@ export type CreativeRow = {
   filename: string;
   storage_path: string | null;
   image_provider: string | null;
+  parent_creative_id?: string | null;
   updated_at?: string;
 };
 
@@ -107,12 +108,13 @@ export type BatchRow = {
   ratios: Ratio[];
   status: BatchStatus;
   drive: BatchDrive;
+  parent_batch_id?: string | null;
   created_at: string;
 };
 
 export type AdJobRow = {
   id: string;
-  kind: "ad_plan" | "ad_render" | "ad_drive";
+  kind: "ad_plan" | "ad_render" | "ad_drive" | "ad_iterate";
   status: "queued" | "running" | "done" | "error" | "cancelled";
   progress: { stage?: string; done?: number; total?: number; failed?: number; angles_failed?: number };
   error: string | null;
@@ -239,6 +241,15 @@ export function lines(text: string): string[] {
     .filter(Boolean);
 }
 
+/** Texto de búsqueda sin tildes ni mayúsculas, para filtrar listas en el navegador. */
+export function normalizeSearch(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
 export const POLICY_ORDER: Record<PolicyStatus, number> = { green: 0, yellow: 1, red: 2 };
 
 /** El peor semáforo de un grupo (todos sus formatos comparten texto, así que casi siempre es uno). */
@@ -251,3 +262,109 @@ export function worstPolicy(rows: CreativeRow[]): PolicyStatus | null {
 export function isActive(job: Pick<AdJobRow, "status"> | null): boolean {
   return !!job && (job.status === "queued" || job.status === "running");
 }
+
+// ───────────────────────────── resultados y aprendizaje (fase 6) ─────────────────────────────
+
+/** Con menos impresiones que esto, el CTR y el resto son ruido (igual que app/ads/learning.py). */
+export const MIN_IMPRESSIONS = 1000;
+
+export type ResultRow = {
+  id: string;
+  creative_id: string;
+  day: string;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  purchases: number;
+  revenue: number;
+  source: "manual" | "csv";
+};
+
+export type ResultInput = {
+  day: string;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  purchases: number;
+  revenue: number;
+};
+
+export type Totals = Omit<ResultInput, "day">;
+
+export type Derived = { ctr: number | null; cpc: number | null; cpa: number | null; roas: number | null };
+
+export function sumResults(rows: Partial<Totals>[]): Totals {
+  const total: Totals = { spend: 0, impressions: 0, clicks: 0, purchases: 0, revenue: 0 };
+  for (const r of rows) {
+    total.spend += Number(r.spend ?? 0);
+    total.impressions += Number(r.impressions ?? 0);
+    total.clicks += Number(r.clicks ?? 0);
+    total.purchases += Number(r.purchases ?? 0);
+    total.revenue += Number(r.revenue ?? 0);
+  }
+  return total;
+}
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+/** CTR, CPC, CPA y ROAS salen de los TOTALES (nunca de promedios de promedios). */
+export function derive(t: Totals): Derived {
+  return {
+    ctr: t.impressions ? round2((100 * t.clicks) / t.impressions) : null,
+    cpc: t.clicks ? round2(t.spend / t.clicks) : null,
+    cpa: t.purchases ? round2(t.spend / t.purchases) : null,
+    roas: t.spend && t.revenue ? round2(t.revenue / t.spend) : null,
+  };
+}
+
+export type ResultIssue = "future" | "clicksOverImpressions" | "purchasesWithoutClicks" | "negative" | "empty";
+
+/** Mismas reglas que `ResultIn` del backend, para avisar antes de enviar. */
+export function validateResult(input: ResultInput, today: string = new Date().toISOString().slice(0, 10)): ResultIssue[] {
+  const out: ResultIssue[] = [];
+  const nums = [input.spend, input.impressions, input.clicks, input.purchases, input.revenue];
+  if (nums.some((n) => !Number.isFinite(n) || n < 0)) out.push("negative");
+  if (!input.day) out.push("empty");
+  else if (input.day > today) out.push("future");
+  if (input.clicks > input.impressions) out.push("clicksOverImpressions");
+  if (input.purchases > 0 && input.clicks === 0) out.push("purchasesWithoutClicks");
+  return out;
+}
+
+export type InsightItem = Totals &
+  Derived & {
+    key: string;
+    rank: number;
+    winner: boolean;
+    enough_data: boolean;
+    // Solo en los hooks:
+    creative_id?: string;
+    headline?: string;
+    ad_headline?: string;
+    angle?: string;
+    template_id?: string;
+    filename?: string;
+  };
+
+export type InsightMetric = "roas" | "cpa" | "ctr" | "none";
+export type InsightBlock = { metric: InsightMetric; items: InsightItem[] };
+
+export type Insights = {
+  totals: Totals & Derived;
+  creatives_with_results: number;
+  min_impressions: number;
+  angles: InsightBlock;
+  templates: InsightBlock;
+  hooks: InsightBlock;
+  winner_angles: string[];
+};
+
+export type ImportReport = {
+  rows: number;
+  matched: number;
+  imported: number;
+  unmatched: string[];
+  ambiguous: string[];
+  invalid: number;
+  columns: string[];
+};

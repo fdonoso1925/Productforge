@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, model_validator
 
 from app.ads import jobs as ad_jobs
+from app.ads.insights import winner_angles
 from app.ads.schemas import (
     AdBrief,
     AdCopy,
@@ -90,6 +91,7 @@ class AngleInfo(BaseModel):
 class AnglesOut(BaseModel):
     available: list[AngleInfo]
     suggestions: list[dict[str, Any]]
+    winners: list[str] = []  # ángulos que ya rindieron bien con tus resultados
 
 
 class JobOut(BaseModel):
@@ -215,8 +217,25 @@ async def angles(body: AnglesIn, user: User, services: ServicesDep) -> AnglesOut
     brief_, product = await resolve_brief(services, user, body)
     proofs = await user_proofs(services, user, UUID(product["id"]) if product else None)
     available = services.ad_strategy.available(brief_, proofs)
+    winners = [
+        w
+        for w in await winner_angles(
+            batches=services.ad_batches,
+            creatives=services.ad_creatives,
+            results=services.ad_results,
+            user_id=user.id,
+            market=brief_.market,
+            niche=brief_.niche,
+        )
+        if w in available
+    ]
     suggestions = await services.ad_strategy.angles(
-        user_id=user.id, brief=brief_, avatars=body.avatars, proofs=proofs, count=body.count
+        user_id=user.id,
+        brief=brief_,
+        avatars=body.avatars,
+        proofs=proofs,
+        winners=winners,
+        count=body.count,
     )
     return AnglesOut(
         available=[
@@ -229,6 +248,7 @@ async def angles(body: AnglesIn, user: User, services: ServicesDep) -> AnglesOut
             for k, v in available.items()
         ],
         suggestions=[s.model_dump() for s in suggestions],
+        winners=winners,
     )
 
 

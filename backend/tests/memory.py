@@ -225,6 +225,9 @@ class MemoryAdCreatives:
     async def delete_for_batch(self, batch_id) -> None:
         self.rows = {k: v for k, v in self.rows.items() if v["batch_id"] != str(batch_id)}
 
+    async def list_for_user(self, user_id, limit: int = 5000) -> list[dict]:
+        return [r for r in self.rows.values() if r["user_id"] == str(user_id)][:limit]
+
 
 @dataclass
 class MemoryAdProofs:
@@ -324,3 +327,33 @@ class MemoryProviderUsage:
             (provider, str(day)), {"requests": 0, "cost_usd": 0.0, "exhausted": False}
         )
         row["exhausted"] = True
+
+
+@dataclass
+class MemoryAdResults:
+    rows: dict[tuple[str, str], dict] = field(default_factory=dict)
+
+    async def upsert_many(self, rows: list[dict]) -> int:
+        for row in rows:
+            key = (row["creative_id"], str(row["day"]))
+            self.rows[key] = {"id": str(uuid4()), **self.rows.get(key, {}), **row}
+        return len(rows)
+
+    async def list_for_user(self, user_id, limit: int = 20000) -> list[dict]:
+        return [r for r in self.rows.values() if r["user_id"] == str(user_id)][:limit]
+
+    async def list_for_creative(self, creative_id, user_id) -> list[dict]:
+        return [
+            r
+            for r in self.rows.values()
+            if r["creative_id"] == str(creative_id) and r["user_id"] == str(user_id)
+        ]
+
+    async def get(self, result_id, user_id) -> dict:
+        for r in self.rows.values():
+            if r["id"] == str(result_id) and r["user_id"] == str(user_id):
+                return r
+        raise NotFound(str(result_id))
+
+    async def delete(self, result_id, user_id) -> None:
+        self.rows = {k: v for k, v in self.rows.items() if v["id"] != str(result_id)}

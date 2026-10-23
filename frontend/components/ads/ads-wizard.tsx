@@ -1,9 +1,10 @@
 "use client";
 
-import { Sparkles, X } from "lucide-react";
+import { Sparkles, Trophy, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { ConfirmButton } from "@/components/product/confirm-button";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -85,7 +86,12 @@ export function AdsWizard({
 
   const [avatars, setAvatars] = useState<{ key: string; list: Avatar[] } | null>(null);
   const [chosen, setChosen] = useState<string[]>([]);
-  const [angles, setAngles] = useState<{ key: string; available: AngleInfo[]; suggestions: AngleSuggestion[] } | null>(null);
+  const [angles, setAngles] = useState<{
+    key: string;
+    available: AngleInfo[];
+    suggestions: AngleSuggestion[];
+    winners: string[];
+  } | null>(null);
   const [picks, setPicks] = useState<AnglePick[]>([]);
   const [ratios, setRatios] = useState<Ratio[]>(["4x5"]);
   const [templates, setTemplates] = useState<TemplateInfo[]>([]);
@@ -141,7 +147,7 @@ export function AdsWizard({
     try {
       const result = await api.adsAngles({ ...body, avatars: list });
       const key = `${briefKey}|${chosen.join(",")}`;
-      setAngles({ key, available: result.available, suggestions: result.suggestions });
+      setAngles({ key, available: result.available, suggestions: result.suggestions, winners: result.winners ?? [] });
       setPicks(result.suggestions.slice(0, LIMITS.maxPicks).map((s) => ({ angle_id: s.angle_id, avatar: s.avatar, count: 2 })));
     } catch (e) {
       setError(message(e));
@@ -344,6 +350,9 @@ export function AdsWizard({
       {step === 2 && (
         <section className="flex flex-col gap-5">
           <p className="text-sm text-muted-foreground">{t("angles.hint")}</p>
+          {angles && angles.winners.length > 0 && (
+            <p className="rounded-lg bg-emerald-500/10 p-3 text-sm">{t("angles.winnersHint")}</p>
+          )}
           {pending && !angles && <Loading text={t("angles.loading")} />}
           {angles && (
             <>
@@ -355,7 +364,15 @@ export function AdsWizard({
                     <li key={`${p.angle_id}|${p.avatar}|${i}`} className="flex flex-col gap-2 rounded-xl border p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="font-medium">{info?.name ?? p.angle_id}</p>
+                          <p className="flex flex-wrap items-center gap-2 font-medium">
+                            {info?.name ?? p.angle_id}
+                            {angles.winners.includes(p.angle_id) && (
+                              <Badge variant="secondary" className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
+                                <Trophy aria-hidden />
+                                {t("angles.winner")}
+                              </Badge>
+                            )}
+                          </p>
                           <p className="text-xs text-muted-foreground">{why ?? info?.description}</p>
                         </div>
                         <Button variant="ghost" size="icon-sm" onClick={() => setPicks(picks.filter((_, j) => j !== i))} aria-label={t("angles.remove")}>
@@ -404,7 +421,7 @@ export function AdsWizard({
                   <option value="">{t("angles.choose")}</option>
                   {angles.available.map((a) => (
                     <option key={a.id} value={a.id}>
-                      {a.name}
+                      {angles.winners.includes(a.id) ? `★ ${a.name}` : a.name}
                     </option>
                   ))}
                 </select>

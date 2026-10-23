@@ -31,6 +31,7 @@ from tests.memory import (
     MemoryAdBatches,
     MemoryAdCreatives,
     MemoryAdProofs,
+    MemoryAdResults,
     MemoryImageCache,
     MemoryJobs,
     MemoryProducts,
@@ -69,6 +70,7 @@ class AdsWorld:
         )
         self.batches, self.creatives = MemoryAdBatches(), MemoryAdCreatives()
         self.proofs, self.jobs, self.storage = MemoryAdProofs(), MemoryJobs(), MemoryStorage()
+        self.results = MemoryAdResults()
         renderer = AdRenderer(SETTINGS.ad_templates_dir, SETTINGS.templates_dir)
         strategy = AdStrategyService(content)
         self.drive = drive or FakeTarget(connected=False)
@@ -87,6 +89,7 @@ class AdsWorld:
             ad_creatives=self.creatives,
             ad_proofs=self.proofs,
             ad_images=self.images,
+            ad_results=self.results,
             drive=self.drive,
             ads=lambda: AdDeps(
                 strategy=strategy,
@@ -99,6 +102,7 @@ class AdsWorld:
                 templates_dir=SETTINGS.templates_dir,
                 images=self.images,
                 sync_target=self.drive,
+                results=self.results,
             ),
         )
         app = create_app()

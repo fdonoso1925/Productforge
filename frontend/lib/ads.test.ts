@@ -8,9 +8,13 @@ import {
   creativeCount,
   draftCount,
   groupCreatives,
+  derive,
   isActive,
   LIMITS,
   lines,
+  normalizeSearch,
+  sumResults,
+  validateResult,
   validatePicks,
   wordCount,
   worstPolicy,
@@ -195,5 +199,49 @@ describe("textos es/pt", () => {
     for (const key of ["headlineEmpty", "imageHeadlineWords", "primaryLongRange", "bulletsRange", "bulletsPaired", "noteRequired"]) {
       expect(ads.editor.issues[key]).toBeTruthy();
     }
+  });
+});
+
+describe("resultados y métricas", () => {
+  const day = "2026-03-04";
+
+  it("suma los resultados y calcula CTR, CPC, CPA y ROAS de los totales", () => {
+    const total = sumResults([
+      { spend: 50, impressions: 4000, clicks: 80, purchases: 2, revenue: 150 },
+      { spend: 50, impressions: 6000, clicks: 120, purchases: 3, revenue: 350 },
+    ]);
+    expect(total).toEqual({ spend: 100, impressions: 10000, clicks: 200, purchases: 5, revenue: 500 });
+    expect(derive(total)).toEqual({ ctr: 2, cpc: 0.5, cpa: 20, roas: 5 });
+  });
+
+  it("sin datos no divide por cero", () => {
+    expect(derive(sumResults([]))).toEqual({ ctr: null, cpc: null, cpa: null, roas: null });
+    expect(derive({ spend: 10, impressions: 100, clicks: 0, purchases: 0, revenue: 0 })).toEqual({
+      ctr: 0,
+      cpc: null,
+      cpa: null,
+      roas: null,
+    });
+  });
+
+  it("ignora campos ausentes al sumar", () => {
+    expect(sumResults([{ spend: 5 }, { impressions: 10 }])).toEqual({ spend: 5, impressions: 10, clicks: 0, purchases: 0, revenue: 0 });
+  });
+
+  it("valida un resultado con las mismas reglas del backend", () => {
+    const ok = { day, spend: 10, impressions: 1000, clicks: 20, purchases: 1, revenue: 30 };
+    expect(validateResult(ok, "2026-03-05")).toEqual([]);
+    expect(validateResult({ ...ok, day: "2026-03-06" }, "2026-03-05")).toContain("future");
+    expect(validateResult({ ...ok, clicks: 2000 }, "2026-03-05")).toContain("clicksOverImpressions");
+    expect(validateResult({ ...ok, clicks: 0 }, "2026-03-05")).toContain("purchasesWithoutClicks");
+    expect(validateResult({ ...ok, spend: -1 }, "2026-03-05")).toContain("negative");
+    expect(validateResult({ ...ok, spend: Number.NaN }, "2026-03-05")).toContain("negative");
+    expect(validateResult({ ...ok, day: "" }, "2026-03-05")).toContain("empty");
+    expect(validateResult({ ...ok, clicks: 0, purchases: 0 }, "2026-03-05")).toEqual([]);
+  });
+
+  it("la búsqueda ignora tildes y mayúsculas", () => {
+    expect(normalizeSearch("  Bandeja ÚNICA ")).toBe("bandeja unica");
+    expect(normalizeSearch("Produtividade")).toBe("produtividade");
   });
 });

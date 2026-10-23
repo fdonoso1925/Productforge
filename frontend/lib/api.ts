@@ -10,8 +10,11 @@ import type {
   Avatar,
   CreativeRow,
   ImageCopy,
+  ImportReport,
+  Insights,
   Proof,
   Ratio,
+  ResultInput,
 } from "@/lib/ads";
 import type {
   ArtChoice,
@@ -171,7 +174,7 @@ export const api = {
       body: JSON.stringify(source),
     }),
   adsAngles: (source: BriefSource & { avatars: Avatar[]; count?: number }) =>
-    call<{ available: AngleInfo[]; suggestions: AngleSuggestion[] }>("/ads/angles", {
+    call<{ available: AngleInfo[]; suggestions: AngleSuggestion[]; winners: string[] }>("/ads/angles", {
       method: "POST",
       body: JSON.stringify(source),
     }),
@@ -196,6 +199,39 @@ export const api = {
   adsDrive: (batchId: string) => call<AdDrive>(`/ads/batches/${batchId}/drive`),
   adsDriveStart: (batchId: string) =>
     call<{ job_id: string }>(`/ads/batches/${batchId}/drive`, { method: "POST" }),
+  adsSaveResult: (creativeId: string, body: ResultInput) =>
+    call<{ saved: boolean }>(`/ads/creatives/${creativeId}/results`, { method: "PUT", body: JSON.stringify(body) }),
+  adsDeleteResult: (resultId: string) => call<void>(`/ads/results/${resultId}`, { method: "DELETE" }),
+  /** El cuerpo es el CSV de Ads Manager tal cual; el backend lo lee y lo empareja por nombre de archivo. */
+  adsImportResults: (file: File) =>
+    call<ImportReport>("/ads/results/import", {
+      method: "POST",
+      body: file,
+      headers: { "Content-Type": file.type || "text/csv" },
+    }),
+  adsInsights: (filters: { market?: Market; niche?: string } = {}) => {
+    const query = new URLSearchParams();
+    if (filters.market) query.set("market", filters.market);
+    if (filters.niche) query.set("niche", filters.niche);
+    return call<Insights>(`/ads/insights${query.size ? `?${query}` : ""}`);
+  },
+  /** Hooks nuevos para un creativo ya probado. Usa IA. */
+  adsIterate: (creativeId: string, count = 2) =>
+    call<{ job_id: string }>(`/ads/creatives/${creativeId}/iterate`, {
+      method: "POST",
+      body: JSON.stringify({ count }),
+    }),
+  /** Otra plantilla o formato con el mismo texto. No usa IA. */
+  adsVariant: (creativeId: string, body: { template_id?: string; ratio?: Ratio }) =>
+    call<CreativeRow>(`/ads/creatives/${creativeId}/variant`, { method: "POST", body: JSON.stringify(body) }),
+  /** Adapta el lote al otro mercado y lo planifica de nuevo. Usa IA. */
+  adsDuplicate: (batchId: string, market: Market) =>
+    call<{ batch_id: string; job_id: string }>(`/ads/batches/${batchId}/duplicate`, {
+      method: "POST",
+      body: JSON.stringify({ market }),
+    }),
+  adsTemplates: () =>
+    call<{ templates: { id: string; uses_image: boolean }[]; ratios: { id: Ratio }[] }>("/ads/templates"),
   adsProofs: (productId?: string) =>
     call<Proof[]>(`/ads/proofs${productId ? `?product_id=${productId}` : ""}`),
   adsAddProof: (body: { kind: Proof["kind"]; text: string; author?: string | null; product_id?: string | null }) =>

@@ -376,7 +376,14 @@
       "new": "Novo lote",
       "empty": "Ainda não há lotes. Crie um a partir de um pacote ou de um briefing manual.",
       "drafts": "{count, plural, one {# rascunho} other {# rascunhos}}",
-      "formats": "formatos"
+      "formats": "formatos",
+      "insights": "Aprendizado",
+      "search": "Buscar por produto ou nicho",
+      "market": "Mercado",
+      "allMarkets": "Todos os mercados",
+      "status": "Status",
+      "allStatuses": "Todos os status",
+      "noMatches": "Nenhum lote corresponde aos filtros."
     },
     "fromProduct": "Criar anúncios",
     "status": {
@@ -453,7 +460,9 @@
         "variations": "{count, plural, one {# variação} other {# variações}}",
         "add": "Adicionar outro ângulo",
         "choose": "Escolher…",
-        "summary": "{drafts, plural, one {# rascunho} other {# rascunhos}} → {images, plural, one {# imagem} other {# imagens}} no total. As imagens não usam IA: só os textos."
+        "summary": "{drafts, plural, one {# rascunho} other {# rascunhos}} → {images, plural, one {# imagem} other {# imagens}} no total. As imagens não usam IA: só os textos.",
+        "winner": "Vencedor",
+        "winnersHint": "Os ângulos com ★ já foram bem com os seus resultados: vêm primeiro e a IA os prioriza."
       },
       "formats": {
         "title": "Formatos",
@@ -497,7 +506,14 @@
       "discard": "Descartar",
       "discardConfirm": "Descartar?",
       "notRendered": "Sem compor",
-      "renderError": "Erro ao compor"
+      "renderError": "Erro ao compor",
+      "duplicate": "Duplicar para {market}",
+      "duplicateConfirm": "Confirmar (usa IA)",
+      "duplicatedFrom": "Adaptado de outro lote:",
+      "original": "ver o original",
+      "iteration": "Iteração",
+      "results": "Resultados",
+      "iterate": "Iterar"
     },
     "editor": {
       "title": "Editar texto",
@@ -590,6 +606,83 @@
       "question": "Pergunta",
       "testimonial": "Depoimento",
       "offer_stack": "Oferta empilhada"
+    },
+    "results": {
+      "title": "Resultados",
+      "hint": "Cadastre o que o Gerenciador de Anúncios mostra deste rascunho (por formato e dia), ou importe o CSV do lote todo. CTR, CPA e ROAS são calculados dos totais.",
+      "spend": "Gasto",
+      "impressions": "Impressões",
+      "clicks": "Cliques",
+      "purchases": "Compras",
+      "revenue": "Valor das compras",
+      "ctr": "CTR",
+      "cpa": "CPA",
+      "roas": "ROAS",
+      "format": "Formato",
+      "day": "Dia",
+      "save": "Salvar resultado",
+      "saving": "Salvando…",
+      "remove": "Remover este resultado",
+      "source": {
+        "manual": "manual",
+        "csv": "CSV"
+      },
+      "issues": {
+        "future": "A data não pode ser futura.",
+        "clicksOverImpressions": "Os cliques não podem superar as impressões.",
+        "purchasesWithoutClicks": "Não pode haver compras sem cliques.",
+        "negative": "Os valores não podem ser negativos.",
+        "empty": "Escolha o dia."
+      }
+    },
+    "import": {
+      "title": "Importar resultados do Gerenciador de Anúncios",
+      "hint": "Exporte o relatório de anúncios em CSV (com Nome do anúncio, Valor usado, Impressões, Cliques e Compras). O pareamento é pelo nome do arquivo: dê aos seus anúncios o nome do criativo.",
+      "choose": "Escolher CSV",
+      "importing": "Importando…",
+      "tooBig": "O arquivo tem mais de 2 MB.",
+      "summary": "{matched} de {rows} linhas pareadas e {imported} resultados salvos.",
+      "invalid": "{count, plural, one {# linha com números ilegíveis foi ignorada.} other {# linhas com números ilegíveis foram ignoradas.}}",
+      "ambiguous": "Nomes que coincidem com vários criativos (não foram salvos)",
+      "unmatched": "{count, plural, one {# anúncio sem par} other {# anúncios sem par}}",
+      "unmatchedHint": "Não coincidem com nenhum nome de arquivo dos seus criativos (ou o criativo foi descartado)."
+    },
+    "iterate": {
+      "title": "Iterar este criativo",
+      "hint": "Parte do que você já testou: não mexe no original.",
+      "hooksTitle": "Hooks novos (IA)",
+      "hooksHint": "Mesmo ângulo e avatar, textos diferentes. Se você cadastrou resultados, a IA os considera. Entram neste lote para revisar.",
+      "hooks": "Propor 2 hooks novos",
+      "confirmAi": "Confirmar (usa IA)",
+      "variantTitle": "Variante sem IA",
+      "variantHint": "O mesmo texto em outro template ou formato. Formatos novos do mesmo template entram neste rascunho.",
+      "template": "Template",
+      "format": "Formato",
+      "createVariant": "Criar variante"
+    },
+    "insights": {
+      "title": "Aprendizado",
+      "hint": "Quais ângulos, templates e hooks rendem mais com os seus resultados. Não garante vencedores: resume o que já aconteceu.",
+      "back": "Meus lotes",
+      "market": "Mercado",
+      "allMarkets": "Todos",
+      "niche": "Nicho",
+      "nichePlaceholder": "Todos os nichos",
+      "empty": "Ainda não há resultados. Cadastre as métricas dos seus anúncios (à mão ou com o CSV do Gerenciador) a partir de um lote.",
+      "summary": "{count, plural, one {# criativo com resultados} other {# criativos com resultados}} · gasto total {spend}. Com menos de {min} impressões não se declara vencedor.",
+      "winners": "Ângulos vencedores",
+      "newBatch": "Novo lote priorizando-os",
+      "angles": "Ângulos",
+      "templates": "Templates",
+      "hooks": "Hooks (títulos da imagem)",
+      "winner": "Vencedor",
+      "fewData": "poucos dados",
+      "metric": {
+        "roas": "Ordenado por ROAS (retorno por unidade gasta)",
+        "cpa": "Ordenado por CPA (custo por compra, quanto menor melhor)",
+        "ctr": "Ordenado por CTR (ainda não há compras para comparar)",
+        "none": "Ainda sem dados suficientes para ordenar"
+      }
     }
   }
 }

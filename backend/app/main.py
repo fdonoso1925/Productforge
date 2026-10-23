@@ -8,7 +8,8 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import ads, catalog, content, cover, drive, products
+from app.ads.results_import import MAX_BYTES as REPORT_MAX_BYTES
+from app.api import ads, ads_results, catalog, content, cover, drive, products
 from app.auth import CurrentUser, get_current_user
 from app.config import get_settings
 from app.content.claude_client import LLMError
@@ -54,7 +55,10 @@ def create_app() -> FastAPI:
         BodyLimitMiddleware,
         max_bytes=settings.max_body_bytes,
         # La imagen de portada puede pesar hasta MAX_BYTES (+ margen); el endpoint corta igual.
-        overrides={"/cover-images": MAX_BYTES + 64 * 1024},
+        overrides={
+            "/cover-images": MAX_BYTES + 64 * 1024,
+            "/ads/results/import": REPORT_MAX_BYTES + 64 * 1024,
+        },
     )
     app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(
@@ -71,6 +75,7 @@ def create_app() -> FastAPI:
     app.include_router(catalog.router)
     app.include_router(cover.router)
     app.include_router(ads.router)
+    app.include_router(ads_results.router)
 
     @app.exception_handler(ContentRejected)
     async def content_rejected(_: Request, exc: ContentRejected) -> JSONResponse:

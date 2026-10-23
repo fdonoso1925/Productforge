@@ -70,6 +70,18 @@ class AvatarProposals(BaseModel):
     avatars: list[Avatar]
 
 
+class AdaptedBrief(BaseModel):
+    """El brief y los avatares reescritos (no traducidos) para otro mercado."""
+
+    niche: str = Field(max_length=120)
+    product_name: str = Field(max_length=300)
+    problem: str = Field(max_length=500)
+    audience: str = Field(max_length=500)
+    promise: str = Field(max_length=500)
+    bonuses: list[str] = Field(default_factory=list, max_length=8)
+    avatars: list[Avatar]
+
+
 class AngleSuggestion(BaseModel):
     angle_id: str
     avatar: str = Field(description="Nombre exacto de uno de los avatares")

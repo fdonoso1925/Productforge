@@ -36,7 +36,7 @@ class SupabaseRest:
         response.raise_for_status()
         return response.json()
 
-    async def upsert(self, table: str, row: Row, on_conflict: str) -> list[Row]:
+    async def upsert(self, table: str, row: Row | list[Row], on_conflict: str) -> list[Row]:
         response = await self._client.post(
             f"/{table}",
             json=row,

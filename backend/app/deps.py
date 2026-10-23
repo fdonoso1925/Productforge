@@ -17,6 +17,7 @@ from app.ads.repo import (
     AdCreativeRepo,
     AdImageCacheRepo,
     AdProofRepo,
+    AdResultRepo,
     ProviderUsageRepo,
 )
 from app.ads.strategy import AdStrategyService
@@ -58,6 +59,7 @@ class Services:
     ad_creatives: AdCreativeRepo
     ad_proofs: AdProofRepo
     ad_images: ImageRouter
+    ad_results: AdResultRepo
 
     def ads(self) -> AdDeps:
         return AdDeps(
@@ -71,6 +73,7 @@ class Services:
             templates_dir=self.settings.templates_dir,
             images=self.ad_images,
             sync_target=self.drive,
+            results=self.ad_results,
         )
 
     def pipeline(self) -> PipelineDeps:
@@ -127,6 +130,7 @@ def build_services(settings: Settings) -> Services:
         ad_batches=AdBatchRepo(db),
         ad_creatives=AdCreativeRepo(db),
         ad_proofs=AdProofRepo(db),
+        ad_results=AdResultRepo(db),
         ad_images=build_router(settings, AdImageCacheRepo(db), ProviderUsageRepo(db), storage),
     )
 

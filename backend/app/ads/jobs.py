@@ -44,6 +44,7 @@ class AdDeps:
     prompt_version: str = ""
     images: ImageRouter | None = None
     sync_target: Any = None  # destino externo (Google Drive); None = sin copia
+    results: Any = None  # AdResultRepo: resultados de Ads Manager (aprendizaje)
 
 
 def available_templates(deps: "AdDeps", brief: AdBrief, proofs: list[AdProof]) -> list[str]:
@@ -77,28 +78,40 @@ def batch_avatars(batch: dict) -> list[Avatar]:
     return [Avatar.model_validate(a) for a in batch["avatars"]]
 
 
-def creative_rows(batch: dict, planned: list, renderer_ratios: list[str]) -> list[dict]:
-    """Una fila por borrador y formato; los borradores de un mismo borrador comparten `group_id`.
+def next_filename(taken: set[str], **parts) -> tuple[str, int]:
+    """Primer nombre libre `…_v<n>.png`: el número de versión distingue variaciones del mismo
+    ángulo, plantilla y formato. Reserva el nombre en `taken`."""
+    version = 1
+    while (name := creative_filename(**parts, version=version)) in taken:
+        version += 1
+    taken.add(name)
+    return name, version
 
-    Dos variaciones del mismo ángulo y plantilla se distinguen por el número de versión del
-    nombre de archivo (`…_v1.png`, `…_v2.png`)."""
+
+def creative_rows(
+    batch: dict,
+    planned: list,
+    renderer_ratios: list[str],
+    taken: set[str] | None = None,
+    parent_id: str | None = None,
+) -> list[dict]:
+    """Una fila por borrador y formato; los formatos de un mismo borrador comparten `group_id`.
+
+    `taken` son los nombres que el lote ya usa (al iterar); `parent_id`, el creativo mejorado."""
     brief = batch_brief(batch)
-    seen: dict[str, int] = {}
+    taken = set(taken or ())
     rows = []
     for item in planned:
         group = str(uuid4())
         for ratio in renderer_ratios:
-            base = dict(
+            filename, version = next_filename(
+                taken,
                 product_name=brief.product_name,
                 market=batch["market"],
                 angle=item.angle_id,
                 template_id=item.draft.template_id,
                 ratio=ratio,
             )
-            seen[f"{item.angle_id}|{item.draft.template_id}|{ratio}"] = (
-                seen.get(f"{item.angle_id}|{item.draft.template_id}|{ratio}", 0) + 1
-            )
-            version = seen[f"{item.angle_id}|{item.draft.template_id}|{ratio}"]
             rows.append(
                 {
                     "batch_id": batch["id"],
@@ -114,7 +127,8 @@ def creative_rows(batch: dict, planned: list, renderer_ratios: list[str]) -> lis
                     "pre_score": item.score.score,
                     "score_notes": item.score.model_dump(mode="json", exclude={"score"}),
                     "version": version,
-                    "filename": creative_filename(**base, version=version),
+                    "filename": filename,
+                    **({"parent_creative_id": parent_id} if parent_id else {}),
                 }
             )
     return rows
@@ -210,19 +224,14 @@ async def switch_to_fallback(deps: AdDeps, batch: dict, creative: dict) -> None:
     """Sin foto disponible el creativo pasa a la plantilla de solo texto (y cambia de nombre)."""
     brief = batch_brief(batch)
     taken = {c["filename"] for c in await deps.creatives.list_for_batch(batch["id"])}
-    version = 1
-    while True:
-        filename = creative_filename(
-            product_name=brief.product_name,
-            market=batch["market"],
-            angle=creative["angle"],
-            template_id=FALLBACK_TEMPLATE,
-            ratio=creative["ratio"],
-            version=version,
-        )
-        if filename not in taken:
-            break
-        version += 1
+    filename, version = next_filename(
+        taken,
+        product_name=brief.product_name,
+        market=batch["market"],
+        angle=creative["angle"],
+        template_id=FALLBACK_TEMPLATE,
+        ratio=creative["ratio"],
+    )
     draft = draft_of(creative).model_copy(update={"template_id": FALLBACK_TEMPLATE})
     values = {
         "template_id": FALLBACK_TEMPLATE,
@@ -407,3 +416,78 @@ async def run_ad_drive(job: dict, deps: AdDeps) -> None:
     await deps.batches.update(batch["id"], drive={**state, "status": status, "folder": folder})
     if state["failed"]:
         raise RuntimeError(f"{state['failed']} archivo(s) sin subir")
+
+
+# ───────────────────────── iterar un creativo ─────────────────────────
+
+
+def metrics_hint(results: list[dict]) -> dict | None:
+    """Métricas del creativo que se itera, para que la IA sepa qué conservar y qué cambiar."""
+    from app.ads.learning import Metrics
+
+    if not results:
+        return None
+    total = Metrics()
+    for r in results:
+        total.add(r)
+    keys = ("spend", "impressions", "clicks", "purchases", "ctr", "cpc", "cpa", "roas")
+    return {k: v for k, v in total.as_dict().items() if k in keys and v is not None}
+
+
+async def run_ad_iterate(job: dict, deps: AdDeps) -> None:
+    """Hooks nuevos para un creativo ya probado: mismo ángulo y avatar, textos distintos.
+
+    Los borradores nuevos entran al mismo lote (apuntando al original con `parent_creative_id`),
+    con su semáforo y pre-score, y quedan listos para revisar y componer."""
+    from app.ads.strategy import PlannedCreative
+
+    user_id = UUID(job["user_id"])
+    batch = await deps.batches.get(job["batch_id"], user_id)
+    source = await deps.creatives.get(job["payload"]["creative_id"], user_id)
+    count = int(job["payload"].get("count", 2))
+    brief = batch_brief(batch)
+    product_id = UUID(batch["product_id"]) if batch.get("product_id") else None
+    proofs = proofs_from_rows(await deps.proofs.list(user_id, product_id))
+    avatar = next(a for a in batch_avatars(batch) if a.name == source["avatar"])
+
+    everything = await deps.creatives.list_for_batch(batch["id"])
+    group = [c for c in everything if c["group_id"] == source["group_id"]]
+    order = list(deps.renderer.ratios)
+    ratios = sorted({c["ratio"] for c in group}, key=order.index)
+    results: list[dict] = []
+    if deps.results is not None:
+        for c in group:
+            results += await deps.results.list_for_creative(c["id"], user_id)
+    draft = draft_of(source)
+    hint = metrics_hint(results)
+    iterate_from = {
+        "angle": source["angle"],
+        "image": draft.image.model_dump(mode="json"),
+        "ad": draft.ad.model_dump(mode="json"),
+        **({"metrics": hint} if hint else {}),
+    }
+
+    await deps.jobs.update(job["id"], progress={"stage": "copy", "done": 0, "total": 1})
+    drafts = await deps.strategy.creatives(
+        user_id=user_id,
+        brief=brief,
+        angle_id=source["angle"],
+        avatar=avatar,
+        count=count,
+        proofs=proofs,
+        templates=available_templates(deps, brief, proofs),
+        iterate_from=iterate_from,
+    )
+    reviews = await deps.strategy.review(
+        user_id=user_id, brief=brief, avatar=avatar, drafts=drafts, proofs=proofs
+    )
+    planned = [
+        PlannedCreative(angle_id=source["angle"], avatar=avatar.name, draft=d, policy=p, score=s)
+        for d, (p, s) in zip(drafts, reviews, strict=True)
+    ]
+    rows = creative_rows(
+        batch, planned, ratios, taken={c["filename"] for c in everything}, parent_id=source["id"]
+    )
+    await deps.creatives.insert_many(rows)
+    await deps.batches.update(batch["id"], status="review")
+    await deps.jobs.update(job["id"], progress={"stage": "done", "creatives": len(planned)})

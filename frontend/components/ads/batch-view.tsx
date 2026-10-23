@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, ImageIcon, Pencil, Wand2 } from "lucide-react";
+import { Download, ImageIcon, Languages, Pencil, Repeat2, TrendingUp, Wand2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ConfirmButton } from "@/components/product/confirm-button";
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ErrorBox, Loading } from "@/components/wizard/step-nav";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import {
   type AdJobRow,
   type BatchRow,
@@ -16,28 +16,34 @@ import {
   type CreativeRow,
   groupCreatives,
   isActive,
+  type ResultRow,
   worstPolicy,
 } from "@/lib/ads";
 import { ApiError, type AdExport, api } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import { AdsDrive } from "./ads-drive";
 import { CreativeEditor } from "./creative-editor";
+import { ImportPanel } from "./import-panel";
+import { IteratePanel } from "./iterate-panel";
 import { PolicyBadge } from "./policy-badge";
+import { MetricsLine, ResultsPanel } from "./results-panel";
 
 const POLL_MS = 2500;
 const URL_REFRESH_MS = 8 * 60 * 1000; // las URLs firmadas duran 10 min
 
-type Data = { batch: BatchRow; creatives: CreativeRow[]; job: AdJobRow | null };
+type Data = { batch: BatchRow; creatives: CreativeRow[]; results: ResultRow[]; job: AdJobRow | null };
+type PanelKind = "edit" | "results" | "iterate";
 
 export function BatchView({ batchId }: { batchId: string }) {
   const t = useTranslations("ads.batch");
   const tc = useTranslations("common");
   const tm = useTranslations("markets");
+  const router = useRouter();
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [urls, setUrls] = useState<Record<string, string>>({});
-  const [editing, setEditing] = useState<string | null>(null);
+  const [panel, setPanel] = useState<{ id: string; kind: PanelKind } | null>(null);
   const [exported, setExported] = useState<AdExport | null>(null);
   const [busy, setBusy] = useState(false);
   const [nonce, setNonce] = useState(0);
@@ -52,15 +58,21 @@ export function BatchView({ batchId }: { batchId: string }) {
         .from("jobs")
         .select("id, kind, status, progress, error")
         .eq("batch_id", batchId)
-        .in("kind", ["ad_plan", "ad_render"])
+        .in("kind", ["ad_plan", "ad_render", "ad_iterate"])
         .order("created_at", { ascending: false })
         .limit(1),
     ]);
     const failure = batch.error ?? creatives.error ?? jobs.error;
     if (failure) throw new Error(failure.message);
+    const ids = ((creatives.data ?? []) as CreativeRow[]).map((c) => c.id);
+    const results = ids.length
+      ? await supabase.from("ad_results").select("*").in("creative_id", ids)
+      : { data: [], error: null };
+    if (results.error) throw new Error(results.error.message);
     return {
       batch: batch.data as BatchRow,
       creatives: (creatives.data ?? []) as CreativeRow[],
+      results: (results.data ?? []) as ResultRow[],
       job: ((jobs.data ?? [])[0] as AdJobRow) ?? null,
     };
   }, [batchId]);
@@ -120,7 +132,7 @@ export function BatchView({ batchId }: { batchId: string }) {
 
   if (!data) return <Shell>{error ? <ErrorBox message={error} /> : <Loading text={tc("loading")} />}</Shell>;
 
-  const { batch, creatives, job } = data;
+  const { batch, creatives, results, job } = data;
   const live = creatives.filter((c) => c.status !== "discarded");
   const rendered = live.filter((c) => c.status === "rendered");
   const pending = live.filter((c) => c.status === "planned" || c.status === "error");
@@ -145,6 +157,21 @@ export function BatchView({ batchId }: { batchId: string }) {
       setExported(await api.adsExport(batchId));
     });
 
+  const otherMarket = batch.market === "pt-BR" ? "es-LATAM" : "pt-BR";
+  const duplicate = async () => {
+    setBusy(true);
+    setActionError(null);
+    try {
+      const { batch_id } = await api.adsDuplicate(batchId, otherMarket);
+      router.push(`/ads/${batch_id}`);
+    } catch (e) {
+      setActionError(e instanceof ApiError ? (e.errors.length ? e.errors.join(" · ") : e.message) : String(e));
+      setBusy(false);
+    }
+  };
+  const toggle = (id: string, kind: PanelKind) =>
+    setPanel(panel?.id === id && panel.kind === kind ? null : { id, kind });
+
   return (
     <Shell title={batch.brief.product_name} meta={`${tm(batch.market)} · ${batch.niche}`}>
       {batch.status === "planning" && <PlanningPanel job={job} />}
@@ -168,6 +195,14 @@ export function BatchView({ batchId }: { batchId: string }) {
                 <Download aria-hidden />
                 {t("export")}
               </Button>
+              <ConfirmButton
+                size="default"
+                label={t("duplicate", { market: tm(otherMarket) })}
+                confirmLabel={t("duplicateConfirm")}
+                onConfirm={() => void duplicate()}
+                disabled={busy || working}
+                icon={<Languages aria-hidden />}
+              />
             </div>
           </div>
           {exported && (
@@ -181,7 +216,16 @@ export function BatchView({ batchId }: { batchId: string }) {
               </a>
             </div>
           )}
+          {batch.parent_batch_id && (
+            <p className="text-sm text-muted-foreground">
+              {t("duplicatedFrom")}{" "}
+              <Link href={`/ads/${batch.parent_batch_id}`} className="text-primary underline underline-offset-2">
+                {t("original")}
+              </Link>
+            </p>
+          )}
           {rendered.length > 0 && <AdsDrive batchId={batchId} refreshKey={renderedKey} />}
+          {rendered.length > 0 && <ImportPanel onImported={refresh} />}
           {working && batch.status !== "planning" && (
             <p className="flex items-center gap-2 text-sm text-muted-foreground" aria-live="polite">
               <span className="size-3 animate-spin rounded-full border-2 border-primary border-t-transparent" aria-hidden />
@@ -195,13 +239,16 @@ export function BatchView({ batchId }: { batchId: string }) {
                 key={g.id}
                 group={g}
                 urls={urls}
-                editing={editing === g.id}
+                results={results}
+                parent={creatives.find((c) => c.id === g.lead.parent_creative_id)}
+                panel={panel?.id === g.id ? panel.kind : null}
                 disabled={busy || working}
-                onEdit={() => setEditing(editing === g.id ? null : g.id)}
-                onSaved={() => {
-                  setEditing(null);
+                onToggle={(kind) => toggle(g.id, kind)}
+                onChanged={() => {
+                  setPanel(null);
                   refresh();
                 }}
+                onResults={refresh}
                 onDiscard={() => run(() => Promise.all(g.items.map((c) => api.adsDiscard(c.id))))}
                 onRender={() => run(() => api.adsRender(batchId, g.items.filter((c) => c.status !== "rendered").map((c) => c.id)))}
               />
@@ -249,19 +296,25 @@ function PlanningPanel({ job }: { job: AdJobRow | null }) {
 function GroupCard({
   group,
   urls,
-  editing,
+  results,
+  parent,
+  panel,
   disabled,
-  onEdit,
-  onSaved,
+  onToggle,
+  onChanged,
+  onResults,
   onDiscard,
   onRender,
 }: {
   group: CreativeGroup;
   urls: Record<string, string>;
-  editing: boolean;
+  results: ResultRow[];
+  parent?: CreativeRow;
+  panel: PanelKind | null;
   disabled: boolean;
-  onEdit: () => void;
-  onSaved: () => void;
+  onToggle: (kind: PanelKind) => void;
+  onChanged: () => void;
+  onResults: () => void;
   onDiscard: () => void;
   onRender: () => void;
 }) {
@@ -270,6 +323,8 @@ function GroupCard({
   const draft = lead.copy;
   const unrendered = items.some((c) => c.status !== "rendered");
   const notes = lead.policy_notes?.notes ?? [];
+  const ids = new Set(items.map((c) => c.id));
+  const own = results.filter((r) => ids.has(r.creative_id));
 
   return (
     <Card>
@@ -278,6 +333,11 @@ function GroupCard({
           <Badge variant="outline">{t(`angleNames.${lead.angle}`)}</Badge>
           <Badge variant="outline">{t(`templates.${lead.template_id}`)}</Badge>
           <span className="text-xs text-muted-foreground">{lead.avatar}</span>
+          {lead.parent_creative_id && (
+            <Badge variant="secondary" title={parent?.copy.image.headline}>
+              {t("batch.iteration")}
+            </Badge>
+          )}
           <span className="ml-auto flex items-center gap-2">
             {lead.pre_score !== null && (
               <span className="text-xs text-muted-foreground" title={lead.score_notes?.explanation}>
@@ -301,6 +361,8 @@ function GroupCard({
           {draft.variant_note && <p className="text-xs text-muted-foreground">{draft.variant_note}</p>}
         </div>
 
+        {own.length > 0 && <MetricsLine rows={own} />}
+
         {(notes.length > 0 || lead.policy_notes?.rewrite) && (
           <details className="rounded-lg bg-muted/40 p-3 text-sm">
             <summary className="cursor-pointer font-medium">{t("batch.policyNotes", { count: notes.length })}</summary>
@@ -323,9 +385,17 @@ function GroupCard({
         )}
 
         <div className="flex flex-wrap gap-2">
-          <Button variant={editing ? "default" : "outline"} size="sm" onClick={onEdit} disabled={disabled}>
+          <Button variant={panel === "edit" ? "default" : "outline"} size="sm" onClick={() => onToggle("edit")} disabled={disabled}>
             <Pencil aria-hidden />
             {t("batch.edit")}
+          </Button>
+          <Button variant={panel === "results" ? "default" : "outline"} size="sm" onClick={() => onToggle("results")}>
+            <TrendingUp aria-hidden />
+            {t("batch.results")}
+          </Button>
+          <Button variant={panel === "iterate" ? "default" : "outline"} size="sm" onClick={() => onToggle("iterate")} disabled={disabled}>
+            <Repeat2 aria-hidden />
+            {t("batch.iterate")}
           </Button>
           {unrendered && (
             <Button variant="outline" size="sm" onClick={onRender} disabled={disabled}>
@@ -336,7 +406,9 @@ function GroupCard({
           <ConfirmButton label={t("batch.discard")} confirmLabel={t("batch.discardConfirm")} onConfirm={onDiscard} disabled={disabled} />
         </div>
 
-        {editing && <CreativeEditor creative={lead} onSaved={onSaved} onClose={onEdit} />}
+        {panel === "edit" && <CreativeEditor creative={lead} onSaved={onChanged} onClose={() => onToggle("edit")} />}
+        {panel === "results" && <ResultsPanel group={group} results={results} onChanged={onResults} />}
+        {panel === "iterate" && <IteratePanel group={group} onDone={onChanged} disabled={disabled} />}
       </CardContent>
     </Card>
   );

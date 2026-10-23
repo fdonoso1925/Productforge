@@ -33,6 +33,8 @@ Uso dos campos de `image` conforme o template (os não citados ficam vazios):
 - `offer_stack`: headline, 3 a 5 bullets com o que está incluso (só coisas do brief), price_text exatamente como está e cta_text. Só se houver preço.
 - `testimonial`: proof_id obrigatório; note = citação TEXTUAL (ou um trecho textual) dessa prova; subheadline = o autor da prova exatamente como está (ou vazio); headline = uma frase curta que apresenta a citação.
 
+Iteração: se `iterate_from` existir, é um criativo que já foi testado (com suas métricas, se houver). Mantenha o ângulo e o avatar e proponha hooks NOVOS que testem outro enfoque (outra dor concreta, outro formato de gancho, outro prazo real); não reutilize as frases dele nem mude só algumas palavras. Se teve bom CTR, preserve o que funcionou (clareza, especificidade) e varie o resto.
+
 Regras:
 - Respeite o formato do ângulo (`angle.hook`) e adapte-o ao avatar e à linguagem dele (`avatar.language`).
 - Cada variação precisa ter um hook diferente, não a mesma frase reescrita.

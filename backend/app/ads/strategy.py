@@ -14,6 +14,7 @@ from pydantic import BaseModel
 
 from app.ads import rules
 from app.ads.schemas import (
+    AdaptedBrief,
     AdBrief,
     AdProof,
     AngleProposals,
@@ -169,6 +170,7 @@ class AdStrategyService:
         count: int,
         proofs: list[AdProof],
         templates: list[str],
+        iterate_from: dict | None = None,
     ) -> list[CreativeDraft]:
         angle = self.available(brief, proofs)[angle_id]
         allowed = [t for t in angle["templates"] if t in templates] or list(templates)
@@ -211,6 +213,7 @@ class AdStrategyService:
                 "allowed_templates": allowed,
                 "proofs": proofs_data(proofs),
                 "real_urgency": brief.real_urgency,
+                **({"iterate_from": iterate_from} if iterate_from else {}),
             },
             schema=CreativeDrafts,
             check=check,
@@ -266,6 +269,60 @@ class AdStrategyService:
             by_rules = rules.policy_verdict(draft, brief, proofs)
             out.append((rules.merge_verdicts(by_rules, by_index[i].policy), by_index[i].score))
         return out
+
+    # ── adaptar un lote a otro mercado ──
+
+    async def adapt_brief(
+        self,
+        *,
+        user_id: UUID,
+        brief: AdBrief,
+        avatars: list[Avatar],
+        target: Market,
+    ) -> tuple[AdBrief, list[Avatar]]:
+        """Reescribe (no traduce) brief y avatares con el prompt NATIVO del mercado destino.
+
+        El precio y la urgencia son hechos del usuario: se copian tal cual, la IA no los toca."""
+        n = len(avatars)
+
+        def check(r: AdaptedBrief) -> list[str]:
+            errors = (
+                []
+                if len(r.avatars) == n
+                else [f"Devuelve exactamente {n} avatares, en el mismo orden."]
+            )
+            if brief.bonuses and len(r.bonuses) != len(brief.bonuses):
+                errors.append("bonuses debe tener la misma cantidad que en source.")
+            return errors
+
+        target_brief = brief.model_copy(update={"market": target})
+        result = await self._call(
+            user_id=user_id,
+            brief=target_brief,
+            task=self.content.prompts.render(target, "ads/adapt"),
+            data={
+                "source": {
+                    "market": brief.market,
+                    **brief_data(brief),
+                    "avatars": [a.model_dump() for a in avatars],
+                }
+            },
+            schema=AdaptedBrief,
+            check=check,
+            max_tokens=5_000,
+        )
+        adapted = target_brief.model_copy(
+            update={
+                "niche": result.niche,
+                "product_name": result.product_name,
+                "problem": result.problem,
+                "audience": result.audience,
+                "promise": result.promise,
+                "bonuses": result.bonuses if brief.bonuses else [],
+                "reference": None,  # la página de referencia era de otro mercado
+            }
+        )
+        return adapted, result.avatars
 
     # ── orquestación de un lote ──
 
