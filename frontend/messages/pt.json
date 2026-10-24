@@ -611,6 +611,7 @@
       "title": "Dashboard de campanhas",
       "hint": "Gasto, alcance e vendas de todas as suas campanhas, com os resultados que você carregou ou que são lidos do Meta.",
       "back": "← Anúncios",
+      "hotmart": "Ver Hotmart",
       "period": "Período",
       "periods": { "7": "Últimos 7 dias", "30": "Últimos 30 dias", "90": "Últimos 90 dias", "all": "Tudo" },
       "market": "Mercado",
@@ -768,6 +769,40 @@
       "exhausted": "sem cota hoje, usa-se a reserva"
     }
   },
+  "hotmart": {
+    "title": "Dashboard da Hotmart",
+    "hint": "Vendas, receita e reembolsos dos seus produtos, lidos da sua conta Hotmart (somente leitura).",
+    "notConfigured": "A Hotmart não está configurada no backend (HOTMART_CLIENT_ID, HOTMART_CLIENT_SECRET e HOTMART_BASIC). Os passos estão em DEPLOY.md, seção Hotmart.",
+    "empty": "A Hotmart não devolveu vendas dos últimos 90 dias.",
+    "refresh": "Atualizar",
+    "syncing": "Lendo a Hotmart…",
+    "syncedAt": "Última leitura: {date}",
+    "period": "Período",
+    "periods": { "7": "Últimos 7 dias", "30": "Últimos 30 dias", "90": "Últimos 90 dias", "all": "Tudo o que foi lido" },
+    "currency": "Moeda",
+    "sales": "Vendas",
+    "gross": "Receita bruta",
+    "net": "Líquido estimado",
+    "avgTicket": "Ticket médio",
+    "refunds": "Reembolsos",
+    "refundedAmount": "Valor reembolsado",
+    "pending": "Pendentes",
+    "lost": "Perdidas",
+    "netNote": "Líquido estimado = preço menos a taxa da Hotmart. Não desconta impostos nem comissões de coprodutores ou afiliados. Cada moeda é mostrada separadamente.",
+    "chart": "Receita por dia",
+    "products": "Por produto",
+    "product": "Produto",
+    "linkedTo": "Produto do app",
+    "notLinked": "Sem vínculo",
+    "cross": {
+      "title": "Hotmart versus Meta Ads",
+      "hint": "Compara o que cada produto vendeu com o gasto em anúncios do mesmo produto. A Hotmart não diz qual anúncio originou cada venda, então o cruzamento é por produto: vincule acima cada produto da Hotmart ao do app.",
+      "empty": "Vincule um produto da Hotmart a um do app que tenha campanhas enviadas ao Meta para ver o cruzamento.",
+      "spend": "Gasto em anúncios",
+      "profit": "Líquido menos gasto",
+      "excluded": "{count, plural, one {# campanha não foi incluída} other {# campanhas não foram incluídas}}: a moeda não é {currency} ou não é conhecida (as carregadas à mão não guardam moeda)."
+    }
+  },
   "shell": {
     "brand": "Produtos Aurora",
     "create": "Criar",
@@ -777,6 +812,7 @@
     "createPackage": "Pacote de produto",
     "createPackageHint": "Escolha um nicho e receba o pacote completo",
     "createAds": "Anúncios",
+    "hotmart": "Hotmart",
     "createAdsHint": "Criativos para Meta Ads prontos para subir"
   }
 }

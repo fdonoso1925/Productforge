@@ -81,9 +81,14 @@ export function DashboardView() {
           <h1 className="text-[26px] font-bold">{t("title")}</h1>
           <p className="text-sm text-muted-foreground">{t("hint")}</p>
         </div>
-        <Link href="/ads" className="text-sm text-muted-foreground hover:underline">
-          {t("back")}
-        </Link>
+        <div className="flex gap-4 text-sm text-muted-foreground">
+          <Link href="/hotmart" className="hover:underline">
+            {t("hotmart")}
+          </Link>
+          <Link href="/ads" className="hover:underline">
+            {t("back")}
+          </Link>
+        </div>
       </header>
 
       <div className="grid gap-3 sm:grid-cols-2">

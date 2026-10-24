@@ -140,6 +140,21 @@ cuenta publicitaria y una página de Facebook; el resto se crea una sola vez:
    destino (https), el presupuesto diario y los países, y pulsa dos veces *Crear anuncios en pausa*.
    Revisa y activa en Ads Manager cuando quieras invertir.
 
+## 7. Conectar Hotmart (opcional, solo lectura)
+
+El dashboard de Hotmart (`/hotmart`) lee tus ventas; la app nunca crea, reembolsa ni modifica nada en
+Hotmart.
+
+1. En Hotmart: *Herramientas → Credenciales de desarrollador → Crear credencial* (tipo API de
+   Hotmart). Te muestra **Client ID**, **Client Secret** y **Basic**.
+2. En `backend/.env`: `HOTMART_CLIENT_ID`, `HOTMART_CLIENT_SECRET` y `HOTMART_BASIC` (el valor
+   «Basic …»; si lo dejas vacío se arma con el ID y el secreto). En Railway, en la API.
+3. Reinicia el backend y abre *Hotmart* en el menú: la primera lectura trae los últimos 90 días y se
+   repite sola al abrir si pasaron más de 30 minutos (o con el botón *Actualizar*).
+4. Para cruzar con Meta Ads, vincula cada producto de Hotmart con el de la app en la tabla «Por
+   producto». El cruce solo incluye campañas subidas a Meta desde la app (guardan la moneda de la
+   cuenta) y compara en la misma moneda.
+
 ## Qué hacer si algo falla
 
 | Síntoma | Causa probable |

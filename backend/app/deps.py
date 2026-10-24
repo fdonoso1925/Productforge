@@ -35,6 +35,8 @@ from app.db.supabase import (
     SupabaseRest,
     UsageRepo,
 )
+from app.hotmart.client import HotmartClient
+from app.hotmart.sync import HotmartRepo
 from app.pipeline.generate import PipelineDeps
 from app.pipeline.uploads import UploadQueue
 from app.storage.crypto import TokenCipher
@@ -62,6 +64,8 @@ class Services:
     ad_images: ImageRouter
     ad_results: AdResultRepo
     meta: MetaClient | None = None
+    hotmart: HotmartClient | None = None
+    hotmart_repo: HotmartRepo | None = None
 
     def ads(self) -> AdDeps:
         return AdDeps(
@@ -143,6 +147,12 @@ def build_services(settings: Settings) -> Services:
             pixel_id=settings.meta_pixel_id,
             version=settings.meta_api_version,
         ),
+        hotmart=HotmartClient(
+            client_id=settings.hotmart_client_id,
+            client_secret=settings.hotmart_client_secret,
+            basic=settings.hotmart_basic,
+        ),
+        hotmart_repo=HotmartRepo(db),
     )
 
 

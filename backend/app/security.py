@@ -186,6 +186,7 @@ _SECRET_PATTERNS = [
     (re.compile(r"AIza[A-Za-z0-9_\-]{20,}"), "AIza***"),
     (re.compile(r"\bAQ\.[A-Za-z0-9_\-]{20,}"), "AQ.***"),
     (re.compile(r"\bEAA[A-Za-z0-9]{30,}"), "EAA***"),  # tokens de acceso de Meta
+    (re.compile(r"\bBasic\s+[A-Za-z0-9+/=]{16,}"), "Basic ***"),  # credenciales de Hotmart
     (re.compile(r"eyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{5,}"), "eyJ***"),
 ]
 
@@ -258,6 +259,14 @@ def meta_problems(settings: Settings) -> list[str]:
     return [f"falta {name} (hay un META_ACCESS_TOKEN)" for name in missing]
 
 
+def hotmart_problems(settings: Settings) -> list[str]:
+    """Hotmart es opcional, pero con el ID sin el secreto (o al revés) no sirve."""
+    has_id, has_secret = bool(settings.hotmart_client_id), bool(settings.hotmart_client_secret)
+    if has_id != has_secret:
+        return ["HOTMART_CLIENT_ID y HOTMART_CLIENT_SECRET van juntos"]
+    return []
+
+
 def image_provider_problems(settings: Settings) -> list[str]:
     """Proveedores de imagen mal configurados (Gemini cobra: nada de gastar por accidente)."""
     problems = []
@@ -303,7 +312,7 @@ def production_problems(settings: Settings) -> list[str]:
         except ValueError:
             problems.append("TOKEN_ENCRYPTION_KEY no es una clave Fernet válida")
     problems += content_dir_problems(settings) + image_provider_problems(settings)
-    problems += meta_problems(settings)
+    problems += meta_problems(settings) + hotmart_problems(settings)
     return problems
 
 

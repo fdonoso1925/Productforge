@@ -71,6 +71,13 @@ class Settings(BaseSettings):
     meta_pixel_id: str = ""  # opcional; con él se puede elegir el objetivo «ventas»
     meta_api_version: str = "v25.0"
 
+    # Hotmart (solo lectura de ventas). Credenciales de Hotmart → Herramientas → Credenciales de
+    # desarrollador. `hotmart_basic` es el valor «Basic …» que muestra Hotmart; si falta, se arma
+    # con el ID y el secreto.
+    hotmart_client_id: str = ""
+    hotmart_client_secret: str = ""
+    hotmart_basic: str = ""
+
     @field_validator("allowed_emails", "cors_origins", "image_providers", mode="before")
     @classmethod
     def _split_csv(cls, value: object) -> object:

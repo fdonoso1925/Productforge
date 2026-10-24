@@ -207,6 +207,15 @@ export const api = {
   adsDrive: (batchId: string) => call<AdDrive>(`/ads/batches/${batchId}/drive`),
   adsDriveStart: (batchId: string) =>
     call<{ job_id: string }>(`/ads/batches/${batchId}/drive`, { method: "POST" }),
+  hotmartStatus: () =>
+    call<{ configured: boolean; synced_at: string | null; last_error: string | null; count: number }>("/hotmart/status"),
+  hotmartSync: (days = 90) =>
+    call<{ sales: number }>("/hotmart/sync", { method: "POST", body: JSON.stringify({ days }) }),
+  hotmartLink: (hotmartProductId: number, productId: string | null) =>
+    call<void>(`/hotmart/products/${hotmartProductId}/link`, {
+      method: "PUT",
+      body: JSON.stringify({ product_id: productId }),
+    }),
   adsMetaStatus: () => call<MetaStatus>("/ads/meta/status"),
   adsMeta: (batchId: string) => call<MetaBatch>(`/ads/batches/${batchId}/meta`),
   adsMetaPublish: (batchId: string, body: MetaPublishInput) =>

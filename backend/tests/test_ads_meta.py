@@ -262,6 +262,9 @@ class FakeMeta:
         self.created.append((kind, info))
         return f"{kind}-{self.n}"
 
+    async def currency(self) -> str:
+        return "USD"
+
     async def account_info(self) -> AdAccount:
         return AdAccount(id="act_1", name="Mi cuenta", currency="USD", status=1)
 

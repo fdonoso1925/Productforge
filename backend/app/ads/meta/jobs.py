@@ -86,6 +86,8 @@ async def run_ad_meta_publish(job: dict, deps: Any) -> None:
     brief_name = (batch.get("brief") or {}).get("product_name", "")
     today = datetime.now(UTC).date().isoformat()
     try:
+        # La moneda de la cuenta queda guardada para cruzar el gasto con las ventas de Hotmart.
+        state["currency"] = await meta.currency()
         if not state.get("campaign_id"):
             state["campaign_id"] = await meta.create_campaign(
                 f"ProductForge · {brief_name} · {today}", state["objective"]
