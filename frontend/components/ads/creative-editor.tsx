@@ -19,6 +19,14 @@ import {
 } from "@/lib/ads";
 import { ApiError, api } from "@/lib/api";
 
+/** «a, b ,c» → ["a", "b", "c"] (sin vacíos ni palabras larguísimas). */
+function keywords(text: string): string[] {
+  return text
+    .split(",")
+    .map((k) => k.trim().slice(0, LIMITS.keywordMax))
+    .filter(Boolean);
+}
+
 const SELECT_CLASS = "h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm";
 
 function Counter({ value, max, unit }: { value: number; max: number; unit: "words" | "chars" }) {
@@ -47,12 +55,21 @@ export function CreativeEditor({
   const [image, setImage] = useState<ImageCopy>(creative.copy.image);
   const [ad, setAd] = useState<AdCopy>(creative.copy.ad);
   const [bulletText, setBulletText] = useState(creative.copy.image.bullets.join("\n"));
+  // La foto de fondo: lo que se busca en el banco de imágenes (inglés, separado por comas).
+  const [keywordText, setKeywordText] = useState(creative.copy.stock_keywords.join(", "));
+  const [scene, setScene] = useState(creative.copy.scene);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const draft = useMemo(
-    () => ({ ...creative.copy, image: { ...image, bullets: lines(bulletText) }, ad }),
-    [creative.copy, image, ad, bulletText],
+    () => ({
+      ...creative.copy,
+      image: { ...image, bullets: lines(bulletText) },
+      ad,
+      scene,
+      stock_keywords: keywords(keywordText),
+    }),
+    [creative.copy, image, ad, bulletText, scene, keywordText],
   );
   const issues = useMemo(() => copyIssues(draft), [draft]);
   const templateId = creative.template_id;
@@ -66,7 +83,13 @@ export function CreativeEditor({
     setPending(true);
     setError(null);
     try {
-      await api.adsEdit(creative.id, { image: draft.image, ad });
+      // La foto solo viaja si cambió: así un creativo anterior (sin escena guardada) se edita igual.
+      const photoChanged = scene !== creative.copy.scene || keywordText !== creative.copy.stock_keywords.join(", ");
+      await api.adsEdit(creative.id, {
+        image: draft.image,
+        ad,
+        ...(photoChanged ? { stock_keywords: draft.stock_keywords, scene: scene.trim() } : {}),
+      });
       onSaved();
     } catch (e) {
       setError(
@@ -133,6 +156,25 @@ export function CreativeEditor({
             </select>
           </div>
         )}
+      </div>
+
+      <div className="grid gap-4 border-t pt-4 sm:grid-cols-2">
+        <p className="text-sm font-medium sm:col-span-2">{t("photo")}</p>
+        <p className="-mt-2 text-xs text-muted-foreground sm:col-span-2">{t("photoHint")}</p>
+        <div className="flex flex-col gap-1 sm:col-span-2">
+          <Label htmlFor={`kw-${creative.id}`}>{t("photoKeywords")}</Label>
+          <Input
+            id={`kw-${creative.id}`}
+            value={keywordText}
+            onChange={(e) => setKeywordText(e.target.value)}
+            placeholder="home office, sunrise"
+          />
+          <span className="text-xs text-muted-foreground">{t("photoKeywordsHint")}</span>
+        </div>
+        <div className="flex flex-col gap-1 sm:col-span-2">
+          <Label htmlFor={`sc-${creative.id}`}>{t("photoScene")}</Label>
+          <Input id={`sc-${creative.id}`} value={scene} onChange={(e) => setScene(e.target.value)} maxLength={LIMITS.sceneMax} />
+        </div>
       </div>
 
       <div className="grid gap-4 border-t pt-4 sm:grid-cols-2">

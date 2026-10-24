@@ -47,6 +47,8 @@ export function BatchView({ batchId }: { batchId: string }) {
   const [exported, setExported] = useState<AdExport | null>(null);
   const [busy, setBusy] = useState(false);
   const [nonce, setNonce] = useState(0);
+  // ¿Hay algún proveedor de fotos activo? Si sí, se ofrece ponerle foto a los anuncios ya hechos.
+  const [photosOn, setPhotosOn] = useState(false);
 
   // Lecturas directas a Supabase: RLS garantiza que solo vemos lo nuestro.
   const fetchAll = useCallback(async (): Promise<Data> => {
@@ -128,6 +130,17 @@ export function BatchView({ batchId }: { batchId: string }) {
     };
   }, [batchId, renderedKey]);
 
+  useEffect(() => {
+    let alive = true;
+    api
+      .adsImagesStatus()
+      .then((r) => alive && setPhotosOn(r.providers.some((p) => p.enabled && !p.exhausted)))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const groups = useMemo(() => groupCreatives(data?.creatives ?? []), [data]);
 
   if (!data) return <Shell>{error ? <ErrorBox message={error} /> : <Loading text={tc("loading")} />}</Shell>;
@@ -136,6 +149,7 @@ export function BatchView({ batchId }: { batchId: string }) {
   const live = creatives.filter((c) => c.status !== "discarded");
   const rendered = live.filter((c) => c.status === "rendered");
   const pending = live.filter((c) => c.status === "planned" || c.status === "error");
+  const withoutPhoto = rendered.filter((c) => !c.base_image_path);
   const working = isActive(job) || batch.status === "planning" || batch.status === "rendering";
   const refresh = () => setNonce((n) => n + 1);
 
@@ -195,6 +209,17 @@ export function BatchView({ batchId }: { batchId: string }) {
                 <Download aria-hidden />
                 {t("export")}
               </Button>
+              {photosOn && withoutPhoto.length > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={() => run(() => api.adsRender(batchId, [], true))}
+                  disabled={busy || working}
+                  title={t("recomposePhotosHint")}
+                >
+                  <ImageIcon aria-hidden />
+                  {t("recomposePhotos", { count: withoutPhoto.length })}
+                </Button>
+              )}
               <ConfirmButton
                 size="default"
                 label={t("duplicate", { market: tm(otherMarket) })}

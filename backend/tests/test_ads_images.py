@@ -3,6 +3,7 @@ y las 12 plantillas. Ningún test llama a Pixabay ni a Gemini de verdad."""
 
 import asyncio
 import base64
+import hashlib
 import io
 from uuid import uuid4
 
@@ -23,7 +24,7 @@ from app.ads.images.gemini import GeminiImageProvider
 from app.ads.images.pixabay import PixabayProvider
 from app.ads.images.router import ImageRouter, UnusableImage, build_router, fit_image
 from app.ads.jobs import FALLBACK_TEMPLATE, available_templates
-from app.ads.render import MissingImage, photo_veil
+from app.ads.render import MAX_VEIL, MIN_VEIL, MissingImage, photo_veil, veil_color
 from app.ads.schemas import CreativeDrafts, CreativeReview, CreativeReviews
 from app.config import Settings
 from tests.memory import MemoryImageCache, MemoryProviderUsage, MemoryStorage
@@ -219,6 +220,12 @@ def test_gemini_errors_map_to_router_friendly_exceptions(response, error) -> Non
 # ───────────────────────────── router ─────────────────────────────
 
 
+def tint(keywords) -> tuple[int, int, int]:
+    """Un color distinto por búsqueda: así se nota cuándo cambia la foto."""
+    digest = hashlib.md5(" ".join(keywords).encode(), usedforsecurity=False).digest()
+    return digest[0], digest[1], digest[2]
+
+
 class Fake:
     """Proveedor de prueba: devuelve imágenes o levanta lo que se le indique, y cuenta llamadas."""
 
@@ -227,6 +234,7 @@ class Fake:
         self.outcomes = list(outcomes)
         self.cost, self.daily_cap, self.on = cost, cap, on
         self.calls = 0
+        self.requests: list[ImageRequest] = []
 
     def enabled(self) -> bool:
         return self.on
@@ -236,11 +244,13 @@ class Fake:
 
     async def fetch(self, request: ImageRequest) -> ProviderImage:
         self.calls += 1
+        self.requests.append(request)
         outcome = self.outcomes.pop(0) if self.outcomes else "ok"
         if isinstance(outcome, Exception):
             raise outcome
         return ProviderImage(
-            data=jpeg(), mime="image/jpeg", provider=self.name, cost_usd=self.cost,
+            data=jpeg(color=tint(request.keywords)), mime="image/jpeg", provider=self.name,
+            cost_usd=self.cost,
             credit={"provider": self.name},
         )  # fmt: skip
 
@@ -393,9 +403,10 @@ def test_the_photo_template_needs_a_photo_and_never_flags_the_full_bleed_backgro
 def test_the_veil_gets_stronger_over_a_bright_photo_and_text_stays_readable() -> None:
     spec = R.ratios["4x5"]
     palette = BOLD.palette
-    bright = photo_veil(stripes(light=True), palette.primary, palette.on_primary, spec)
-    dark = photo_veil(stripes(light=False), palette.primary, palette.on_primary, spec)
-    assert 0.35 <= dark < bright <= 0.9
+    veil = veil_color(palette.primary)
+    bright = photo_veil(stripes(light=True), veil, palette.on_primary, spec)
+    dark = photo_veil(stripes(light=False), veil, palette.on_primary, spec)
+    assert MIN_VEIL <= dark < bright <= MAX_VEIL
     png, _ = R.render_with_report(
         template_id="photo_headline", copy=copy(), ratio="4x5", product_template=BOLD,
         market="es-LATAM", bg_jpeg=stripes(light=True),
@@ -639,3 +650,277 @@ def test_image_status_lists_providers_without_secrets() -> None:
     assert by_name["gemini"]["enabled"] is False and by_name["gemini"]["free"] is False
     assert data["photo_templates"] is True
     assert "key" not in str(data).lower()
+
+
+# ───────────────────── todos los anuncios llevan foto de fondo ─────────────────────
+
+
+@pytest.mark.parametrize("template", sorted(VARIANTS))
+def test_every_template_accepts_a_photo_background_without_overflowing_or_overlapping(
+    template: str,
+) -> None:
+    from tests.test_ads_render import mockup as make_mockup
+
+    for ratio in ("4x5", "9x16", "1x1"):
+        spec = R.ratios[ratio]
+        pdf, report = R.compose(
+            template_id=template,
+            copy=copy(**VARIANTS[template]),
+            ratio=ratio,
+            product_template=BOLD,
+            market="es-LATAM",
+            product_name="Bandeja Única",
+            mockup_png=make_mockup() if R.templates[template].uses_mockup else None,
+            bg_jpeg=stripes((spec.width, spec.height)),
+        )
+        assert report.outside == [], (template, ratio)
+        assert overlapping(text_boxes(pdf)) == [], (template, ratio)
+
+
+def test_a_photo_turns_any_template_into_light_text_on_a_dark_veil() -> None:
+    """Sin foto, `checklist` es claro (texto oscuro sobre blanco); con foto el texto se vuelve
+    claro sobre el velo oscuro, que es lo que se lee sobre una imagen."""
+    plain = R.render(
+        template_id="checklist", copy=copy(), ratio="4x5", product_template=BOLD, market="es-LATAM"
+    )
+    photo = R.render(
+        template_id="checklist", copy=copy(), ratio="4x5", product_template=BOLD,
+        market="es-LATAM", bg_jpeg=stripes(light=True),
+    )  # fmt: skip
+    corner = lambda png: sum(Image.open(io.BytesIO(png)).convert("RGB").getpixel((5, 600)))  # noqa: E731
+    assert corner(plain) > 3 * 230  # fondo blanco
+    assert corner(photo) < 3 * 200  # la foto clara quedó bajo el velo
+
+
+def test_the_veil_is_a_darker_shade_of_the_brand_color() -> None:
+    assert veil_color("#5B21B6") == "#321264"
+    assert veil_color("#FFFFFF") == "#8C8C8C"
+    r, g, b = (int(veil_color("#5B21B6")[i : i + 2], 16) for i in (1, 3, 5))
+    assert (r, g, b) < (0x5B, 0x21, 0xB6)  # más oscuro en cada canal
+
+
+def test_a_scene_and_keywords_are_required_for_every_template() -> None:
+    for template in ("headline_bold", "checklist", "note", "question", "photo_headline"):
+        assert errors(template, scene="") != []
+        assert errors(template, stock_keywords=[]) != []
+        assert errors(template, stock_keywords=["solo"]) != []
+        assert errors(template, stock_keywords=["a", "b", "c", "d"]) != []
+        assert errors(template) in ([], errors(template))  # el borrador de ejemplo es válido
+    assert [e for e in errors("headline_bold") if "scene" in e] == []
+
+
+def photo_batch_world(router):
+    drafts = [draft("headline_bold"), draft("checklist")]
+    reviews = [CreativeReview(index=i, policy=green(), score=score()) for i in range(2)]
+    w = AdsWorld(
+        [CreativeDrafts(creatives=drafts), CreativeReviews(reviews=reviews)], images=router
+    )
+    pick = [{"angle_id": "mecanismo", "avatar": avatar().name, "count": 2}]
+    batch_id = w.client.post("/ads/batches", json=w.batch_body(picks=pick, ratios=["4x5"])).json()[
+        "batch_id"
+    ]
+    w.run_worker()
+    return w, batch_id
+
+
+def test_text_templates_get_a_photo_background_when_a_provider_is_available() -> None:
+    router, *_ = make_router(Fake("pixabay"))
+    w, batch_id = photo_batch_world(router)
+    router._storage = w.storage
+    creatives = render_all(w, batch_id)
+    assert {c["template_id"] for c in creatives} == {
+        "headline_bold",
+        "checklist",
+    }  # no cambian de plantilla
+    assert all(c["image_provider"] == "pixabay" and c["base_image_path"] for c in creatives)
+    assert all(c["image_credit"]["provider"] == "pixabay" for c in creatives)
+
+
+def test_without_any_photo_text_templates_still_render_with_the_brand_color() -> None:
+    router, *_ = make_router(Fake("pixabay", outcomes=[ProviderError("x")] * 4))
+    w, batch_id = photo_batch_world(router)
+    creatives = render_all(w, batch_id)
+    assert all(c["status"] == "rendered" for c in creatives)
+    assert {c["template_id"] for c in creatives} == {
+        "headline_bold",
+        "checklist",
+    }  # sin cambio de plantilla
+    assert all(c["image_provider"] is None for c in creatives)
+
+
+# ───────────────────── fotos de Pixabay: tamaño y variedad ─────────────────────
+
+
+def test_pixabay_skips_photos_too_small_for_the_format_and_varies_the_pick() -> None:
+    small = {
+        **HIT,
+        "id": 10,
+        "imageWidth": 1000,
+        "imageHeight": 600,
+        "largeImageURL": "https://pixabay.com/get/s.jpg",
+    }
+    tall = [
+        {
+            **HIT,
+            "id": 20 + i,
+            "imageWidth": 2000,
+            "imageHeight": 3000,
+            "largeImageURL": f"https://pixabay.com/get/t{i}.jpg",
+        }
+        for i in range(8)
+    ]
+    provider = pixabay([small, *tall])
+    ids = set()
+    for scene in (
+        "oficina",
+        "playa",
+        "montaña",
+        "ciudad",
+        "cocina",
+        "jardín",
+        "biblioteca",
+        "calle",
+    ):
+        request = ImageRequest(scene, ("desk", "notebook"), "4:5")
+        ids.add(asyncio.run(provider.fetch(request)).credit["id"])
+    assert 10 not in ids  # la foto apaisada de 1000×600 no alcanza para 4:5
+    assert len(ids) > 1 and ids <= {20, 21, 22, 23, 24}  # varía, entre las 5 mejores
+    same = ImageRequest("oficina", ("desk", "notebook"), "4:5")
+    assert (
+        asyncio.run(provider.fetch(same)).credit["id"]
+        == asyncio.run(provider.fetch(same)).credit["id"]
+    )
+
+
+# ───────────────────── cambiar la foto y recomponer lotes anteriores ─────────────────────
+
+
+def test_editing_the_photo_keywords_fetches_a_new_background_without_ai_or_new_text() -> None:
+    provider = Fake("pixabay")
+    router, *_ = make_router(provider)
+    w, batch_id = photo_batch_world(router)
+    router._storage = w.storage
+    creatives = render_all(w, batch_id)
+    target = creatives[0]
+    before = w.storage.objects[target["storage_path"]]
+    llm_calls = len(w.llm.calls)
+
+    response = w.client.put(
+        f"/ads/creatives/{target['id']}",
+        json={"stock_keywords": ["mountain", "lake"], "scene": "Un lago de montaña al amanecer"},
+    )
+    assert response.status_code == 200, response.text
+    assert provider.requests[-1].keywords == ("mountain", "lake")  # se pidió otra foto
+    assert provider.requests[-1].prompt == "Un lago de montaña al amanecer"
+    assert w.storage.objects[target["storage_path"]] != before  # la imagen cambió
+    assert len(w.llm.calls) == llm_calls  # sin IA
+    saved = w.creatives.rows[target["id"]]
+    assert saved["copy"]["stock_keywords"] == ["mountain", "lake"]
+    assert saved["copy"]["image"] == target["copy"]["image"]  # el texto no se tocó
+
+
+def test_photo_edits_are_validated_like_everything_else() -> None:
+    router, *_ = make_router(Fake("pixabay"))
+    w, batch_id = photo_batch_world(router)
+    target = w.client.get(f"/ads/batches/{batch_id}").json()["creatives"][0]
+    put = lambda **body: w.client.put(f"/ads/creatives/{target['id']}", json=body)  # noqa: E731
+    assert put(stock_keywords=["solo"]).status_code == 422  # mínimo 2 palabras
+    assert put(stock_keywords=["a", "b", "c", "d"]).status_code == 422
+    assert put(stock_keywords=["x" * 41, "b"]).status_code == 422
+    assert put(scene="s" * 301).status_code == 422
+    assert put(scene="   ").status_code == 422  # sin escena no hay foto que buscar
+    assert put().status_code == 422
+
+
+def test_force_rendering_recomposes_what_was_already_composed() -> None:
+    provider = Fake("pixabay")
+    router, *_ = make_router(provider)
+    w, batch_id = photo_batch_world(router)
+    router._storage = w.storage
+    creatives = render_all(w, batch_id)
+    stamp = {c["id"]: w.storage.objects[c["storage_path"]] for c in creatives}
+    fetched = provider.calls
+
+    w.client.post(f"/ads/batches/{batch_id}/render", json={})  # sin force: no hay nada por hacer
+    w.run_worker()
+    assert provider.calls == fetched
+    forced = w.client.post(f"/ads/batches/{batch_id}/render", json={"force": True})
+    assert forced.status_code == 202
+    assert w.jobs.rows[forced.json()["job_id"]]["payload"]["force"] is True
+    w.run_worker()
+    state = w.client.get(f"/ads/batches/{batch_id}").json()
+    assert state["batch"]["status"] == "ready"
+    assert {c["status"] for c in state["creatives"]} == {"rendered"}
+    assert provider.calls == fetched  # las fotos salen de la caché: no se vuelven a pedir
+    assert all(w.storage.objects[c["storage_path"]] for c in state["creatives"]) and stamp
+
+
+# ───────────────────── lo que falló contra el Supabase real ─────────────────────
+
+
+def test_a_void_rpc_answers_without_a_body_and_that_is_not_an_error() -> None:
+    """`ad_usage_add` devuelve `void`: PostgREST contesta vacío y antes se intentaba leer JSON."""
+    from app.db.supabase import SupabaseRest
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/rest/v1/rpc/ad_usage_add"
+        return httpx.Response(204)
+
+    db = SupabaseRest("http://supabase.test", "k")
+    db._client = httpx.AsyncClient(
+        base_url="http://supabase.test/rest/v1", transport=httpx.MockTransport(handler)
+    )
+    assert asyncio.run(db.rpc("ad_usage_add", {"p_provider": "x"})) is None
+
+    def with_body(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=[{"id": 1}])
+
+    db._client = httpx.AsyncClient(
+        base_url="http://supabase.test/rest/v1", transport=httpx.MockTransport(with_body)
+    )
+    assert asyncio.run(db.rpc("claim_job")) == [{"id": 1}]  # lo que sí devuelve datos sigue igual
+
+
+class Broken:
+    """Un repositorio accesorio que falla siempre."""
+
+    async def add(self, *args, **kwargs):
+        raise RuntimeError("boom")
+
+    put = mark_exhausted = add
+
+    async def get(self, *args, **kwargs):
+        return None
+
+
+def test_a_bookkeeping_failure_never_costs_the_ad_its_photo() -> None:
+    router, *_ = make_router(Fake("pixabay"))
+    router._usage, router._cache = Broken(), Broken()  # el consumo y la caché fallan
+    image = get(router)
+    assert image is not None and image.provider == "pixabay"  # la foto llega igual
+    assert image.storage_path  # y se guardó en Storage
+    router._storage = Broken()
+    router._storage.upload = Broken().add  # ahora falla también el guardado
+    other = get(router, ImageRequest("otra", ("lake",), "4:5"))
+    assert other is not None and other.storage_path == ""  # sin archivo, sin ruta
+
+
+def test_a_failed_recompose_keeps_the_image_the_creative_already_had() -> None:
+    router, *_ = make_router(Fake("pixabay"))
+    w, batch_id = photo_batch_world(router)
+    router._storage = w.storage
+    creatives = render_all(w, batch_id)
+    old = {c["id"]: w.storage.objects[c["storage_path"]] for c in creatives}
+
+    async def broken_upload(*args, **kwargs):
+        raise RuntimeError("storage caído")
+
+    w.storage.upload = broken_upload
+    w.client.post(f"/ads/batches/{batch_id}/render", json={"force": True})
+    try:
+        w.run_worker()
+    except AssertionError:
+        pass
+    rows = w.creatives.rows.values()
+    assert {c["status"] for c in rows} == {"rendered"}  # nada pasó a «error»
+    assert all(w.storage.objects[c["storage_path"]] == old[c["id"]] for c in rows)  # imagen intacta

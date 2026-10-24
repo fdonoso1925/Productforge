@@ -521,7 +521,9 @@
       "original": "ver o original",
       "iteration": "Iteração",
       "results": "Resultados",
-      "iterate": "Iterar"
+      "iterate": "Iterar",
+      "recomposePhotos": "{count, plural, one {Pôr foto de fundo em # anúncio} other {Pôr foto de fundo em # anúncios}}",
+      "recomposePhotosHint": "Recompõe os anúncios feitos sem foto. Não usa IA e as fotos são grátis."
     },
     "editor": {
       "title": "Editar texto",
@@ -570,8 +572,15 @@
         "primaryLongRange": "O texto principal longo tem {n} caracteres (entre {min} e {max}).",
         "bulletsRange": "Este template precisa de {min} a {max} itens (há {n}).",
         "bulletsPaired": "Este template precisa de 2 ou 4 itens: antes e depois (há {n}).",
-        "noteRequired": "O template de nota precisa do texto da nota."
-      }
+        "noteRequired": "O template de nota precisa do texto da nota.",
+        "sceneRequired": "Descreva a cena da foto de fundo.",
+        "keywordsRange": "A foto precisa de {min} a {max} palavras-chave (há {n})."
+      },
+      "photo": "Foto de fundo",
+      "photoHint": "Todos os anúncios levam uma foto atrás do texto. Mude as palavras-chave para buscar outra e salve: recompõe em segundos, sem IA.",
+      "photoKeywords": "Palavras-chave da foto (em inglês, 2 ou 3 separadas por vírgula)",
+      "photoKeywordsHint": "Melhor conceitos concretos: «home office», «sunrise mountain», «coffee desk», «family kitchen».",
+      "photoScene": "Descrição da cena"
     },
     "drive": {
       "notConnected": "O Google Drive não está conectado",

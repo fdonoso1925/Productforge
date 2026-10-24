@@ -105,11 +105,18 @@ class BatchOut(BaseModel):
 
 class RenderIn(BaseModel):
     creative_ids: list[UUID] = Field(default_factory=list, max_length=200)
+    # Recompone también lo ya compuesto (p. ej. para ponerle foto de fondo a un lote anterior).
+    force: bool = False
 
 
 class EditIn(BaseModel):
     image: ImageCopy | None = None
     ad: AdCopy | None = None
+    # La foto de fondo: lo que se busca (palabras clave en inglés) y cómo se describe.
+    stock_keywords: list[Annotated[str, Field(min_length=1, max_length=40)]] | None = Field(
+        default=None, max_length=3
+    )
+    scene: str | None = Field(default=None, max_length=300)
 
 
 class ProofIn(BaseModel):
@@ -335,7 +342,7 @@ async def render_batch(batch_id: UUID, body: RenderIn, user: User, services: Ser
         user_id=user.id,
         batch_id=batch_id,
         kind="ad_render",
-        payload={"creative_ids": [str(i) for i in body.creative_ids]},
+        payload={"creative_ids": [str(i) for i in body.creative_ids], "force": body.force},
     )
     return JobOut(job_id=UUID(job["id"]))
 
@@ -352,14 +359,28 @@ async def edit_creative(creative_id: UUID, body: EditIn, user: User, services: S
 
     Pasa por las mismas reglas y el mismo semáforo que el texto de la IA, pero sin IA."""
     creative = await owned_creative(services, creative_id, user)
-    if body.image is None and body.ad is None:
+    if all(v is None for v in (body.image, body.ad, body.stock_keywords, body.scene)):
         raise unprocessable("no hay nada que cambiar")
     batch, brief_, proofs = await batch_and_context(services, creative, user)
     old = ad_jobs.draft_of(creative)
     draft = CreativeDraft(
         **{
             **old.model_dump(),
-            **{k: v for k, v in (("image", body.image), ("ad", body.ad)) if v is not None},
+            **{
+                k: v
+                for k, v in (
+                    ("image", body.image),
+                    ("ad", body.ad),
+                    ("scene", body.scene.strip() if body.scene is not None else None),
+                    (
+                        "stock_keywords",
+                        [k.strip() for k in body.stock_keywords]
+                        if body.stock_keywords is not None
+                        else None,
+                    ),
+                )
+                if v is not None
+            },
         }
     )
     angle = services.prompts.angle_library(brief_.market).get(creative["angle"], {})
@@ -396,7 +417,7 @@ async def edit_creative(creative_id: UUID, body: EditIn, user: User, services: S
         try:
             await ad_jobs.render_creative(deps, batch, c, template=template, mockup=mockup)
         except Exception:
-            await services.ad_creatives.update(c["id"], status="error")
+            await services.ad_creatives.update(c["id"], status=ad_jobs.failure_status(c))
             raise HTTPException(
                 status.HTTP_500_INTERNAL_SERVER_ERROR, "no se pudo componer"
             ) from None
@@ -421,7 +442,7 @@ async def render_one(creative_id: UUID, user: User, services: ServicesDep) -> di
     try:
         await ad_jobs.render_creative(deps, batch, creative, template=template, mockup=mockup)
     except Exception:
-        await services.ad_creatives.update(creative_id, status="error")
+        await services.ad_creatives.update(creative_id, status=ad_jobs.failure_status(creative))
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "no se pudo componer") from None
     return await services.ad_creatives.get(creative_id, user.id)
 

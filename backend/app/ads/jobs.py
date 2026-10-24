@@ -47,6 +47,15 @@ class AdDeps:
     results: Any = None  # AdResultRepo: resultados de Ads Manager (aprendizaje)
 
 
+def failure_status(creative: dict) -> str:
+    """Si recomponer falla, un creativo que ya tenía imagen la conserva: no pasa a «error»."""
+    return (
+        "rendered"
+        if creative.get("status") == "rendered" and creative.get("storage_path")
+        else "error"
+    )
+
+
 def available_templates(deps: "AdDeps", brief: AdBrief, proofs: list[AdProof]) -> list[str]:
     """Plantillas que este lote puede usar hoy: las que necesitan foto, solo con un proveedor de
     imagen activo; la de oferta, solo con precio real; la de testimonio, solo con pruebas."""
@@ -253,21 +262,21 @@ async def render_creative(
 ) -> str:
     """Compone, sube y marca el creativo como renderizado. Devuelve la ruta en Storage.
 
-    Una plantilla con foto pide la imagen al router (caché → proveedores → tope diario). Si
-    ninguno puede, el creativo pasa a la plantilla de solo texto: el lote nunca se cae."""
+    Todos los anuncios llevan foto de fondo: se pide al router (caché → proveedores → tope
+    diario) para cualquier plantilla que la admita. Si ninguno puede, un anuncio que NO la exige
+    sale igual con su color de marca, y uno que sí (`photo_headline`) pasa a la plantilla de solo
+    texto: el lote nunca se cae."""
     brief = batch_brief(batch)
     user_id = UUID(batch["user_id"])
     routed: RoutedImage | None = None
-    if deps.renderer.templates[creative["template_id"]].uses_image:
-        routed = (
-            await deps.images.get(
-                user_id=user_id, request=image_request(creative, draft_of(creative), batch["niche"])
-            )
-            if deps.images
-            else None
+    definition = deps.renderer.templates[creative["template_id"]]
+    draft = draft_of(creative)
+    if deps.images and definition.supports_image and (draft.scene.strip() or draft.stock_keywords):
+        routed = await deps.images.get(
+            user_id=user_id, request=image_request(creative, draft, batch["niche"])
         )
-        if routed is None:
-            await switch_to_fallback(deps, batch, creative)
+    if routed is None and definition.uses_image:
+        await switch_to_fallback(deps, batch, creative)
     png = await asyncio.to_thread(
         compose_png,
         deps.renderer,
@@ -298,13 +307,11 @@ def needs_mockup(deps: AdDeps, creatives: list[dict]) -> bool:
 
 async def run_ad_render(job: dict, deps: AdDeps) -> None:
     batch = await deps.batches.get(job["batch_id"], UUID(job["user_id"]))
-    wanted = set(job.get("payload", {}).get("creative_ids") or [])
+    payload = job.get("payload", {})
+    wanted = set(payload.get("creative_ids") or [])
+    states = ("planned", "error", "rendered") if payload.get("force") else ("planned", "error")
     everything = await deps.creatives.list_for_batch(batch["id"])
-    todo = [
-        c
-        for c in everything
-        if c["status"] in ("planned", "error") and (not wanted or c["id"] in wanted)
-    ]
+    todo = [c for c in everything if c["status"] in states and (not wanted or c["id"] in wanted)]
     template = await asyncio.to_thread(load_template, deps.templates_dir, batch["template_id"])
     mockup = (
         await asyncio.to_thread(make_mockup, template, batch, batch_brief(batch))
@@ -322,7 +329,7 @@ async def run_ad_render(job: dict, deps: AdDeps) -> None:
                 await render_creative(deps, batch, creative, template=template, mockup=mockup)
             except Exception:
                 logger.exception("no se pudo componer el creativo %s", creative["id"])
-                await deps.creatives.update(creative["id"], status="error")
+                await deps.creatives.update(creative["id"], status=failure_status(creative))
                 failed += 1
             else:
                 done += 1

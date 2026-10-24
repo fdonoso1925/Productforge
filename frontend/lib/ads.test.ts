@@ -38,8 +38,8 @@ function draft(over: Partial<CreativeDraft> = {}, image: Partial<CreativeDraft["
       ...image,
     },
     ad: { primary_short: "Corto", primary_long: long, headline: "Ordena tus pedidos", description: "Método simple", cta: "LEARN_MORE" },
-    scene: "",
-    stock_keywords: [],
+    scene: "Escritorio ordenado con una libreta",
+    stock_keywords: ["desk", "notebook"],
     proof_id: null,
     ...over,
   };
@@ -80,6 +80,17 @@ describe("copyIssues (mismas reglas que el backend)", () => {
       expect(keys(draft({ template_id: template }, { bullets: items(3) }))).toContain("bulletsPaired");
       expect(keys(draft({ template_id: template }, { bullets: items(2) }))).not.toContain("bulletsPaired");
       expect(keys(draft({ template_id: template }, { bullets: items(4) }))).not.toContain("bulletsPaired");
+    }
+  });
+
+  it("todo anuncio lleva foto de fondo: escena y 2 o 3 palabras clave", () => {
+    expect(keys(draft({ scene: "  " }))).toContain("sceneRequired");
+    expect(keys(draft({ stock_keywords: [] }))).toContain("keywordsRange");
+    expect(keys(draft({ stock_keywords: ["solo"] }))).toContain("keywordsRange");
+    expect(keys(draft({ stock_keywords: ["a", "b", "c", "d"] }))).toContain("keywordsRange");
+    expect(keys(draft({ stock_keywords: ["a", "b", "c"] }))).not.toContain("keywordsRange");
+    for (const template of ["headline_bold", "checklist", "note", "question", "photo_headline"]) {
+      expect(keys(draft({ template_id: template, scene: "" }))).toContain("sceneRequired");
     }
   });
 

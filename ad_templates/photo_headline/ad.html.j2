@@ -1,11 +1,7 @@
 <style>
-.photo { position: absolute; left: 0; top: 0; width: {{ W }}px; height: {{ H }}px; }
-.veil { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: {{ c.bg }}; opacity: {{ veil }}; }
 .h { font-size: {{ fs.headline }}px; }
 .cta { align-self: flex-start; margin-top: 52px; }
 </style>
-<img class="photo" src="{{ bg_uri }}" alt="">
-<div class="veil"></div>
 <div class="safe">
   {% if copy.kicker %}<div class="kicker">{{ copy.kicker }}</div>{% endif %}
   <div class="h">{{ copy.headline }}</div>

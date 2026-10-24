@@ -37,6 +37,9 @@ ALLOWED = {"JPEG", "PNG", "WEBP"}
 ASPECTS = {"4:5": (4, 5), "9:16": (9, 16), "1:1": (1, 1)}
 
 
+_FAILED = object()  # marca de «esta operación accesoria falló»
+
+
 class UnusableImage(ProviderError):
     """La imagen no sirve (formato raro, demasiado chica): se prueba otro proveedor."""
 
@@ -127,6 +130,14 @@ class ImageRouter:
         cap = getattr(provider, "daily_cap", 0.0)
         return float(row.get("cost_usd") or 0) + cost <= cap
 
+    @staticmethod
+    async def _safely(what: str, awaitable) -> Any:
+        try:
+            return await awaitable
+        except Exception:
+            logger.exception("no se pudo registrar el %s de la imagen; se sigue sin él", what)
+            return _FAILED
+
     async def get(self, *, user_id: UUID, request: ImageRequest) -> RoutedImage | None:
         key = request.scene_hash(user_id)
         cached = await self._cache.get(key)
@@ -156,18 +167,22 @@ class ImageRouter:
             except Exception:
                 logger.exception("%s falló de forma inesperada", provider.name)
                 continue
-            await self._usage.add(provider.name, day, requests=1, cost_usd=raw.cost_usd)
+            # Contabilidad y caché son accesorias: si fallan, la foto ya está y el anuncio sale.
             path = f"{user_id}/ads/_images/{key}.jpg"
-            await self._storage.upload(path, jpeg, "image/jpeg")
-            await self._cache.put(
-                {
+            await self._safely(
+                "consumo", self._usage.add(provider.name, day, requests=1, cost_usd=raw.cost_usd)
+            )
+            stored = await self._safely("guardado", self._storage.upload(path, jpeg, "image/jpeg"))
+            if stored is not _FAILED:
+                row = {
                     "scene_hash": key,
                     "provider": raw.provider,
                     "storage_path": path,
                     "credit": raw.credit,
                 }
-            )
-            return RoutedImage(jpeg, raw.provider, raw.credit, path, raw.cost_usd)
+                await self._safely("caché", self._cache.put(row))
+            saved_path = "" if stored is _FAILED else path  # sin archivo no hay ruta que guardar
+            return RoutedImage(jpeg, raw.provider, raw.credit, saved_path, raw.cost_usd)
         return None
 
 

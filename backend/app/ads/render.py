@@ -39,7 +39,7 @@ LABELS = {
         "method": "Com o método",
     },
 }
-MIN_VEIL, MAX_VEIL = 0.35, 0.9
+MIN_VEIL, MAX_VEIL = 0.28, 0.9
 FULL_BLEED = 0.9  # un objeto de imagen que cubre tanto de la página es el fondo, no contenido
 SUCCESS, DANGER = "#16A34A", "#DC2626"
 MIN_TEXT_CONTRAST = 4.5
@@ -87,7 +87,8 @@ class AdTemplate(BaseModel):
     id: str
     name: str
     description: str
-    uses_image: bool
+    uses_image: bool  # EXIGE una foto de fondo (sin ella no se puede componer)
+    supports_image: bool = True  # admite una foto de fondo opcional detrás del texto
     uses_mockup: bool
     scheme: str
 
@@ -128,6 +129,17 @@ def readable(fg: str, bg: str, *candidates: str, minimum: float = MIN_TEXT_CONTR
         if contrast(luminance(hex_rgb(option)), bg_l) >= minimum:
             return option
     return max(options, key=lambda o: contrast(luminance(hex_rgb(o)), bg_l))
+
+
+VEIL_DARKEN = 0.45  # cuánto se oscurece el color de marca para el velo
+
+
+def veil_color(brand: str) -> str:
+    """El color de marca mezclado con negro: contrasta más con el texto claro, así el velo
+    necesita menos opacidad y la foto se ve más viva (sin perder la identidad del color)."""
+    r, g, b = hex_rgb(brand)
+    k = 1 - VEIL_DARKEN
+    return f"#{round(r * k):02X}{round(g * k):02X}{round(b * k):02X}"
 
 
 def photo_veil(jpeg: bytes, bg: str, fg: str, spec: RatioSpec) -> float:
@@ -333,7 +345,10 @@ class AdRenderer:
         tpl = self.templates[template_id]
         if tpl.uses_image and bg_jpeg is None:
             raise MissingImage(template_id)
-        c = scheme_colors(product_template, tpl.scheme)
+        # Con foto de fondo, el texto va sobre un velo del color de marca: siempre esquema «bold».
+        c = scheme_colors(
+            product_template, "bold" if bg_jpeg and tpl.supports_image else tpl.scheme
+        )
         c["mk"] = DANGER if copy.mark == "cross" else SUCCESS
         faces = product_template.font_faces()
         caveat = font_path(self.templates_dir / "_fonts", "Caveat", 700)
@@ -343,7 +358,8 @@ class AdRenderer:
             "data:image/png;base64," + base64.b64encode(mockup_png).decode() if mockup_png else None
         )
         bg_uri = "data:image/jpeg;base64," + base64.b64encode(bg_jpeg).decode() if bg_jpeg else None
-        veil = photo_veil(bg_jpeg, c["bg"], c["fg"], spec) if bg_jpeg else 0.0
+        veil_hex = veil_color(c["bg"])
+        veil = photo_veil(bg_jpeg, veil_hex, c["fg"], spec) if bg_jpeg else 0.0
         page = self._env.get_template("page.html.j2")
         pdf = b""
         outside: list[str] = []
@@ -369,6 +385,7 @@ class AdRenderer:
                 mockup_uri=mockup_uri,
                 bg_uri=bg_uri,
                 veil=veil,
+                veil_color=veil_hex,
                 labels=LABELS[market],
                 danger=DANGER,
                 success=SUCCESS,

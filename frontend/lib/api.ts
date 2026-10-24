@@ -184,13 +184,17 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  adsRender: (batchId: string, creativeIds: string[] = []) =>
+  /** `force` recompone también lo ya compuesto (p. ej. para ponerle foto de fondo a un lote anterior). */
+  adsRender: (batchId: string, creativeIds: string[] = [], force = false) =>
     call<{ job_id: string }>(`/ads/batches/${batchId}/render`, {
       method: "POST",
-      body: JSON.stringify({ creative_ids: creativeIds }),
+      body: JSON.stringify({ creative_ids: creativeIds, force }),
     }),
   adsUrls: (batchId: string) => call<Record<string, string>>(`/ads/batches/${batchId}/urls`, { method: "POST" }),
-  adsEdit: (creativeId: string, body: { image?: ImageCopy; ad?: AdCopy }) =>
+  adsEdit: (
+    creativeId: string,
+    body: { image?: ImageCopy; ad?: AdCopy; stock_keywords?: string[]; scene?: string },
+  ) =>
     call<CreativeRow>(`/ads/creatives/${creativeId}`, { method: "PUT", body: JSON.stringify(body) }),
   adsRenderOne: (creativeId: string) =>
     call<CreativeRow>(`/ads/creatives/${creativeId}/render`, { method: "POST" }),

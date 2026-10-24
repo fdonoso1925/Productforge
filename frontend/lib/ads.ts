@@ -83,6 +83,7 @@ export type CreativeRow = {
   filename: string;
   storage_path: string | null;
   image_provider: string | null;
+  base_image_path?: string | null;
   parent_creative_id?: string | null;
   updated_at?: string;
 };
@@ -151,6 +152,9 @@ export const LIMITS = {
   primaryLong: [200, 700] as const,
   headlineMax: 40,
   descriptionMax: 30,
+  keywords: [2, 3] as const,
+  keywordMax: 40,
+  sceneMax: 300,
   maxPicks: 8,
   maxCreativesPerBatch: 20,
   maxCount: 5,
@@ -194,6 +198,12 @@ export function copyIssues(draft: CreativeDraft): Issue[] {
     out.push({ key: "bulletsPaired", values: { n: bullets } });
   }
   if (draft.template_id === "note" && image.note.trim() === "") out.push({ key: "noteRequired" });
+  // Todos los anuncios llevan foto de fondo: sin escena ni 2–3 palabras clave no hay qué buscar.
+  if (draft.scene.trim() === "") out.push({ key: "sceneRequired" });
+  const keywords = draft.stock_keywords.length;
+  if (keywords < LIMITS.keywords[0] || keywords > LIMITS.keywords[1]) {
+    out.push({ key: "keywordsRange", values: { n: keywords, min: LIMITS.keywords[0], max: LIMITS.keywords[1] } });
+  }
   return out;
 }
 

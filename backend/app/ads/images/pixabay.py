@@ -30,6 +30,23 @@ PEOPLE_TAGS = {
     "student", "doctor", "patient", "model", "selfie", "crowd", "team", "hand", "hands",
 }  # fmt: skip
 TRUSTED_HOST = "pixabay.com"
+LARGE_SIDE = 1280  # `largeImageURL` mide como mucho esto en su lado largo
+MIN_CROP_WIDTH = 720  # igual que el recorte del router: menos se ve pixelado a 1080 px
+VARIETY = 5  # se elige entre las N mejores: dos anuncios con la misma búsqueda no repiten foto
+RATIO = {"4:5": (4, 5), "9:16": (9, 16), "1:1": (1, 1)}
+
+
+def fits_aspect(hit: dict, aspect: str) -> bool:
+    """¿Alcanza la foto (en su versión grande) para recortarla a este formato sin pixelarse?"""
+    try:
+        width, height = int(hit["imageWidth"]), int(hit["imageHeight"])
+    except (KeyError, TypeError, ValueError):
+        return True  # sin medidas no se puede saber: el router igual valida al recortar
+    if width <= 0 or height <= 0 or aspect not in RATIO:
+        return False
+    scale = min(1.0, LARGE_SIDE / max(width, height))
+    w, h = RATIO[aspect]
+    return min(width * scale, height * scale * w / h) >= MIN_CROP_WIDTH
 
 
 def trusted_image_url(url: object) -> bool:
@@ -113,9 +130,11 @@ class PixabayProvider:
         usable = [h for h in hits if trusted_image_url(h.get("largeImageURL"))]
         if request.sensitive:
             usable = [h for h in usable if not self.has_people(h)]
+        usable = [h for h in usable if fits_aspect(h, request.aspect)]
         if not usable:
             raise ProviderRejected("Pixabay no tiene fotos adecuadas")
-        hit = usable[0]
+        # Determinista (misma escena → misma foto, así se puede cachear) pero variado entre escenas.
+        hit = usable[int(request.scene_hash("photo")[:8], 16) % min(len(usable), VARIETY)]
         self._throttle()
         async with self._client.stream("GET", hit["largeImageURL"]) as response:
             if response.status_code != 200:

@@ -64,7 +64,8 @@ class SupabaseRest:
     async def rpc(self, function: str, args: Row | None = None) -> Any:
         response = await self._client.post(f"/rpc/{function}", json=args or {})
         response.raise_for_status()
-        return response.json()
+        # Una función `void` responde sin cuerpo (204 o vacío): no hay JSON que leer.
+        return response.json() if response.content else None
 
     async def aclose(self) -> None:
         await self._client.aclose()

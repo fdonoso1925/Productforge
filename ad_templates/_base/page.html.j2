@@ -21,6 +21,10 @@ html, body { margin: 0; padding: 0; }
 </head>
 <body>
 <div class="ad ratio-{{ ratio }}">
+{% if bg_uri %}
+<img class="photo" src="{{ bg_uri }}" alt="" style="position: absolute; left: 0; top: 0; width: {{ W }}px; height: {{ H }}px;">
+<div class="veil" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: {{ veil_color }}; opacity: {{ veil }};"></div>
+{% endif %}
 {% include template_id ~ "/ad.html.j2" %}
 </div>
 </body>

@@ -18,12 +18,12 @@ Cada variación tiene:
   - headline: máximo 40 caracteres.
   - description: máximo 30 caracteres.
   - cta: uno de LEARN_MORE, SHOP_NOW, GET_OFFER, DOWNLOAD, SIGN_UP.
-- scene: descripción breve de la imagen base ideal SIN texto y, en nichos sensibles, sin rostros reconocibles.
-- stock_keywords: 2 o 3 palabras clave en inglés para buscar una foto de stock de esa escena.
+- scene (obligatorio): la FOTO DE FONDO del anuncio, en una frase. Todos los anuncios llevan foto de fondo, nunca un color plano: elige una escena concreta, atractiva y emocional que haga detener el scroll (una persona en una situación reconocible, un lugar, un espacio de trabajo o del hogar, naturaleza…). Sin texto, logos ni marcas visibles. En nichos sensibles (salud, dinero, deudas, maternidad…) sin personas reconocibles: usa lugares, objetos o paisajes. Cada variación usa una escena distinta.
+- stock_keywords (obligatorio): 2 o 3 palabras clave EN INGLÉS, sustantivos concretos que den buenos resultados en un banco de fotos (por ejemplo «home office», «sunrise mountain», «coffee desk»). La foto va detrás del texto, así que busca escenas con espacio despejado.
 - proof_id: el `id` de la prueba de `proofs` que uses (testimonio o dato real) o null. Si `angle.needs` es `proof`, usa solo pruebas de `proofs` y cítalas tal cual.
 
 Uso de los campos de `image` según la plantilla (los que no se nombran se dejan vacíos):
-- `headline_bold`, `question`, `photo_headline`: headline (en `question`, una pregunta real), subheadline, kicker y cta_text. `photo_headline` exige `scene` y 2 o 3 `stock_keywords`.
+- `headline_bold`, `question`, `photo_headline`: headline (en `question`, una pregunta real), subheadline, kicker y cta_text.
 - `product_mockup`: headline, subheadline, 3 a 5 bullets, price_text (si hay precio) y cta_text.
 - `checklist`: headline, 3 a 5 bullets y mark.
 - `note`: note (obligatorio) y, si quieres, subheadline como firma.

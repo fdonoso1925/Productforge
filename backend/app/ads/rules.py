@@ -158,10 +158,9 @@ def check_draft(
         )
     if draft.template_id == "offer_stack" and not brief.price_text.strip():
         e.append("La plantilla offer_stack exige un precio real en el brief; usa otra plantilla.")
-    if draft.template_id == "photo_headline" and (
-        not draft.scene.strip() or not 2 <= len(draft.stock_keywords) <= 3
-    ):
-        e.append("photo_headline necesita scene y 2 o 3 stock_keywords en inglés.")
+    # Todos los anuncios llevan foto de fondo: sin escena ni palabras clave no hay qué buscar.
+    if not draft.scene.strip() or not 2 <= len(draft.stock_keywords) <= 3:
+        e.append("scene es obligatorio y stock_keywords debe tener 2 o 3 palabras clave en inglés.")
     if draft.template_id == "testimonial":
         e += check_testimonial(draft, proofs)
     if draft.template_id != "checklist" and len(img.bullets) > hi:
