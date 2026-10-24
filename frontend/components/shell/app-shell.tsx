@@ -121,7 +121,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <SignOutButton label={th("signOut")} />
         </div>
       </aside>
-      {open && <div className="fixed inset-0 z-30 hidden bg-black/40 md:block" onClick={() => setOpen(false)} aria-hidden />}
+      {/* El velo va POR DEBAJO del sidebar (z-20): el menú vive dentro del sidebar y, si el velo
+          lo tapara, cada clic en una opción cerraría el menú sin llegar al enlace. */}
+      {open && <div className="fixed inset-0 z-10 hidden bg-black/40 md:block" onClick={() => setOpen(false)} aria-hidden />}
 
       <div className="flex min-w-0 flex-1 flex-col pb-[84px] md:pb-0 md:pl-[220px]">{children}</div>
 
