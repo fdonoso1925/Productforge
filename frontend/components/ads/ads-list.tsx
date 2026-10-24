@@ -52,23 +52,23 @@ export function AdsList() {
   );
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-8">
+    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-5 py-4 md:py-10">
       <header className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{t("list.title")}</h1>
+          <h1 className="text-[26px] font-bold">{t("list.title")}</h1>
           <p className="text-sm text-muted-foreground">{t("list.hint")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
             href="/ads/insights"
-            className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted"
+            className="inline-flex items-center gap-2 rounded-full border border-input px-4 py-2 text-sm font-semibold hover:bg-secondary"
           >
             <Trophy className="size-4" aria-hidden />
             {t("list.insights")}
           </Link>
           <Link
             href="/ads/new"
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/80"
+            className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/85"
           >
             <Plus className="size-4" aria-hidden />
             {t("list.new")}
@@ -76,12 +76,12 @@ export function AdsList() {
         </div>
       </header>
       <ImagesStatus />
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("list.search")} aria-label={t("list.search")} />
         <select
           value={market}
           onChange={(e) => setMarket(e.target.value)}
-          className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm"
+          className="h-11 w-full min-w-0 rounded-[14px] border border-border bg-card px-3 text-sm font-semibold"
           aria-label={t("list.market")}
         >
           <option value="">{t("list.allMarkets")}</option>
@@ -91,7 +91,7 @@ export function AdsList() {
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm"
+          className="h-11 w-full min-w-0 rounded-[14px] border border-border bg-card px-3 text-sm font-semibold"
           aria-label={t("list.status")}
         >
           <option value="">{t("list.allStatuses")}</option>
@@ -108,9 +108,9 @@ export function AdsList() {
       {rows && rows.length > 0 && shown?.length === 0 && (
         <p className="text-sm text-muted-foreground">{t("list.noMatches")}</p>
       )}
-      <div className="grid gap-3">
+      <div className="grid grid-cols-1 gap-3">
         {shown?.map((b) => (
-          <Link key={b.id} href={`/ads/${b.id}`} className="rounded-xl focus-visible:ring-3 focus-visible:ring-ring/50">
+          <Link key={b.id} href={`/ads/${b.id}`} className="block min-w-0 rounded-[20px] focus-visible:ring-3 focus-visible:ring-ring/50">
             <Card className="transition-colors hover:bg-muted/40">
               <CardContent className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">

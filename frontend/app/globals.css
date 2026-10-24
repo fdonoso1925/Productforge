@@ -10,6 +10,7 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
+  --color-lavender: var(--lavender);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -72,7 +73,7 @@
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  --radius: 0.875rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -83,40 +84,42 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-/* La app siempre usa el tema oscuro (clase `dark` en <html>), con fondo negro puro. */
+/* La app siempre usa el tema oscuro (clase `dark` en <html>). Tokens del diseño «Creator App»:
+   fondo #0b0b0d, superficies #18181b/#1f1f23/#26262a, bordes #2a2a2e, acento lima #e4ff5c. */
 .dark {
   color-scheme: dark; /* controles nativos, barras de scroll y autocompletado en oscuro */
-  --background: oklch(0 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #0b0b0d;
+  --foreground: #f2f0ea;
+  --card: #18181b;
+  --card-foreground: #f2f0ea;
+  --popover: #1f1f23;
+  --popover-foreground: #f2f0ea;
+  --primary: #e4ff5c;
+  --primary-foreground: #0b0b0d;
+  --secondary: #26262a;
+  --secondary-foreground: #f2f0ea;
+  --muted: #1f1f23;
+  --muted-foreground: #8f8d85;
+  --accent: #26262a;
+  --accent-foreground: #f2f0ea;
+  --lavender: #cfd9ff;
+  --destructive: #ff8a7a;
+  --border: #2a2a2e;
+  --input: #3a3a3f;
+  --ring: #e4ff5c;
+  --chart-1: #e4ff5c;
+  --chart-2: #cfd9ff;
+  --chart-3: #8f8d85;
+  --chart-4: #3a3a3f;
+  --chart-5: #26262a;
+  --sidebar: #131316;
+  --sidebar-foreground: #f2f0ea;
+  --sidebar-primary: #e4ff5c;
+  --sidebar-primary-foreground: #0b0b0d;
+  --sidebar-accent: #26262a;
+  --sidebar-accent-foreground: #f2f0ea;
+  --sidebar-border: #2a2a2e;
+  --sidebar-ring: #e4ff5c;
 }
 
 @layer base {
@@ -135,5 +138,12 @@
   }
   html {
     @apply font-sans;
+  }
+  h1 {
+    letter-spacing: -0.5px;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
 }

@@ -27,7 +27,7 @@ function keywords(text: string): string[] {
     .filter(Boolean);
 }
 
-const SELECT_CLASS = "h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm";
+const SELECT_CLASS = "h-11 w-full min-w-0 rounded-[14px] border border-border bg-card px-3 text-sm font-semibold";
 
 function Counter({ value, max, unit }: { value: number; max: number; unit: "words" | "chars" }) {
   const t = useTranslations("ads.editor");

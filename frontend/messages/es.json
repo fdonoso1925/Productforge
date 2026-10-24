@@ -23,7 +23,19 @@
     "newProductHint": "Elige un nicho y en menos de 2 minutos tienes el paquete en camino.",
     "history": "Ver historial",
     "settings": "Ajustes",
-    "ads": "Anuncios (Meta Ads)"
+    "ads": "Anuncios",
+    "greeting": "Hola, {name}",
+    "title": "Mis productos",
+    "metrics": "Resumen",
+    "products": "Productos",
+    "purchases": "Compras",
+    "revenue": "Ingresos",
+    "recent": "Productos recientes",
+    "newShort": "Nuevo",
+    "createAds": "Crear anuncios",
+    "view": "Ver",
+    "empty": "Aún no tienes productos.",
+    "noResults": "Sin resultados"
   },
   "locale": {
     "switch": "Ver en português"
@@ -708,5 +720,16 @@
       "paid": "{name}: hoy US$ {spent} de US$ {cap}",
       "exhausted": "sin cuota hoy, se usa la reserva"
     }
+  },
+  "shell": {
+    "brand": "Productos Aurora",
+    "create": "Crear",
+    "createTitle": "¿Qué quieres crear?",
+    "close": "Cerrar",
+    "main": "Navegación principal",
+    "createPackage": "Paquete de producto",
+    "createPackageHint": "Elige un nicho y recibe el paquete completo",
+    "createAds": "Anuncios",
+    "createAdsHint": "Creativos para Meta Ads listos para subir"
   }
 }

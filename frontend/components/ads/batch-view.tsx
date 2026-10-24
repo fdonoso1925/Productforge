@@ -288,10 +288,10 @@ export function BatchView({ batchId }: { batchId: string }) {
 function Shell({ title, meta, children }: { title?: string; meta?: string; children: React.ReactNode }) {
   const t = useTranslations("ads.batch");
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-8">
+    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-5 py-4 md:py-10">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{title ?? t("title")}</h1>
+          <h1 className="text-[26px] font-bold">{title ?? t("title")}</h1>
           {meta && <p className="text-sm text-muted-foreground">{meta}</p>}
         </div>
         <Link href="/ads" className="text-sm text-muted-foreground hover:underline">

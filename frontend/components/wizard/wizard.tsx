@@ -59,10 +59,10 @@ export function Wizard({ niches, defaultMarket }: { niches: Niche[]; defaultMark
   const nav = { next, back };
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-8">
+    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-5 py-4 md:py-10">
       <header className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
+          <h1 className="text-[26px] font-bold">{t("title")}</h1>
           <Link href="/" className="text-sm text-muted-foreground hover:underline">
             {tApp("name")}
           </Link>

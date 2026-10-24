@@ -17,7 +17,7 @@ import {
 } from "@/lib/ads";
 import { ApiError, api } from "@/lib/api";
 
-const SELECT_CLASS = "h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm";
+const SELECT_CLASS = "h-11 w-full min-w-0 rounded-[14px] border border-border bg-card px-3 text-sm font-semibold";
 
 export function formatMetric(value: number | null, kind: "money" | "percent" | "ratio" | "int"): string {
   if (value === null) return "—";

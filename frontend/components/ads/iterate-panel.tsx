@@ -10,7 +10,7 @@ import { ErrorBox } from "@/components/wizard/step-nav";
 import { type CreativeGroup, RATIOS, type Ratio } from "@/lib/ads";
 import { ApiError, api } from "@/lib/api";
 
-const SELECT_CLASS = "h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm";
+const SELECT_CLASS = "h-11 w-full min-w-0 rounded-[14px] border border-border bg-card px-3 text-sm font-semibold";
 
 function message(e: unknown): string {
   if (e instanceof ApiError) return e.errors.length ? e.errors.join(" · ") : e.message;

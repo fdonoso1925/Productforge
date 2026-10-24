@@ -39,7 +39,7 @@ export type ProductOption = {
 
 const STEPS = ["brief", "avatars", "angles"] as const;
 const DEFAULT_TEMPLATE = "minimal-clean";
-const SELECT_CLASS = "h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm";
+const SELECT_CLASS = "h-11 w-full min-w-0 rounded-[14px] border border-border bg-card px-3 text-sm font-semibold";
 
 function emptyManual(market: Market): AdBrief {
   return {
@@ -193,10 +193,10 @@ export function AdsWizard({
   };
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-8">
+    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-5 py-4 md:py-10">
       <header className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
+          <h1 className="text-[26px] font-bold">{t("title")}</h1>
           <Link href="/ads" className="text-sm text-muted-foreground hover:underline">
             {t("back")}
           </Link>

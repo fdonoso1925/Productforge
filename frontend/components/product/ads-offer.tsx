@@ -12,7 +12,7 @@ export function AdsOffer({ productId, emphasis }: { productId: string; emphasis:
   const t = useTranslations("product.ads");
   return (
     <section
-      className={`flex flex-wrap items-center justify-between gap-4 rounded-xl border p-4 ${
+      className={`flex flex-wrap items-center justify-between gap-4 rounded-[20px] bg-card p-4 ${
         emphasis ? "border-primary bg-primary/5 ring-1 ring-primary/30" : "bg-muted/20"
       }`}
       aria-label={t("title")}

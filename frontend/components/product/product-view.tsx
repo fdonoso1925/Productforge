@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Link } from "@/i18n/navigation";
 import { ApiError, api } from "@/lib/api";
 import { FORMAT_ICONS } from "@/lib/formats";
 import { createClient } from "@/lib/supabase/client";
@@ -177,25 +176,13 @@ function ProductMeta({ product }: { product: ProductRow }) {
 }
 
 function Shell({ title, meta, children }: { title?: string; meta?: React.ReactNode; children: React.ReactNode }) {
-  const tc = useTranslations("common");
   return (
-    <main className="mx-auto flex w-full min-w-0 max-w-4xl flex-1 flex-col gap-6 px-4 py-8">
+    <main className="mx-auto flex w-full min-w-0 max-w-4xl flex-1 flex-col gap-6 px-5 py-4 md:py-10">
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          <h1 className="text-[26px] font-bold">{title}</h1>
           {meta}
         </div>
-        <nav className="flex shrink-0 gap-4 text-sm text-muted-foreground">
-          <Link href="/history" className="hover:underline">
-            {tc("history")}
-          </Link>
-          <Link href="/settings" className="hover:underline">
-            {tc("settings")}
-          </Link>
-          <Link href="/" className="hover:underline">
-            {tc("home")}
-          </Link>
-        </nav>
       </div>
       {children}
     </main>

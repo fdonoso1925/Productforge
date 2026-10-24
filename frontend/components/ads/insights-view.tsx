@@ -13,7 +13,7 @@ import { ApiError, api } from "@/lib/api";
 import type { Market } from "@/lib/types";
 import { formatMetric } from "./results-panel";
 
-const SELECT_CLASS = "h-8 w-full rounded-lg border border-input bg-transparent px-2 text-sm";
+const SELECT_CLASS = "h-11 w-full min-w-0 rounded-[14px] border border-border bg-card px-3 text-sm font-semibold";
 
 export function InsightsView() {
   const t = useTranslations("ads.insights");
@@ -46,10 +46,10 @@ export function InsightsView() {
   }, [market, debouncedNiche]);
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-8">
+    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-5 py-4 md:py-10">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
+          <h1 className="text-[26px] font-bold">{t("title")}</h1>
           <p className="text-sm text-muted-foreground">{t("hint")}</p>
         </div>
         <Link href="/ads" className="text-sm text-muted-foreground hover:underline">

@@ -42,7 +42,6 @@ async function query(filters: HistoryFilters, limit: number) {
 
 export function HistoryView() {
   const t = useTranslations("history");
-  const tApp = useTranslations("app");
   const tf = useTranslations("formats");
   const tm = useTranslations("markets");
   const [filters, setFilters] = useState<HistoryFilters>(EMPTY_FILTERS);
@@ -86,18 +85,15 @@ export function HistoryView() {
   const ready = result && "rows" in result ? result : null;
 
   return (
-    <main className="mx-auto flex w-full min-w-0 max-w-4xl flex-1 flex-col gap-6 px-4 py-8">
+    <main className="mx-auto flex w-full min-w-0 max-w-4xl flex-1 flex-col gap-6 px-5 py-4 md:py-10">
       <header className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
+          <h1 className="text-[26px] font-bold">{t("title")}</h1>
           <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
-        <Link href="/" className="text-sm text-muted-foreground hover:underline">
-          {tApp("name")}
-        </Link>
       </header>
 
-      <section aria-label={t("search")} className="grid gap-3 rounded-xl border bg-muted/30 p-4 sm:grid-cols-2 lg:grid-cols-3">
+      <section aria-label={t("search")} className="grid grid-cols-1 gap-3 rounded-[20px] bg-card p-4 sm:grid-cols-2 lg:grid-cols-3">
         <Field label={t("search")} className="sm:col-span-2 lg:col-span-3">
           <Input
             type="search"
@@ -155,11 +151,11 @@ export function HistoryView() {
             {t("results", { count: ready.count })}
           </p>
           {ready.rows.length === 0 ? (
-            <div className="flex flex-col items-start gap-3 rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
+            <div className="flex flex-col items-start gap-3 rounded-[20px] border border-dashed p-6 text-sm text-muted-foreground">
               {t("empty")}
               <Link
                 href="/new"
-                className="rounded-lg bg-primary px-3 py-1.5 font-medium text-primary-foreground hover:bg-primary/80"
+                className="rounded-full bg-primary px-4 py-2 font-bold text-primary-foreground hover:bg-primary/85"
               >
                 {t("emptyNew")}
               </Link>
@@ -195,10 +191,10 @@ function ProductItem({ row }: { row: HistoryRow }) {
     <li>
       <Link
         href={`/products/${row.id}`}
-        className="flex min-w-0 flex-col gap-2 rounded-xl border p-4 transition-colors hover:bg-muted/60 sm:flex-row sm:items-center sm:justify-between"
+        className="flex min-w-0 flex-col gap-2 rounded-[18px] bg-card p-4 transition-colors hover:bg-secondary sm:flex-row sm:items-center sm:justify-between"
       >
         <span className="flex min-w-0 flex-col gap-1">
-          <span className="truncate font-medium">{row.title ?? row.niche}</span>
+          <span className="truncate text-[15px] font-semibold">{row.title ?? row.niche}</span>
           <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span>{row.niche}</span>
             <span className="flex items-center gap-1">
@@ -228,7 +224,7 @@ function ProductItem({ row }: { row: HistoryRow }) {
 
 function Field({ label, className, children }: { label: string; className?: string; children: React.ReactNode }) {
   return (
-    <div className={`flex flex-col gap-1.5 ${className ?? ""}`}>
+    <div className={`flex min-w-0 flex-col gap-1.5 ${className ?? ""}`}>
       <Label>{label}</Label>
       {children}
     </div>
@@ -248,7 +244,7 @@ function Select({
 }) {
   return (
     <select
-      className="h-8 rounded-lg border border-input bg-background px-2 text-sm"
+      className="h-11 w-full min-w-0 rounded-[14px] border border-border bg-background px-3 text-sm font-semibold"
       value={value}
       onChange={(e) => onChange(e.target.value)}
     >

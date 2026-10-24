@@ -18,7 +18,7 @@ export function PolicyBadge({ status }: { status: PolicyStatus | null }) {
   if (!status) return null;
   const Icon = ICON[status];
   return (
-    <Badge variant="secondary" className={STYLE[status]} title={t(`${status}Hint`)}>
+    <Badge variant="outline" className={`border-transparent ${STYLE[status]}`} title={t(`${status}Hint`)}>
       <Icon aria-hidden />
       {t(status)}
     </Badge>
