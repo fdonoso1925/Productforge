@@ -62,6 +62,15 @@ class Settings(BaseSettings):
     gemini_image_price_usd: float = 0.034
     gemini_daily_usd_cap: float = 0.0
 
+    # Meta Marketing API (subir anuncios en PAUSA y leer métricas). Token de un usuario del sistema
+    # con `ads_management`; solo en el backend. Sin token o sin cuenta publicitaria queda apagado.
+    meta_access_token: str = ""
+    meta_ad_account_id: str = ""  # con o sin el prefijo «act_»
+    meta_page_id: str = ""
+    meta_instagram_user_id: str = ""  # opcional
+    meta_pixel_id: str = ""  # opcional; con él se puede elegir el objetivo «ventas»
+    meta_api_version: str = "v25.0"
+
     @field_validator("allowed_emails", "cors_origins", "image_providers", mode="before")
     @classmethod
     def _split_csv(cls, value: object) -> object:

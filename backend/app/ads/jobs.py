@@ -45,6 +45,7 @@ class AdDeps:
     images: ImageRouter | None = None
     sync_target: Any = None  # destino externo (Google Drive); None = sin copia
     results: Any = None  # AdResultRepo: resultados de Ads Manager (aprendizaje)
+    meta: Any = None  # MetaClient: subida en pausa y métricas; None = sin Meta
 
 
 def failure_status(creative: dict) -> str:

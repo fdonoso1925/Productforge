@@ -51,7 +51,7 @@ SETTINGS = Settings(_env_file=None, supabase_jwt_secret=SECRET, allowed_emails=[
 class AdsWorld:
     """API + worker + repos en memoria compartiendo el mismo estado."""
 
-    def __init__(self, responses=(), images=None, drive=None) -> None:
+    def __init__(self, responses=(), images=None, drive=None, meta=None) -> None:
         self.llm = FakeLLM(list(responses))
         prompts = PromptLibrary(SETTINGS.prompts_dir)
         content = ContentService(
@@ -91,6 +91,7 @@ class AdsWorld:
             ad_images=self.images,
             ad_results=self.results,
             drive=self.drive,
+            meta=meta,
             ads=lambda: AdDeps(
                 strategy=strategy,
                 renderer=renderer,
@@ -103,6 +104,7 @@ class AdsWorld:
                 images=self.images,
                 sync_target=self.drive,
                 results=self.results,
+                meta=meta,
             ),
         )
         app = create_app()

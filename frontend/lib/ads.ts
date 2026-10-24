@@ -138,6 +138,38 @@ export type AdDrive = {
   folder_url: string | null;
 };
 
+export type MetaStatus = {
+  configured: boolean;
+  missing: string[];
+  account_name: string | null;
+  currency: string | null;
+  account_active: boolean | null;
+  sales_available: boolean;
+  default_countries: Record<string, string[]>;
+  error: string | null;
+};
+
+export type MetaBatch = {
+  status: "none" | "publishing" | "done" | "partial" | "error";
+  total: number;
+  uploaded: number;
+  failed: number;
+  skipped: number;
+  objective: "traffic" | "sales" | null;
+  daily_budget: number | null;
+  campaign_id: string | null;
+  synced_at: string | null;
+  active_ads: number;
+  error: string | null;
+};
+
+export type MetaPublishInput = {
+  link_url: string;
+  objective: "traffic" | "sales";
+  daily_budget: number;
+  countries: string[];
+};
+
 // ───────────────────────────── límites (mismos valores que rules.py) ─────────────────────────────
 
 export const LIMITS = {

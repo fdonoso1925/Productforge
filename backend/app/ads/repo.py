@@ -33,6 +33,11 @@ class AdBatchRepo:
             "ad_batches", user_id=eq(user_id), order="created_at.desc", limit=str(limit)
         )
 
+    async def list_published(self, limit: int = 200) -> list[Row]:
+        """Lotes ya subidos a Meta (de todos los usuarios; solo lo usa el worker)."""
+        rows = await self._db.select("ad_batches", order="created_at.desc", limit=str(limit))
+        return [r for r in rows if (r.get("meta") or {}).get("status") in ("done", "partial")]
+
 
 class AdCreativeRepo:
     def __init__(self, db: SupabaseRest) -> None:

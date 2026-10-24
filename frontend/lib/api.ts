@@ -13,6 +13,9 @@ import type {
   ImageProviderStatus,
   ImportReport,
   Insights,
+  MetaBatch,
+  MetaPublishInput,
+  MetaStatus,
   Proof,
   Ratio,
   ResultInput,
@@ -204,6 +207,12 @@ export const api = {
   adsDrive: (batchId: string) => call<AdDrive>(`/ads/batches/${batchId}/drive`),
   adsDriveStart: (batchId: string) =>
     call<{ job_id: string }>(`/ads/batches/${batchId}/drive`, { method: "POST" }),
+  adsMetaStatus: () => call<MetaStatus>("/ads/meta/status"),
+  adsMeta: (batchId: string) => call<MetaBatch>(`/ads/batches/${batchId}/meta`),
+  adsMetaPublish: (batchId: string, body: MetaPublishInput) =>
+    call<{ job_id: string }>(`/ads/batches/${batchId}/meta`, { method: "POST", body: JSON.stringify(body) }),
+  adsMetaSync: (batchId: string) =>
+    call<{ job_id: string }>(`/ads/batches/${batchId}/meta/sync`, { method: "POST" }),
   adsSaveResult: (creativeId: string, body: ResultInput) =>
     call<{ saved: boolean }>(`/ads/creatives/${creativeId}/results`, { method: "PUT", body: JSON.stringify(body) }),
   adsDeleteResult: (resultId: string) => call<void>(`/ads/results/${resultId}`, { method: "DELETE" }),

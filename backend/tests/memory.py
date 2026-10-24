@@ -191,6 +191,13 @@ class MemoryAdBatches:
     async def list_for_user(self, user_id, limit: int = 50) -> list[dict]:
         return [r for r in self.rows.values() if r["user_id"] == str(user_id)][:limit]
 
+    async def list_published(self, limit: int = 200) -> list[dict]:
+        return [
+            r
+            for r in self.rows.values()
+            if (r.get("meta") or {}).get("status") in ("done", "partial")
+        ][:limit]
+
 
 @dataclass
 class MemoryAdCreatives:

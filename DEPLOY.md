@@ -118,6 +118,28 @@ compartido), hace falta un dominio propio apuntando a Netlify; sin eso, la recon
   lote corto, compón las imágenes y descarga el ZIP + CSV.
 - Logs de Railway: sin tokens ni claves; el callback de Google no muestra `code` ni `state`.
 
+## 6. Conectar Meta Ads (opcional)
+
+La app crea campaña, conjunto y anuncios **siempre en pausa** y lee las métricas sola. Necesitas una
+cuenta publicitaria y una página de Facebook; el resto se crea una sola vez:
+
+1. **Business Manager**: https://business.facebook.com → *Configuración del negocio*. Si la cuenta
+   publicitaria y la página aún no están dentro, agrégalas (*Cuentas → Cuentas publicitarias / Páginas*).
+2. **App**: https://developers.facebook.com/apps → *Crear app* → caso de uso **Otro** → tipo **Empresa**,
+   vinculada a tu Business Manager. No hace falta publicarla ni pasar la revisión de Meta: con acceso
+   estándar basta para operar tus propias cuentas.
+3. **Usuario del sistema**: Business Manager → *Usuarios → Usuarios del sistema → Agregar* (rol
+   Administrador). Asígnale la app, la cuenta publicitaria (control total) y la página.
+4. **Token**: en ese usuario, *Generar token* → elige tu app → permisos **`ads_management`** (y
+   `ads_read`) → expiración *Nunca*. Cópialo **una sola vez** a `backend/.env` (`META_ACCESS_TOKEN`);
+   no lo pegues en el chat ni en el frontend. Si lo expones, revócalo y genera otro.
+5. Completa en `backend/.env`: `META_AD_ACCOUNT_ID` (el número de la cuenta, con o sin `act_`),
+   `META_PAGE_ID` y, si lo usas, `META_INSTAGRAM_USER_ID` y `META_PIXEL_ID` (el píxel habilita el
+   objetivo «Ventas»). En Railway, las mismas variables en la API **y** en el worker.
+6. Reinicia el backend. En un lote con imágenes compuestas aparece «Subir a Meta Ads»: pon el enlace de
+   destino (https), el presupuesto diario y los países, y pulsa dos veces *Crear anuncios en pausa*.
+   Revisa y activa en Ads Manager cuando quieras invertir.
+
 ## Qué hacer si algo falla
 
 | Síntoma | Causa probable |

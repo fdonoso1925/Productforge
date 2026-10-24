@@ -12,6 +12,7 @@ from collections.abc import Awaitable, Callable
 from uuid import UUID
 
 from app.ads.jobs import AdDeps, run_ad_drive, run_ad_iterate, run_ad_plan, run_ad_render
+from app.ads.meta.jobs import run_ad_meta_publish, run_ad_meta_sync
 from app.config import get_settings
 from app.deps import Services, build_services
 from app.pipeline.drive_sync import run_upload
@@ -34,8 +35,12 @@ AD_HANDLERS: dict[str, Callable[[dict, AdDeps], Awaitable[None]]] = {
     "ad_render": run_ad_render,
     "ad_drive": run_ad_drive,
     "ad_iterate": run_ad_iterate,
+    "ad_meta_publish": run_ad_meta_publish,
+    "ad_meta_sync": run_ad_meta_sync,
 }
 POLL_SECONDS = 2.0
+# Las métricas de los lotes subidos a Meta se vuelven a leer cada 6 horas.
+META_SYNC_SECONDS = 6 * 3600.0
 # Cada tanto se reencolan las subidas a Google Drive que quedaron pendientes o fallidas.
 UPLOAD_RETRY_SECONDS = 600.0
 
@@ -59,6 +64,12 @@ async def fail_batch(services: Services, job: dict) -> None:
         batch = await services.ad_batches.get(job["batch_id"])
         if job["kind"] == "ad_drive":
             return  # la copia a Drive no cambia el estado del lote (queda en `drive`)
+        if job["kind"] in ("ad_meta_publish", "ad_meta_sync"):
+            # Meta tampoco: su estado vive en `meta`; una subida cortada no queda «publicando».
+            meta = batch.get("meta") or {}
+            if meta.get("status") == "publishing":
+                await services.ad_batches.update(batch["id"], meta={**meta, "status": "error"})
+            return
         if job["kind"] == "ad_iterate":
             await services.ad_batches.update(batch["id"], status="review")
             return  # iterar no tumba un lote que ya tenía creativos
@@ -96,10 +107,35 @@ async def run_one(services: Services) -> bool:
     return True
 
 
+async def enqueue_meta_syncs(services: Services) -> int:
+    """Encola la lectura de métricas de cada lote ya publicado en Meta (sin duplicar jobs)."""
+    if services.meta is None or not services.meta.configured():
+        return 0
+    count = 0
+    for batch in await services.ad_batches.list_published():
+        if await services.jobs.active_for_batch(UUID(batch["id"])):
+            continue
+        await services.jobs.enqueue(
+            user_id=UUID(batch["user_id"]),
+            batch_id=UUID(batch["id"]),
+            kind="ad_meta_sync",
+            payload={},
+        )
+        count += 1
+    return count
+
+
 async def worker_loop(services: Services, stop: asyncio.Event) -> None:
     logger.info("worker iniciado")
     next_retry = time.monotonic() + UPLOAD_RETRY_SECONDS
+    next_meta = time.monotonic() + 60.0
     while not stop.is_set():
+        if time.monotonic() >= next_meta:
+            next_meta = time.monotonic() + META_SYNC_SECONDS
+            try:
+                await enqueue_meta_syncs(services)
+            except Exception:
+                logger.exception("no se pudo encolar la lectura de métricas de Meta")
         try:
             busy = await run_one(services)
         except Exception:

@@ -185,6 +185,7 @@ _SECRET_PATTERNS = [
     (re.compile(r"sk-ant-[A-Za-z0-9_\-]{8,}"), "sk-ant-***"),
     (re.compile(r"AIza[A-Za-z0-9_\-]{20,}"), "AIza***"),
     (re.compile(r"\bAQ\.[A-Za-z0-9_\-]{20,}"), "AQ.***"),
+    (re.compile(r"\bEAA[A-Za-z0-9]{30,}"), "EAA***"),  # tokens de acceso de Meta
     (re.compile(r"eyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{5,}"), "eyJ***"),
 ]
 
@@ -242,6 +243,21 @@ def content_dir_problems(settings: Settings) -> list[str]:
 KNOWN_IMAGE_PROVIDERS = {"pixabay", "gemini"}
 
 
+def meta_problems(settings: Settings) -> list[str]:
+    """Meta es opcional, pero a medias no sirve: o está completo o no está."""
+    if not settings.meta_access_token:
+        return []
+    missing = [
+        name
+        for name, value in (
+            ("META_AD_ACCOUNT_ID", settings.meta_ad_account_id),
+            ("META_PAGE_ID", settings.meta_page_id),
+        )
+        if not value.strip()
+    ]
+    return [f"falta {name} (hay un META_ACCESS_TOKEN)" for name in missing]
+
+
 def image_provider_problems(settings: Settings) -> list[str]:
     """Proveedores de imagen mal configurados (Gemini cobra: nada de gastar por accidente)."""
     problems = []
@@ -287,6 +303,7 @@ def production_problems(settings: Settings) -> list[str]:
         except ValueError:
             problems.append("TOKEN_ENCRYPTION_KEY no es una clave Fernet válida")
     problems += content_dir_problems(settings) + image_provider_problems(settings)
+    problems += meta_problems(settings)
     return problems
 
 

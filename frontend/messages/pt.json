@@ -606,6 +606,36 @@
       "copy": "Copiar para o Google Drive",
       "openFolder": "Abrir pasta"
     },
+    "meta": {
+      "title": "Enviar para o Meta Ads",
+      "hint": "Cria a campanha, o conjunto e um anúncio por imagem direto na sua conta. Tudo fica pausado: nada é gasto até você ativar no Gerenciador de Anúncios.",
+      "notConfigured": "O Meta não está configurado no backend (falta: {missing}). Os passos estão em DEPLOY.md, seção Meta Ads.",
+      "account": "Conta de anúncios: {name} ({currency})",
+      "inactive": "A conta de anúncios não está ativa no Meta.",
+      "link": "Link de destino",
+      "linkHint": "Para onde vai quem clica (sua página de vendas ou checkout). Deve começar com https://",
+      "objective": "Objetivo",
+      "traffic": "Tráfego (cliques no link)",
+      "sales": "Vendas (precisa do pixel)",
+      "budget": "Orçamento diário ({currency})",
+      "countries": "Países",
+      "countriesHint": "Códigos de 2 letras separados por vírgula, por exemplo BR, PT.",
+      "publish": "Criar anúncios pausados",
+      "retry": "Completar os que faltam",
+      "confirm": "Clique de novo para criá-los no Meta",
+      "status": {
+        "none": "Ainda não foi enviado ao Meta.",
+        "publishing": "Enviando ao Meta… {uploaded} de {total}",
+        "done": "{uploaded} anúncios criados no Meta.",
+        "partial": "{uploaded} de {total} anúncios criados; {failed} falharam.",
+        "error": "Não foi possível enviar ao Meta."
+      },
+      "skipped": "{count, plural, one {# criativo vermelho não é enviado} other {# criativos vermelhos não são enviados}}",
+      "paused": "Estão pausados. Revise e ative no Gerenciador de Anúncios quando quiser começar a investir.",
+      "active": "{count, plural, one {# anúncio já está ativo no Meta.} other {# anúncios já estão ativos no Meta.}}",
+      "sync": "Trazer métricas",
+      "syncedAt": "Última leitura: {date}"
+    },
     "angleNames": {
       "dolor": "Dor",
       "mecanismo": "Solução / mecanismo",

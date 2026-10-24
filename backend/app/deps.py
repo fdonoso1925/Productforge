@@ -11,6 +11,7 @@ from fastapi import Depends
 
 from app.ads.images.router import ImageRouter, build_router
 from app.ads.jobs import AdDeps
+from app.ads.meta.client import MetaClient
 from app.ads.render import AdRenderer
 from app.ads.repo import (
     AdBatchRepo,
@@ -60,6 +61,7 @@ class Services:
     ad_proofs: AdProofRepo
     ad_images: ImageRouter
     ad_results: AdResultRepo
+    meta: MetaClient | None = None
 
     def ads(self) -> AdDeps:
         return AdDeps(
@@ -74,6 +76,7 @@ class Services:
             images=self.ad_images,
             sync_target=self.drive,
             results=self.ad_results,
+            meta=self.meta,
         )
 
     def pipeline(self) -> PipelineDeps:
@@ -132,6 +135,14 @@ def build_services(settings: Settings) -> Services:
         ad_proofs=AdProofRepo(db),
         ad_results=AdResultRepo(db),
         ad_images=build_router(settings, AdImageCacheRepo(db), ProviderUsageRepo(db), storage),
+        meta=MetaClient(
+            access_token=settings.meta_access_token,
+            ad_account_id=settings.meta_ad_account_id,
+            page_id=settings.meta_page_id,
+            instagram_user_id=settings.meta_instagram_user_id,
+            pixel_id=settings.meta_pixel_id,
+            version=settings.meta_api_version,
+        ),
     )
 
 

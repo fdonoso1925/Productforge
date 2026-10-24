@@ -22,6 +22,7 @@ import {
 import { ApiError, type AdExport, api } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import { AdsDrive } from "./ads-drive";
+import { MetaPanel } from "./meta-panel";
 import { CreativeEditor } from "./creative-editor";
 import { ImportPanel } from "./import-panel";
 import { IteratePanel } from "./iterate-panel";
@@ -250,6 +251,7 @@ export function BatchView({ batchId }: { batchId: string }) {
             </p>
           )}
           {rendered.length > 0 && <AdsDrive batchId={batchId} refreshKey={renderedKey} />}
+          {rendered.length > 0 && <MetaPanel batchId={batchId} market={batch.market} refreshKey={renderedKey} />}
           {rendered.length > 0 && <ImportPanel onImported={refresh} />}
           {working && batch.status !== "planning" && (
             <p className="flex items-center gap-2 text-sm text-muted-foreground" aria-live="polite">

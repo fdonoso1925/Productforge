@@ -606,6 +606,36 @@
       "copy": "Copiar a Google Drive",
       "openFolder": "Abrir carpeta"
     },
+    "meta": {
+      "title": "Subir a Meta Ads",
+      "hint": "Crea la campaña, el conjunto y un anuncio por imagen directamente en tu cuenta. Todo queda en pausa: no se gasta nada hasta que lo actives tú en Ads Manager.",
+      "notConfigured": "Meta no está configurado en el backend (falta: {missing}). Los pasos están en DEPLOY.md, sección Meta Ads.",
+      "account": "Cuenta publicitaria: {name} ({currency})",
+      "inactive": "La cuenta publicitaria no está activa en Meta.",
+      "link": "Enlace de destino",
+      "linkHint": "Dónde llega quien hace clic (tu página de ventas o checkout). Debe empezar con https://",
+      "objective": "Objetivo",
+      "traffic": "Tráfico (clics al enlace)",
+      "sales": "Ventas (necesita el píxel)",
+      "budget": "Presupuesto diario ({currency})",
+      "countries": "Países",
+      "countriesHint": "Códigos de 2 letras separados por coma, por ejemplo MX, CO, AR.",
+      "publish": "Crear anuncios en pausa",
+      "retry": "Completar los que faltan",
+      "confirm": "Haz clic otra vez para crearlos en Meta",
+      "status": {
+        "none": "Aún no se subió a Meta.",
+        "publishing": "Subiendo a Meta… {uploaded} de {total}",
+        "done": "{uploaded} anuncios creados en Meta.",
+        "partial": "{uploaded} de {total} anuncios creados; {failed} fallaron.",
+        "error": "No se pudo subir a Meta."
+      },
+      "skipped": "{count, plural, one {# creativo en rojo no se sube} other {# creativos en rojo no se suben}}",
+      "paused": "Están en pausa. Revísalos y actívalos en Ads Manager cuando quieras empezar a invertir.",
+      "active": "{count, plural, one {# anuncio ya está activo en Meta.} other {# anuncios ya están activos en Meta.}}",
+      "sync": "Traer métricas",
+      "syncedAt": "Última lectura: {date}"
+    },
     "angleNames": {
       "dolor": "Dolor",
       "mecanismo": "Solución / mecanismo",
