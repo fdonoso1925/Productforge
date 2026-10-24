@@ -8,7 +8,9 @@ import {
   creativeCount,
   draftCount,
   groupCreatives,
+  dailySeries,
   derive,
+  summarizeCampaigns,
   isActive,
   LIMITS,
   lines,
@@ -254,5 +256,45 @@ describe("resultados y métricas", () => {
   it("la búsqueda ignora tildes y mayúsculas", () => {
     expect(normalizeSearch("  Bandeja ÚNICA ")).toBe("bandeja unica");
     expect(normalizeSearch("Produtividade")).toBe("produtividade");
+  });
+});
+
+describe("dashboard de campañas", () => {
+  const creatives = [
+    { id: "c1", batch_id: "b1" },
+    { id: "c2", batch_id: "b1" },
+    { id: "c3", batch_id: "b2" },
+  ];
+  const row = (creative_id: string, day: string, spend: number, impressions: number, clicks: number, purchases = 0, revenue = 0) => ({
+    creative_id,
+    day,
+    spend,
+    impressions,
+    clicks,
+    purchases,
+    revenue,
+  });
+  const results = [
+    row("c1", "2026-10-01", 10, 1000, 20, 1, 30),
+    row("c2", "2026-10-01", 5, 500, 5),
+    row("c3", "2026-10-02", 40, 2000, 40, 2, 120),
+    row("huerfano", "2026-10-02", 99, 1, 1),
+  ];
+
+  it("suma por campaña desde los totales y ordena por gasto", () => {
+    const [first, second] = summarizeCampaigns(creatives, results);
+    expect(first.batchId).toBe("b2");
+    expect(first.derived.roas).toBe(3);
+    expect(second.batchId).toBe("b1");
+    expect(second.totals.spend).toBe(15);
+    expect(second.derived.ctr).toBe(1.67); // 25 clics / 1500 impresiones, no el promedio de CTR
+    expect(second.days).toBe(1);
+  });
+
+  it("agrupa gasto e ingresos por día en orden cronológico", () => {
+    expect(dailySeries(results.slice(0, 3))).toEqual([
+      { day: "2026-10-01", spend: 15, revenue: 30 },
+      { day: "2026-10-02", spend: 40, revenue: 120 },
+    ]);
   });
 });

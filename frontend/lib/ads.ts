@@ -109,6 +109,7 @@ export type BatchRow = {
   ratios: Ratio[];
   status: BatchStatus;
   drive: BatchDrive;
+  meta?: { status?: string; statuses?: Record<string, string>; synced_at?: string } | null;
   parent_batch_id?: string | null;
   created_at: string;
 };
@@ -319,7 +320,7 @@ export type ResultRow = {
   clicks: number;
   purchases: number;
   revenue: number;
-  source: "manual" | "csv";
+  source: "manual" | "csv" | "meta";
 };
 
 export type ResultInput = {
@@ -357,6 +358,47 @@ export function derive(t: Totals): Derived {
     cpa: t.purchases ? round2(t.spend / t.purchases) : null,
     roas: t.spend && t.revenue ? round2(t.revenue / t.spend) : null,
   };
+}
+
+export type CampaignSummary = {
+  batchId: string;
+  totals: Totals;
+  derived: Derived;
+  days: number;
+};
+
+/** Totales por lote (campaña): suma los resultados de todos sus creativos. Orden: más gasto primero. */
+export function summarizeCampaigns(
+  creatives: { id: string; batch_id: string }[],
+  results: (Totals & { creative_id: string; day: string })[],
+): CampaignSummary[] {
+  const batchOf = new Map(creatives.map((c) => [c.id, c.batch_id]));
+  const byBatch = new Map<string, (Totals & { day: string })[]>();
+  for (const r of results) {
+    const batch = batchOf.get(r.creative_id);
+    if (!batch) continue;
+    byBatch.set(batch, [...(byBatch.get(batch) ?? []), r]);
+  }
+  return [...byBatch.entries()]
+    .map(([batchId, rows]) => {
+      const totals = sumResults(rows);
+      return { batchId, totals, derived: derive(totals), days: new Set(rows.map((r) => r.day)).size };
+    })
+    .sort((a, b) => b.totals.spend - a.totals.spend);
+}
+
+/** Gasto e ingresos por día, de la fecha más antigua a la más reciente. */
+export function dailySeries(
+  results: (Totals & { day: string })[],
+): { day: string; spend: number; revenue: number }[] {
+  const days = new Map<string, { spend: number; revenue: number }>();
+  for (const r of results) {
+    const d = days.get(r.day) ?? { spend: 0, revenue: 0 };
+    d.spend += Number(r.spend);
+    d.revenue += Number(r.revenue);
+    days.set(r.day, d);
+  }
+  return [...days.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([day, v]) => ({ day, ...v }));
 }
 
 export type ResultIssue = "future" | "clicksOverImpressions" | "purchasesWithoutClicks" | "negative" | "empty";

@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Trophy } from "lucide-react";
+import { BarChart3, Plus, Trophy } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -59,6 +59,13 @@ export function AdsList() {
           <p className="text-sm text-muted-foreground">{t("list.hint")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link
+            href="/ads/dashboard"
+            className="inline-flex items-center gap-2 rounded-full border border-input px-4 py-2 text-sm font-semibold hover:bg-secondary"
+          >
+            <BarChart3 className="size-4" aria-hidden />
+            {t("list.dashboard")}
+          </Link>
           <Link
             href="/ads/insights"
             className="inline-flex items-center gap-2 rounded-full border border-input px-4 py-2 text-sm font-semibold hover:bg-secondary"

@@ -398,6 +398,7 @@
       "drafts": "{count, plural, one {# borrador} other {# borradores}}",
       "formats": "formatos",
       "insights": "Aprendizaje",
+      "dashboard": "Dashboard",
       "search": "Buscar por producto o nicho",
       "market": "Mercado",
       "allMarkets": "Todos los mercados",
@@ -606,6 +607,21 @@
       "copy": "Copiar a Google Drive",
       "openFolder": "Abrir carpeta"
     },
+    "dashboard": {
+      "title": "Dashboard de campañas",
+      "hint": "Gasto, alcance y ventas de todas tus campañas, con los resultados que cargaste o que se leen de Meta.",
+      "back": "← Anuncios",
+      "period": "Período",
+      "periods": { "7": "Últimos 7 días", "30": "Últimos 30 días", "90": "Últimos 90 días", "all": "Todo" },
+      "market": "Mercado",
+      "allMarkets": "Todos",
+      "empty": "Aún no hay resultados en este período. Se llenará cuando traigas métricas de Meta o cargues el CSV de Ads Manager en un lote.",
+      "chart": "Gasto e ingresos por día",
+      "campaigns": "Campañas",
+      "campaign": "Campaña",
+      "paused": "En pausa",
+      "live": "{count, plural, one {# anuncio activo} other {# anuncios activos}}"
+    },
     "meta": {
       "title": "Subir a Meta Ads",
       "hint": "Crea la campaña, el conjunto y un anuncio por imagen directamente en tu cuenta. Todo queda en pausa: no se gasta nada hasta que lo actives tú en Ads Manager.",
@@ -684,7 +700,8 @@
       "remove": "Quitar este resultado",
       "source": {
         "manual": "manual",
-        "csv": "CSV"
+        "csv": "CSV",
+        "meta": "Meta"
       },
       "issues": {
         "future": "La fecha no puede ser futura.",
