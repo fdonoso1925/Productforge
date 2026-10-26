@@ -31,8 +31,20 @@ from app.content.engines import ContentRejected, ContentService
 from app.content.schemas import Market
 
 PLAN_CONCURRENCY = 3
+# Un anuncio con observaciones de políticas no se entrega: se corrige y se vuelve a revisar hasta
+# que quede en verde. Si tras estas rondas sigue sin pasar, se descarta y se pide uno nuevo.
+FIX_ROUNDS = 3
+REPLACEMENT_ROUNDS = 2
 HEADLINE_WORDS_HINT = rules.IMAGE_HEADLINE_WORDS
 SUB_WORDS_HINT = rules.IMAGE_SUB_WORDS
+
+
+@dataclass
+class PlanStats:
+    """Cuánto trabajo de políticas hubo que hacer para entregar solo anuncios en verde."""
+
+    fixed: int = 0  # reescrituras hechas para quitar observaciones
+    dropped: int = 0  # anuncios descartados por no quedar en verde
 
 
 class PlannedCreative(BaseModel):
@@ -270,6 +282,155 @@ class AdStrategyService:
             out.append((rules.merge_verdicts(by_rules, by_index[i].policy), by_index[i].score))
         return out
 
+    # ── 5. corregir hasta quedar en verde ──
+
+    async def fix(
+        self,
+        *,
+        user_id: UUID,
+        brief: AdBrief,
+        avatar: Avatar,
+        items: list[tuple[CreativeDraft, PolicyVerdict]],
+        proofs: list[AdProof],
+    ) -> list[CreativeDraft]:
+        """Reescribe los creativos con observaciones para que pasen la revisión de políticas.
+
+        Conserva ángulo, plantilla y estructura; el resultado pasa las mismas reglas que el copy
+        original (largos, precio y pruebas reales)."""
+        n = len(items)
+
+        def check(r: CreativeDrafts) -> list[str]:
+            if len(r.creatives) != n:
+                return [f"Devuelve exactamente {n} creativos, en el mismo orden."]
+            errors: list[str] = []
+            for i, (draft, (original, _)) in enumerate(zip(r.creatives, items, strict=True)):
+                if draft.template_id != original.template_id:
+                    errors.append(f"creatives[{i}]: conserva template_id={original.template_id}.")
+                    continue
+                errors += [
+                    f"creatives[{i}]: {e}"
+                    for e in rules.check_draft(
+                        draft,
+                        allowed_templates=[original.template_id],
+                        brief=brief,
+                        proofs=proofs,
+                        needs_proof=original.proof_id is not None,
+                    )
+                ]
+            return errors
+
+        result = await self._call(
+            user_id=user_id,
+            brief=brief,
+            task=self.content.prompts.render(
+                brief.market,
+                "ads/fix",
+                headline_words=HEADLINE_WORDS_HINT,
+                sub_words=SUB_WORDS_HINT,
+                checklist=self.content.prompts.ads_policy(brief.market),
+            ),
+            data={
+                "brief": brief_data(brief),
+                "avatar": avatar.model_dump(),
+                "strict": rules.is_sensitive(brief.niche),
+                "real_urgency": brief.real_urgency,
+                "proofs": proofs_data(proofs),
+                "creatives": [
+                    {
+                        "index": i,
+                        "draft": draft.model_dump(),
+                        "policy_notes": [note.model_dump() for note in verdict.notes],
+                        "suggested_rewrite": verdict.rewrite,
+                    }
+                    for i, (draft, verdict) in enumerate(items)
+                ],
+            },
+            schema=CreativeDrafts,
+            check=check,
+            max_tokens=12_000,
+            model=self.content.config.model_content,
+        )
+        return result.creatives
+
+    async def make_green(
+        self,
+        *,
+        user_id: UUID,
+        brief: AdBrief,
+        avatar: Avatar,
+        drafts: list[CreativeDraft],
+        proofs: list[AdProof],
+        rounds: int,
+        stats: PlanStats,
+    ) -> list[tuple[CreativeDraft, PolicyVerdict, PreScore]]:
+        """Revisa, corrige y vuelve a revisar hasta que todo quede en verde (o se agoten las
+        rondas: lo que siga con observaciones se descarta, nunca se entrega)."""
+        ok: list[tuple[CreativeDraft, PolicyVerdict, PreScore]] = []
+        current = drafts
+        pending: list[tuple[CreativeDraft, PolicyVerdict]] = []
+        for attempt in range(rounds + 1):
+            if not current:
+                break
+            reviews = await self.review(
+                user_id=user_id, brief=brief, avatar=avatar, drafts=current, proofs=proofs
+            )
+            pending = []
+            for draft, (policy, score) in zip(current, reviews, strict=True):
+                if policy.status == "green":
+                    ok.append((draft, policy, score))
+                else:
+                    pending.append((draft, policy))
+            if not pending:
+                return ok
+            if attempt == rounds:
+                break
+            try:
+                current = await self.fix(
+                    user_id=user_id, brief=brief, avatar=avatar, items=pending, proofs=proofs
+                )
+            except ContentRejected:
+                break  # no se pudo corregir: se descartan
+            stats.fixed += len(pending)
+        stats.dropped += len(pending)
+        return ok
+
+    async def reviewed(
+        self,
+        *,
+        user_id: UUID,
+        brief: AdBrief,
+        avatar: Avatar,
+        angle_id: str,
+        count: int,
+        proofs: list[AdProof],
+        templates: list[str],
+        stats: PlanStats,
+        iterate_from: dict | None = None,
+    ) -> list[tuple[CreativeDraft, PolicyVerdict, PreScore]]:
+        """Copy + revisión + corrección: devuelve solo creativos en verde (hasta `count`)."""
+
+        async def draft(n: int) -> list[CreativeDraft]:
+            return await self.creatives(
+                user_id=user_id, brief=brief, angle_id=angle_id, avatar=avatar, count=n,
+                proofs=proofs, templates=templates, iterate_from=iterate_from,
+            )  # fmt: skip
+
+        green = await self.make_green(
+            user_id=user_id, brief=brief, avatar=avatar, drafts=await draft(count),
+            proofs=proofs, rounds=FIX_ROUNDS, stats=stats,
+        )  # fmt: skip
+        if len(green) < count:
+            # Los descartados se reponen con creativos nuevos, que pasan por la misma revisión.
+            try:
+                extra = await draft(count - len(green))
+                green += await self.make_green(
+                    user_id=user_id, brief=brief, avatar=avatar, drafts=extra,
+                    proofs=proofs, rounds=REPLACEMENT_ROUNDS, stats=stats,
+                )  # fmt: skip
+            except ContentRejected:
+                pass
+        return green[:count]
+
     # ── adaptar un lote a otro mercado ──
 
     async def adapt_brief(
@@ -336,9 +497,11 @@ class AdStrategyService:
         proofs: list[AdProof],
         templates: list[str],
         on_progress: Callable[[int, int], Awaitable[None]] | None = None,
+        stats: PlanStats | None = None,
     ) -> list[PlannedCreative]:
         """Copy + revisión de cada ángulo elegido. Un ángulo que falla no tumba el lote."""
         by_name = {a.name: a for a in avatars}
+        stats = stats if stats is not None else PlanStats()
         semaphore = asyncio.Semaphore(PLAN_CONCURRENCY)
         done = 0
 
@@ -346,13 +509,10 @@ class AdStrategyService:
             nonlocal done
             async with semaphore:
                 avatar = by_name[avatar_name]
-                drafts = await self.creatives(
-                    user_id=user_id, brief=brief, angle_id=angle_id, avatar=avatar,
-                    count=count, proofs=proofs, templates=templates,
+                reviewed = await self.reviewed(
+                    user_id=user_id, brief=brief, avatar=avatar, angle_id=angle_id, count=count,
+                    proofs=proofs, templates=templates, stats=stats,
                 )  # fmt: skip
-                reviews = await self.review(
-                    user_id=user_id, brief=brief, avatar=avatar, drafts=drafts, proofs=proofs
-                )
                 done += 1
                 if on_progress:
                     await on_progress(done, len(picks))
@@ -360,7 +520,7 @@ class AdStrategyService:
                     PlannedCreative(
                         angle_id=angle_id, avatar=avatar_name, draft=d, policy=p, score=s
                     )
-                    for d, (p, s) in zip(drafts, reviews, strict=True)
+                    for d, p, s in reviewed
                 ]
 
         results = await asyncio.gather(*(one(*p) for p in picks), return_exceptions=True)

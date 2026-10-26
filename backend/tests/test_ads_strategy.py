@@ -650,3 +650,134 @@ def test_every_ads_prompt_renders_in_both_markets(market: str) -> None:
     assert LIB.render(market, "ads/creatives", count=3, headline_words=10, sub_words=14)
     assert LIB.render(market, "ads/review", checklist=LIB.ads_policy(market))
     assert LIB.ads_system(market) and LIB.ads_policy(market)
+
+
+# ───────────────────── corregir hasta quedar en verde ─────────────────────
+
+
+def verdicts_response(*statuses: str) -> CreativeReviews:
+    reviews = []
+    for i, status in enumerate(statuses):
+        notes = (
+            []
+            if status == "green"
+            else [
+                PolicyNote(
+                    rule="personal_attributes", text="Insinúa algo personal", severity=status
+                )
+            ]
+        )
+        reviews.append(
+            CreativeReview(
+                index=i,
+                policy=PolicyVerdict(
+                    status=status, notes=notes, rewrite="" if not notes else "Otra idea"
+                ),
+                score=score(8),
+            )
+        )
+    return CreativeReviews(reviews=reviews)
+
+
+def reviewed(svc, count=2, **over):
+    from app.ads.strategy import PlanStats
+
+    stats = PlanStats()
+    out = run(
+        svc.reviewed(
+            user_id=USER, brief=brief(), avatar=avatar("A"), angle_id="dolor", count=count,
+            proofs=[], templates=["headline_bold"], stats=stats, **over,
+        )
+    )  # fmt: skip
+    return out, stats
+
+
+def test_an_ad_with_observations_is_fixed_and_reviewed_again_before_delivery() -> None:
+    fixed_draft = draft(headline="Ordena tus pagos sin drama")
+    svc, llm = service(
+        drafts_response(2),
+        verdicts_response("green", "yellow"),
+        CreativeDrafts(creatives=[fixed_draft]),  # la corrección
+        verdicts_response("green"),  # y se vuelve a revisar
+    )
+    out, stats = reviewed(svc)
+    assert len(out) == 2 and all(p.status == "green" and not p.notes for _, p, _ in out)
+    assert out[1][0].image.headline == "Ordena tus pagos sin drama"
+    assert (stats.fixed, stats.dropped) == (1, 0)
+    fix_call = llm.calls[2]
+    assert "Insinúa algo personal" in fix_call.user and "Otra idea" in fix_call.user
+    assert "SIN que haya que tocarlos" in fix_call.user or "Corrige los creativos" in fix_call.user
+    assert fix_call.schema is CreativeDrafts
+
+
+def test_red_ads_are_fixed_too_and_nothing_but_green_is_ever_returned() -> None:
+    svc, _ = service(
+        drafts_response(1), verdicts_response("red"), drafts_response(1), verdicts_response("green")
+    )
+    out, stats = reviewed(svc, count=1)
+    assert [p.status for _, p, _ in out] == ["green"] and stats.fixed == 1
+
+
+def test_ads_that_cannot_be_fixed_are_dropped_and_replaced_with_new_ones() -> None:
+    stubborn = [drafts_response(1), verdicts_response("yellow")]
+    for _ in range(3):  # tres rondas de corrección sin éxito
+        stubborn += [drafts_response(1), verdicts_response("yellow")]
+    svc, llm = service(*stubborn, drafts_response(1), verdicts_response("green"))
+    out, stats = reviewed(svc, count=1)
+    assert [p.status for _, p, _ in out] == ["green"]
+    assert (stats.fixed, stats.dropped) == (3, 1)
+    assert len(llm.calls) == len(stubborn) + 2
+
+
+def test_if_even_the_replacements_fail_the_ad_is_not_delivered() -> None:
+    stubborn = [drafts_response(1), verdicts_response("yellow")]
+    for _ in range(3):
+        stubborn += [drafts_response(1), verdicts_response("yellow")]
+    replacement = [drafts_response(1), verdicts_response("yellow")]
+    for _ in range(2):
+        replacement += [drafts_response(1), verdicts_response("yellow")]
+    svc, _ = service(*stubborn, *replacement)
+    out, stats = reviewed(svc, count=1)
+    assert out == [] and stats.dropped == 2
+
+
+def test_the_fix_must_keep_the_template_and_the_same_rules_as_the_original_copy() -> None:
+    wrong_template = drafts_response(1, template="checklist")
+    svc, llm = service(
+        drafts_response(1),
+        verdicts_response("yellow"),
+        wrong_template,
+        drafts_response(1),
+        verdicts_response("green"),
+    )
+    out, _ = reviewed(svc, count=1)
+    assert len(out) == 1
+    assert "conserva template_id=headline_bold" in llm.calls[3].user  # el error vuelve a la IA
+
+
+def test_a_plan_reports_how_much_policy_work_it_did() -> None:
+    from app.ads.strategy import PlanStats
+
+    svc, _ = service(
+        drafts_response(2),
+        verdicts_response("yellow", "yellow"),
+        drafts_response(2),
+        verdicts_response("green", "green"),
+    )
+    stats = PlanStats()
+    planned = run(
+        svc.plan(
+            user_id=USER, brief=brief(), avatars=[avatar("A")], picks=[("dolor", "A", 2)],
+            proofs=[], templates=["headline_bold"], stats=stats,
+        )
+    )  # fmt: skip
+    assert len(planned) == 2 and all(p.policy.status == "green" for p in planned)
+    assert (stats.fixed, stats.dropped) == (2, 0)
+
+
+@pytest.mark.parametrize("market", ["es-LATAM", "pt-BR"])
+def test_the_fix_prompt_renders_in_both_markets(market: str) -> None:
+    text = LIB.render(
+        market, "ads/fix", headline_words=10, sub_words=14, checklist=LIB.ads_policy(market)
+    )
+    assert "creatives" in text and "$" not in text

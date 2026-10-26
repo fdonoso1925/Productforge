@@ -19,7 +19,7 @@ from app.ads.naming import creative_filename, storage_path
 from app.ads.render import AdRenderer, product_mockup
 from app.ads.repo import AdBatchRepo, AdCreativeRepo, AdProofRepo
 from app.ads.schemas import AdBrief, AdProof, Avatar, CreativeDraft, ImageCopy
-from app.ads.strategy import AdStrategyService
+from app.ads.strategy import AdStrategyService, PlanStats
 from app.db.supabase import JobRepo
 from app.storage.base import StorageProvider
 from app.templates_engine.model import Template, load_template
@@ -155,6 +155,7 @@ async def run_ad_plan(job: dict, deps: AdDeps) -> None:
         await deps.jobs.update(job["id"], progress={"stage": "copy", "done": done, "total": total})
 
     await deps.batches.update(batch["id"], status="planning")
+    stats = PlanStats()
     planned = await deps.strategy.plan(
         user_id=UUID(batch["user_id"]),
         brief=brief,
@@ -163,6 +164,7 @@ async def run_ad_plan(job: dict, deps: AdDeps) -> None:
         proofs=proofs,
         templates=available_templates(deps, brief, proofs),
         on_progress=progress,
+        stats=stats,
     )
     await deps.creatives.delete_for_batch(batch["id"])
     await deps.creatives.insert_many(creative_rows(batch, planned, list(batch["ratios"])))
@@ -173,6 +175,8 @@ async def run_ad_plan(job: dict, deps: AdDeps) -> None:
             "stage": "done",
             "creatives": len(planned),
             "angles_failed": len(picks) - len({(p.angle_id, p.avatar) for p in planned}),
+            "policy_fixed": stats.fixed,
+            "policy_dropped": stats.dropped,
         },
     )
 
@@ -476,22 +480,20 @@ async def run_ad_iterate(job: dict, deps: AdDeps) -> None:
     }
 
     await deps.jobs.update(job["id"], progress={"stage": "copy", "done": 0, "total": 1})
-    drafts = await deps.strategy.creatives(
+    reviewed = await deps.strategy.reviewed(
         user_id=user_id,
         brief=brief,
-        angle_id=source["angle"],
         avatar=avatar,
+        angle_id=source["angle"],
         count=count,
         proofs=proofs,
         templates=available_templates(deps, brief, proofs),
+        stats=PlanStats(),
         iterate_from=iterate_from,
-    )
-    reviews = await deps.strategy.review(
-        user_id=user_id, brief=brief, avatar=avatar, drafts=drafts, proofs=proofs
     )
     planned = [
         PlannedCreative(angle_id=source["angle"], avatar=avatar.name, draft=d, policy=p, score=s)
-        for d, (p, s) in zip(drafts, reviews, strict=True)
+        for d, p, s in reviewed
     ]
     rows = creative_rows(
         batch, planned, ratios, taken={c["filename"] for c in everything}, parent_id=source["id"]
