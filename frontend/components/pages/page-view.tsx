@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, Download, Monitor, Pencil, RefreshCw, Smartphone, Trash2 } from "lucide-react";
+import { Copy, Download, ExternalLink, Monitor, Pencil, RefreshCw, Smartphone, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { ConfirmButton } from "@/components/product/confirm-button";
@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { ErrorBox, Loading } from "@/components/wizard/step-nav";
 import { Link, useRouter } from "@/i18n/navigation";
 import { ApiError, api } from "@/lib/api";
-import { isCheckoutUrl, type PageContent, type PageRow, previewDocument, type SimilarityReport } from "@/lib/pages";
+import { isCheckoutUrl, lovableUrl, type PageContent, type PageRow, previewDocument, type SimilarityReport } from "@/lib/pages";
 import { createClient } from "@/lib/supabase/client";
 import type { TemplateInfo } from "@/lib/types";
 import { ContentEditor } from "./content-editor";
@@ -241,6 +241,22 @@ export function PageView({ pageId }: { pageId: string }) {
               {t("copy")}
             </Button>
             <Button
+              variant="outline"
+              size="sm"
+              disabled={blocked || generating || editing}
+              onClick={() =>
+                void run(async () => {
+                  const out = await api.pagesLovable(pageId);
+                  await navigator.clipboard.writeText(out.prompt).catch(() => undefined);
+                  // Con textos muy largos el enlace puede fallar: se abre Lovable vacío y se pega.
+                  window.open(out.link_ok ? lovableUrl(out.prompt) : "https://lovable.dev/", "_blank", "noopener,noreferrer");
+                }, t("lovableDone"))
+              }
+            >
+              <ExternalLink aria-hidden />
+              {t("lovable")}
+            </Button>
+            <Button
               variant={editing ? "default" : "outline"}
               size="sm"
               disabled={generating}
@@ -267,6 +283,7 @@ export function PageView({ pageId }: { pageId: string }) {
             />
           </div>
           {blocked && <p className="text-xs text-destructive">{t("exportBlocked")}</p>}
+          <p className="text-xs text-muted-foreground">{t("lovableHint")}</p>
 
           {editing && draft ? (
             <section className="flex flex-col gap-4">

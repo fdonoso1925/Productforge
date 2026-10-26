@@ -223,6 +223,8 @@ export const api = {
   pagesHtml: (pageId: string) => call<{ html: string; filename: string }>(`/pages/${pageId}/html`),
   pagesExport: (pageId: string) =>
     call<{ html: string; filename: string }>(`/pages/${pageId}/export`, { method: "POST" }),
+  pagesLovable: (pageId: string) =>
+    call<{ prompt: string; chars: number; link_ok: boolean }>(`/pages/${pageId}/lovable`),
   pagesEdit: (pageId: string, body: { content?: PageContent; checkout_url?: string; template_id?: string }) =>
     call<{ similarity: SimilarityReport }>(`/pages/${pageId}`, { method: "PUT", body: JSON.stringify(body) }),
   pagesRegenerate: (pageId: string) => call<{ job_id: string }>(`/pages/${pageId}/regenerate`, { method: "POST" }),

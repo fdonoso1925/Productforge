@@ -3,7 +3,7 @@ revisar el parecido y exportar el HTML."""
 
 from pathlib import Path
 from typing import Annotated, Any
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -23,7 +23,7 @@ from app.auth import CurrentUser, get_current_user
 from app.content.schemas import Market
 from app.db.supabase import NotFound
 from app.deps import ServicesDep
-from app.pages import similarity
+from app.pages import lovable, similarity
 from app.pages.render import render_page
 from app.pages.schemas import (
     Deliverable,
@@ -374,6 +374,33 @@ async def export_html(page_id: UUID, user: User, services: ServicesDep) -> HtmlO
             "el texto se parece demasiado a la página modelo: edítalo o vuelve a generarlo",
         )
     return HtmlOut(html=html_of(services, page), filename=filename_of(page))
+
+
+class LovableOut(BaseModel):
+    prompt: str
+    chars: int
+    # El enlace de Lovable lleva el texto en la URL: pasado este largo conviene copiar y pegar.
+    link_ok: bool
+
+
+@router.get("/{page_id}/lovable", dependencies=[Depends(work_rate_limit)])
+async def lovable_prompt(page_id: UUID, user: User, services: ServicesDep) -> LovableOut:
+    """Las instrucciones para construir esta página en Lovable (texto ya revisado, sin IA)."""
+    page = await owned_page(services, page_id, user)
+    report = SimilarityReport.model_validate(page.get("similarity") or {})
+    if report.level == "block":
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "el texto se parece demasiado a la página modelo: edítalo o vuelve a generarlo",
+        )
+    content, brief, proofs = page_parts(page)
+    template = load_template(Path(services.settings.templates_dir), page["template_id"])
+    prompt = lovable.build_prompt(content, brief, proofs, template, page.get("checkout_url"))
+    return LovableOut(
+        prompt=prompt,
+        chars=len(prompt),
+        link_ok=len(quote(prompt, safe="")) <= lovable.URL_SAFE_CHARS,
+    )
 
 
 class EditIn(BaseModel):

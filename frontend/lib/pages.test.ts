@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { editableLeaves, flaggedPaths, isCheckoutUrl, previewDocument, sectionOf, setLeaf } from "./pages";
+import { editableLeaves, flaggedPaths, isCheckoutUrl, lovableUrl, previewDocument, sectionOf, setLeaf } from "./pages";
 
 const content = {
   seo_title: "t",
@@ -44,5 +44,16 @@ describe("enlace de compra", () => {
 describe("vista previa", () => {
   it("abre los enlaces en otra pestaña", () => {
     expect(previewDocument("<html><head><title>x</title></head>")).toContain('<base target="_blank">');
+  });
+});
+
+describe("enlace de Lovable", () => {
+  it("lleva el texto en el fragmento y codificado, no en la query", () => {
+    const url = lovableUrl("Hola & «mundo»\nlínea 2 #1");
+    expect(url.startsWith("https://lovable.dev/#prompt=")).toBe(true);
+    expect(url).not.toContain("?");
+    expect(url).not.toContain(" ");
+    expect(url.split("#prompt=")[1]).not.toContain("#");
+    expect(decodeURIComponent(url.split("#prompt=")[1])).toBe("Hola & «mundo»\nlínea 2 #1");
   });
 });

@@ -155,6 +155,12 @@ export function flaggedPaths(report: SimilarityReport | null): Set<string> {
   return new Set((report?.fields ?? []).map((f) => f.path));
 }
 
+/** «Build with URL» de Lovable: el texto va en el fragmento (#), nunca en la query. No construye solo:
+ * Lovable abre el texto sin enviar y la persona pulsa enviar. */
+export function lovableUrl(prompt: string): string {
+  return `https://lovable.dev/#prompt=${encodeURIComponent(prompt)}`;
+}
+
 /** Vista previa: los enlaces se abren en otra pestaña en vez de cargar la compra dentro del marco. */
 export function previewDocument(html: string): string {
   return html.replace("<head>", '<head><base target="_blank">');

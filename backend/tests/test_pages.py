@@ -761,3 +761,83 @@ def test_the_embedded_css_is_not_html_escaped() -> None:
     css = html().split("</style>")[0]
     assert "&#34;" not in css and "&quot;" not in css and "&amp;" not in css
     assert '--heading: "Montserrat"' in css
+
+
+# ───────────────────────────── Lovable ─────────────────────────────
+
+
+def lovable_prompt(c=None, b=None, p=None, url="https://pay.hotmart.com/X123") -> str:
+    from app.pages import lovable
+
+    template = load_template(SETTINGS.templates_dir, "bold-moderno")
+    return lovable.build_prompt(
+        c or content(), b or brief(), p if p is not None else [], template, url
+    )
+
+
+def test_the_lovable_prompt_carries_every_text_and_the_rules_not_to_invent() -> None:
+    b = brief(price_text="USD 12")
+    c = rules.finalize(content(), b, [])
+    text = lovable_prompt(c, b)
+    for needle in (
+        c.hero.headline,
+        c.problem.pains[0],
+        c.solution.mechanism_name,
+        c.journey[1].title,
+        c.benefits[0].title,
+        c.faq[2].q,
+        c.final_cta.headline,
+        c.disclaimer,
+        "Guía principal",
+    ):
+        assert needle in text
+    assert "#5B21B6" in text and "Montserrat" in text and "https://pay.hotmart.com/X123" in text
+    assert "USD 12" in text and "EXACTAMENTE" in text and "No inventes" in text
+    assert len(text) <= 50_000
+
+
+def test_the_lovable_prompt_never_adds_what_the_user_did_not_give() -> None:
+    text = lovable_prompt()
+    for absent in ("Precio:", "Garantía:", "Urgencia:", "PRUEBAS", "QUIÉN LO CREÓ"):
+        assert absent not in text
+    assert "aún no hay" in lovable_prompt(url=None)
+
+
+def test_the_lovable_prompt_quotes_real_proofs_verbatim_and_speaks_portuguese() -> None:
+    c = content(proof=ProofBlock(intro="Depoimentos", proof_ids=["p1"]))
+    assert "«Me sirvió muchísimo <b>gracias</b>» — Ana" in lovable_prompt(c, p=proofs())
+    pt = lovable_prompt(b=brief(market="pt-BR"))
+    assert "português do Brasil" in pt and "SEÇÕES, EM ORDEM" in pt
+
+
+def test_the_lovable_endpoint_gives_the_prompt_but_nothing_from_the_model_page() -> None:
+    w = pages_world([content()])
+    w.client.post("/pages", json=create_body(w, checkout_url="https://pay.hotmart.com/X"))
+    w.run_worker()
+    page_id = next(iter(w.pages.rows))
+    page = w.pages.rows[page_id]
+    page["reference"] = {
+        "brand_terms": ["Acme Pro"],
+        "source_url": "https://competencia.com/oferta",
+    }
+    page["reference_fingerprint"] = [1, 2, 3]
+    body = w.client.get(f"/pages/{page_id}/lovable").json()
+    assert body["chars"] == len(body["prompt"]) and body["link_ok"] is True
+    assert (
+        "https://pay.hotmart.com/X" in body["prompt"]
+        and page["content"]["hero"]["headline"] in body["prompt"]
+    )
+    assert "Acme" not in body["prompt"] and "competencia" not in body["prompt"]
+
+    other = w.as_user("00000000-0000-0000-0000-000000000099")
+    assert w.client.get(f"/pages/{page_id}/lovable", headers=other).status_code == 404
+    page["similarity"] = {
+        "level": "block",
+        "ratio": 0.5,
+        "longest_run_words": 20,
+        "fields": [],
+        "brands": [],
+    }
+    assert w.client.get(f"/pages/{page_id}/lovable").status_code == 409
+    fresh = pages_world([])
+    assert fresh.client.get(f"/pages/{uuid4()}/lovable").status_code == 404
