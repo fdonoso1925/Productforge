@@ -37,6 +37,9 @@ from app.db.supabase import (
 )
 from app.hotmart.client import HotmartClient
 from app.hotmart.sync import HotmartRepo
+from app.pages.jobs import PageDeps
+from app.pages.repo import SalesPageRepo
+from app.pages.strategy import PageService
 from app.pipeline.generate import PipelineDeps
 from app.pipeline.uploads import UploadQueue
 from app.storage.crypto import TokenCipher
@@ -66,6 +69,11 @@ class Services:
     meta: MetaClient | None = None
     hotmart: HotmartClient | None = None
     hotmart_repo: HotmartRepo | None = None
+    sales_pages: SalesPageRepo | None = None
+    page_service: PageService | None = None
+
+    def page_deps(self) -> PageDeps:
+        return PageDeps(service=self.page_service, pages=self.sales_pages)  # type: ignore[arg-type]
 
     def ads(self) -> AdDeps:
         return AdDeps(
@@ -153,6 +161,8 @@ def build_services(settings: Settings) -> Services:
             basic=settings.hotmart_basic,
         ),
         hotmart_repo=HotmartRepo(db),
+        sales_pages=SalesPageRepo(db),
+        page_service=PageService(content),
     )
 
 

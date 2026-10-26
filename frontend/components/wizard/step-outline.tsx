@@ -24,6 +24,8 @@ export function StepOutline({ state, update, nav }: StepProps) {
   const [submitting, setSubmitting] = useState(false);
   // Opcional: al terminar el paquete, ofrecer crear los anuncios con distintos ángulos.
   const [offerAds, setOfferAds] = useState(false);
+  // Opcional: al terminar el paquete, ofrecer crear su página de ventas.
+  const [offerPage, setOfferPage] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const requested = useRef<string | null>(null);
   const key = inputsKey(state);
@@ -102,7 +104,8 @@ export function StepOutline({ state, update, nav }: StepProps) {
         update({ built: { ...current, dirty: false } });
       }
       await api.generate(current.productId);
-      router.push(`/products/${current.productId}${offerAds ? "?ads=1" : ""}`);
+      const offers = [offerAds ? "ads=1" : "", offerPage ? "page=1" : ""].filter(Boolean).join("&");
+      router.push(`/products/${current.productId}${offers ? `?${offers}` : ""}`);
     } catch (e) {
       setError(toError(e));
       setSubmitting(false);
@@ -169,6 +172,19 @@ export function StepOutline({ state, update, nav }: StepProps) {
             <span className="flex flex-col gap-1">
               <span className="font-medium">{t("adsAfter")}</span>
               <span className="text-muted-foreground">{t("adsAfterHint")}</span>
+            </span>
+          </label>
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border p-4 text-sm">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={offerPage}
+              onChange={(e) => setOfferPage(e.target.checked)}
+              disabled={submitting}
+            />
+            <span className="flex flex-col gap-1">
+              <span className="font-medium">{t("pageAfter")}</span>
+              <span className="text-muted-foreground">{t("pageAfterHint")}</span>
             </span>
           </label>
           {parsed && !parsed.success && (

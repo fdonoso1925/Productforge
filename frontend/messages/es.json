@@ -150,7 +150,9 @@
       "generate": "Generar paquete",
       "invalid": "Revisa los campos marcados.",
       "adsAfter": "Al terminar, ofrecerme crear los anuncios",
-      "adsAfterHint": "Cuando el paquete esté listo te propongo anuncios de Meta con distintos ángulos de venta. Es opcional y no gasta nada hasta que lo confirmes."
+      "adsAfterHint": "Cuando el paquete esté listo te propongo anuncios de Meta con distintos ángulos de venta. Es opcional y no gasta nada hasta que lo confirmes.",
+      "pageAfter": "Al terminar, ofrecerme crear la página de ventas",
+      "pageAfterHint": "Cuando el paquete esté listo te propongo una página de ventas pensada para convertir, con todo el recorrido: dolor, solución, etapas y oferta. Es opcional y también la puedes crear después desde el menú Páginas."
     },
     "reference": {
       "title": "Página de ventas de referencia (opcional)",
@@ -283,6 +285,12 @@
       "retry": "Subir ahora",
       "retryFailed": "Reintentar",
       "openFolder": "Abrir carpeta"
+    },
+    "page": {
+      "title": "Página de ventas",
+      "titleNext": "Tu paquete está listo: ¿creamos la página de ventas?",
+      "hint": "Una página pensada para convertir, con el dolor, la solución, las etapas, lo que incluye y las objeciones resueltas. Puedes modelarla sobre otra página sin copiarla.",
+      "cta": "Crear página de ventas"
     },
     "ads": {
       "title": "Anuncios para Meta Ads",
@@ -769,6 +777,145 @@
       "exhausted": "sin cuota hoy, se usa la reserva"
     }
   },
+  "pages": {
+    "status": { "planning": "Escribiendo…", "ready": "Lista", "error": "Con error" },
+    "similarity": {
+      "warn": {
+        "title": "Atención: parte del texto roza a la página modelo",
+        "text": "Hay frases o ideas muy parecidas a la otra página. Edítalas con tus palabras antes de publicar (están resaltadas en el editor) o vuelve a generar."
+      },
+      "block": {
+        "title": "Se parece demasiado a la página modelo",
+        "text": "Esto ya es copiar y no se puede exportar. Edita los textos resaltados con tus palabras o vuelve a generar la página."
+      },
+      "brands": "Aparecen nombres de la página modelo: {names}. Quítalos.",
+      "where": "Dónde: {fields}."
+    },
+    "list": {
+      "title": "Páginas de ventas",
+      "hint": "Páginas pensadas para convertir, escritas con todo el recorrido de tu paquete: dolor, solución, etapas, oferta y objeciones.",
+      "new": "Nueva página",
+      "empty": "Aún no tienes páginas. Crea la primera desde un paquete o a mano.",
+      "modeled": "modelada sobre otra página"
+    },
+    "wizard": {
+      "title": "Nueva página de ventas",
+      "hint": "Se escribe con los datos de tu paquete, usando todos los ángulos de venta. Precio, garantía y urgencia solo aparecen si tú los das.",
+      "back": "← Páginas",
+      "sourceTitle": "¿De qué producto?",
+      "sourceLabel": "Paquete",
+      "sourceManual": "Ninguno: escribir los datos a mano",
+      "product": "Producto",
+      "audience": "Público",
+      "promise": "Promesa",
+      "pieces": "Incluye",
+      "market": "Mercado",
+      "manual": {
+        "name": "Nombre del producto",
+        "niche": "Nicho",
+        "audience": "A quién va dirigido",
+        "problem": "Problema que resuelve",
+        "promise": "Resultado que promete",
+        "timeframe": "Plazo realista (opcional)"
+      },
+      "offerTitle": "Tu oferta",
+      "offerHint": "Solo lo que escribas aquí aparecerá en la página. Si lo dejas vacío, la página no lo menciona: nada se inventa.",
+      "price": "Precio",
+      "priceHint": "Tal como quieres que se vea, por ejemplo USD 12.",
+      "urgency": "Urgencia real",
+      "urgencyHint": "Solo si es cierta (una fecha de cierre, un lanzamiento).",
+      "guarantee": "Garantía",
+      "guaranteeHint": "Solo si la ofreces de verdad, con tus palabras (por ejemplo: 7 días para pedir el reembolso).",
+      "about": "Sobre quien lo creó",
+      "aboutHint": "Opcional. Cuenta quién eres y tu experiencia real; no se agregan credenciales.",
+      "checkout": "Enlace de compra",
+      "checkoutHint": "Tu checkout (Hotmart, Kiwify…). Puedes agregarlo después; debe empezar con https://",
+      "checkoutInvalid": "Debe ser una URL completa que empiece con https://",
+      "template": "Estilo visual",
+      "templateDefault": "Elige un estilo",
+      "proofs": "Pruebas reales",
+      "proofsHint": "Se citan tal cual. Si no marcas ninguna, la página no incluye testimonios.",
+      "create": "Crear página de ventas",
+      "confirm": "Haz clic otra vez: usa IA",
+      "createHint": "Usa IA y tarda cerca de un minuto."
+    },
+    "model": {
+      "title": "Modelar otra página (opcional)",
+      "hint": "Pega el enlace de una página de ventas que quieras superar. Se analiza su estructura, qué hace bien y dónde pierde ventas, y la tuya se escribe desde cero, mejor. No se copian textos, logos, nombres ni imágenes.",
+      "urlLabel": "Enlace de la página",
+      "textLabel": "Texto de la página",
+      "textHint": "Mínimo {min} caracteres.",
+      "analyze": "Analizar página",
+      "analyzing": "Analizando…",
+      "analyzingHint": "Leyendo y analizando la página; puede tardar unos segundos.",
+      "pasteInstead": "Pegar el texto en vez del enlace",
+      "useUrl": "Usar un enlace",
+      "analyzed": "Página analizada",
+      "pasted": "texto pegado",
+      "remove": "Quitar",
+      "notSales": "Esto no parece una página de ventas: el análisis puede ser pobre.",
+      "structure": "Estructura",
+      "strengths": "Lo que hace bien",
+      "weaknesses": "Dónde pierde ventas",
+      "missing": "Lo que le falta",
+      "original": "De esta página solo se guarda el análisis, no su texto. La tuya se escribe desde cero y se revisa que no se le parezca.",
+      "errorGeneric": "No se pudo analizar la página."
+    },
+    "view": {
+      "back": "← Páginas",
+      "modeled": "Modelada sobre otra página, escrita desde cero",
+      "original": "Escrita desde tu paquete",
+      "writing": "Escribiendo tu página de ventas… puede tardar cerca de un minuto.",
+      "failed": "No se pudo escribir la página.",
+      "retry": "Volver a intentar",
+      "confirmAi": "Haz clic otra vez: usa IA",
+      "checkout": "Enlace de compra",
+      "checkoutHint": "Los botones de la página llevan aquí.",
+      "checkoutInvalid": "Debe empezar con https://",
+      "saveLink": "Guardar enlace",
+      "template": "Estilo visual",
+      "download": "Descargar HTML",
+      "copy": "Copiar HTML",
+      "copied": "HTML copiado.",
+      "edit": "Editar textos",
+      "cancelEdit": "Cancelar edición",
+      "saveText": "Guardar cambios",
+      "saved": "Guardado.",
+      "regenerate": "Volver a escribir",
+      "delete": "Eliminar",
+      "confirmDelete": "¿Seguro?",
+      "exportBlocked": "No se puede exportar mientras el texto se parezca demasiado a la página modelo.",
+      "preview": "Vista previa",
+      "previewNote": "El archivo es una sola página HTML sin recursos externos: súbela a tu hosting o pega el HTML en tu constructor de páginas.",
+      "device": "Tamaño de la vista previa",
+      "mobile": "Celular",
+      "desktop": "Computadora",
+      "beatTitle": "Cómo supera a la página modelo",
+      "beatHint": "Esto es lo que la otra página no resolvía y la tuya sí aborda.",
+      "weaknesses": "Dónde perdía ventas",
+      "missing": "Lo que le faltaba"
+    },
+    "editor": {
+      "hint": "Edita con tus palabras. El precio, la garantía y la urgencia salen de lo que indicaste y no se editan aquí. Los cambios pasan las mismas reglas de honestidad.",
+      "similar": "Se parece a la página modelo: reescríbelo.",
+      "sections": {
+        "seo_title": "Buscadores", "seo_description": "Buscadores", "hero": "Inicio", "problem": "Problema",
+        "solution": "Solución", "journey": "Etapas del camino", "benefits": "Beneficios",
+        "deliverable_blurbs": "Lo que incluye", "for_you": "Es para ti si…", "not_for_you": "No es para ti si…",
+        "about": "Quién lo creó", "proof": "Pruebas", "offer": "Oferta", "faq": "Preguntas frecuentes",
+        "final_cta": "Cierre", "disclaimer": "Aviso legal"
+      },
+      "fields": {
+        "seo_title": "Título para buscadores", "seo_description": "Descripción para buscadores",
+        "eyebrow": "Etiqueta", "headline": "Título", "subheadline": "Subtítulo", "bullets": "Punto clave",
+        "cta_text": "Texto del botón", "microcopy": "Línea bajo el botón", "title": "Título", "intro": "Introducción",
+        "pains": "Dolor", "agitation": "Costo de seguir igual", "mechanism_name": "Nombre del método",
+        "mechanism": "Cómo funciona", "text": "Texto", "q": "Pregunta", "a": "Respuesta",
+        "deliverable_blurbs": "Frase de valor", "for_you": "Señal", "not_for_you": "Caso", "about": "Texto",
+        "disclaimer": "Aviso"
+      }
+    }
+  },
   "hotmart": {
     "title": "Dashboard de Hotmart",
     "hint": "Ventas, ingresos y reembolsos de tus productos, leídos de tu cuenta de Hotmart (solo lectura).",
@@ -813,6 +960,9 @@
     "createPackageHint": "Elige un nicho y recibe el paquete completo",
     "createAds": "Anuncios",
     "hotmart": "Hotmart",
+    "pages": "Páginas",
+    "createPage": "Página de ventas",
+    "createPageHint": "Una página pensada para convertir, desde tu paquete",
     "createAdsHint": "Creativos para Meta Ads listos para subir"
   }
 }

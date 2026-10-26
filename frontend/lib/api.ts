@@ -21,6 +21,13 @@ import type {
   ResultInput,
 } from "@/lib/ads";
 import type {
+  PageBriefPreview,
+  PageContent,
+  PageInput,
+  SimilarityReport,
+  TeardownResult,
+} from "@/lib/pages";
+import type {
   ArtChoice,
   CoverSpec,
   DriveStatus,
@@ -207,6 +214,19 @@ export const api = {
   adsDrive: (batchId: string) => call<AdDrive>(`/ads/batches/${batchId}/drive`),
   adsDriveStart: (batchId: string) =>
     call<{ job_id: string }>(`/ads/batches/${batchId}/drive`, { method: "POST" }),
+  pagesReference: (body: { market: Market; url?: string; text?: string }) =>
+    call<TeardownResult>("/pages/reference", { method: "POST", body: JSON.stringify(body) }),
+  pagesBrief: (productId: string) => call<PageBriefPreview>(`/pages/brief?product_id=${productId}`),
+  pagesCreate: (body: PageInput) =>
+    call<{ page_id: string; job_id: string }>("/pages", { method: "POST", body: JSON.stringify(body) }),
+  pagesState: (pageId: string) => call<{ working: boolean }>(`/pages/${pageId}/state`),
+  pagesHtml: (pageId: string) => call<{ html: string; filename: string }>(`/pages/${pageId}/html`),
+  pagesExport: (pageId: string) =>
+    call<{ html: string; filename: string }>(`/pages/${pageId}/export`, { method: "POST" }),
+  pagesEdit: (pageId: string, body: { content?: PageContent; checkout_url?: string; template_id?: string }) =>
+    call<{ similarity: SimilarityReport }>(`/pages/${pageId}`, { method: "PUT", body: JSON.stringify(body) }),
+  pagesRegenerate: (pageId: string) => call<{ job_id: string }>(`/pages/${pageId}/regenerate`, { method: "POST" }),
+  pagesDelete: (pageId: string) => call<void>(`/pages/${pageId}`, { method: "DELETE" }),
   hotmartStatus: () =>
     call<{ configured: boolean; synced_at: string | null; last_error: string | null; count: number }>("/hotmart/status"),
   hotmartSync: (days = 90) =>

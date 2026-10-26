@@ -272,13 +272,15 @@ class JobRepo:
         payload: Row,
         product_id: UUID | None = None,
         batch_id: UUID | None = None,
+        page_id: UUID | None = None,
     ) -> Row:
-        """Un job cuelga de un producto o, los de anuncios, de un lote (`batch_id`)."""
+        """Un job cuelga de un producto, de un lote de anuncios (`batch_id`) o de una página."""
         [row] = await self._db.insert(
             "jobs",
             {
                 "product_id": str(product_id) if product_id else None,
                 "batch_id": str(batch_id) if batch_id else None,
+                "page_id": str(page_id) if page_id else None,
                 "user_id": str(user_id),
                 "kind": kind,
                 "payload": payload,
@@ -304,6 +306,9 @@ class JobRepo:
         if kind:
             filters["kind"] = eq(kind)
         return await self._db.select("jobs", **filters)
+
+    async def active_for_page(self, page_id: UUID) -> list[Row]:
+        return await self._db.select("jobs", page_id=eq(page_id), status="in.(queued,running)")
 
 
 class UsageRepo:

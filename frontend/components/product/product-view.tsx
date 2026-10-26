@@ -13,6 +13,7 @@ import { FORMAT_ICONS } from "@/lib/formats";
 import { createClient } from "@/lib/supabase/client";
 import type { FileRow, ItemRow, JobRow, ProductRow } from "@/lib/types";
 import { AdsOffer } from "./ads-offer";
+import { PageOffer } from "./page-offer";
 import { CommercialCard } from "./commercial-card";
 import { ConfirmButton } from "./confirm-button";
 import { DriveStatus } from "./drive-status";
@@ -24,7 +25,15 @@ const POLL_MS = 2500;
 
 type Data = { product: ProductRow; items: ItemRow[]; files: FileRow[]; job: JobRow | null };
 
-export function ProductView({ productId, offerAds = false }: { productId: string; offerAds?: boolean }) {
+export function ProductView({
+  productId,
+  offerAds = false,
+  offerPage = false,
+}: {
+  productId: string;
+  offerAds?: boolean;
+  offerPage?: boolean;
+}) {
   const t = useTranslations("product");
   const ta = useTranslations("product.actions");
   const tc = useTranslations("common");
@@ -119,6 +128,7 @@ export function ProductView({ productId, offerAds = false }: { productId: string
             {zip && <DownloadButton file={zip} label={t("downloadZip")} primary />}
           </div>
           <DriveStatus productId={product.id} refreshKey={`${product.status}|${product.updated_at ?? ""}`} />
+          {product.status === "ready" && <PageOffer productId={product.id} emphasis={offerPage} />}
           {product.status === "ready" && <AdsOffer productId={product.id} emphasis={offerAds} />}
 
           <div className="flex flex-wrap gap-3">

@@ -1,6 +1,6 @@
 "use client";
 
-import { History, Home, type LucideIcon, Megaphone, PackagePlus, Plus, Settings, ShoppingBag, X } from "lucide-react";
+import { FileText, History, Home, type LucideIcon, Megaphone, PackagePlus, Plus, Settings, ShoppingBag, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { LocaleSwitch } from "@/components/locale-switch";
@@ -46,11 +46,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     { href: "/ads", label: t("createAds"), icon: Megaphone, active: pathname.startsWith("/ads") },
     { href: "/settings", label: tc("settings"), icon: Settings, active: pathname.startsWith("/settings") },
     // Solo en la barra lateral: la barra inferior del móvil usa los cuatro primeros.
+    { href: "/pages", label: t("pages"), icon: FileText, active: pathname.startsWith("/pages") },
     { href: "/hotmart", label: t("hotmart"), icon: ShoppingBag, active: pathname.startsWith("/hotmart") },
   ];
 
   const options = [
     { href: "/new", title: t("createPackage"), hint: t("createPackageHint"), icon: PackagePlus, accent: false },
+    { href: "/pages/new", title: t("createPage"), hint: t("createPageHint"), icon: FileText, accent: false },
     { href: "/ads/new", title: t("createAds"), hint: t("createAdsHint"), icon: Megaphone, accent: true },
   ];
 

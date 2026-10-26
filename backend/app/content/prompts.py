@@ -32,6 +32,9 @@ class PromptLibrary:
     def ads_system(self, market: Market) -> str:
         return _read(self.root / market / "ads" / "system.md")
 
+    def pages_system(self, market: Market) -> str:
+        return _read(self.root / market / "pages" / "system.md")
+
     def ads_policy(self, market: Market) -> str:
         """Checklist de políticas de Meta: archivo editable, se inserta en la revisión."""
         return _read(self.root / market / "ads" / "policy.md").strip()

@@ -15,6 +15,7 @@ from app.ads.jobs import AdDeps, run_ad_drive, run_ad_iterate, run_ad_plan, run_
 from app.ads.meta.jobs import run_ad_meta_publish, run_ad_meta_sync
 from app.config import get_settings
 from app.deps import Services, build_services
+from app.pages.jobs import PageDeps, run_page_generate
 from app.pipeline.drive_sync import run_upload
 from app.pipeline.generate import PipelineDeps, run_generate
 from app.pipeline.remodel import run_duplicate, run_regenerate_item, run_remodel
@@ -37,6 +38,10 @@ AD_HANDLERS: dict[str, Callable[[dict, AdDeps], Awaitable[None]]] = {
     "ad_iterate": run_ad_iterate,
     "ad_meta_publish": run_ad_meta_publish,
     "ad_meta_sync": run_ad_meta_sync,
+}
+# Los jobs de páginas de ventas cuelgan de una página.
+PAGE_HANDLERS: dict[str, Callable[[dict, PageDeps], Awaitable[None]]] = {
+    "page_generate": run_page_generate,
 }
 POLL_SECONDS = 2.0
 # Las métricas de los lotes subidos a Meta se vuelven a leer cada 6 horas.
@@ -81,6 +86,21 @@ async def fail_batch(services: Services, job: dict) -> None:
         logger.exception("no se pudo liberar el lote del job %s", job["id"])
 
 
+async def fail_page(services: Services, job: dict, exc: Exception) -> None:
+    """Una página que no se pudo escribir pasa a «error» (con el motivo) en vez de quedar en
+    «planificando» para siempre; si ya tenía texto, lo conserva y vuelve a «lista»."""
+    try:
+        page = await services.sales_pages.get(job["page_id"])
+        if page.get("content"):
+            await services.sales_pages.update(page["id"], status="ready")
+        else:
+            await services.sales_pages.update(
+                page["id"], status="error", error=str(exc)[:300] or type(exc).__name__
+            )
+    except Exception:
+        logger.exception("no se pudo liberar la página del job %s", job["id"])
+
+
 async def run_one(services: Services) -> bool:
     """Ejecuta un job si hay alguno en cola. Devuelve True si procesó uno."""
     job = await services.jobs.claim()
@@ -88,8 +108,11 @@ async def run_one(services: Services) -> bool:
         return False
     handler = HANDLERS.get(job["kind"])
     ad_handler = AD_HANDLERS.get(job["kind"])
+    page_handler = PAGE_HANDLERS.get(job["kind"])
     try:
-        if ad_handler is not None:
+        if page_handler is not None:
+            await page_handler(job, services.page_deps())
+        elif ad_handler is not None:
             await ad_handler(job, services.ads())
         elif handler is None:
             raise ValueError(f"tipo de job desconocido: {job['kind']}")
@@ -102,6 +125,8 @@ async def run_one(services: Services) -> bool:
         await release_product(services, job)
         if job.get("batch_id"):
             await fail_batch(services, job)
+        if job.get("page_id"):
+            await fail_page(services, job, exc)
     else:
         await services.jobs.update(job["id"], status="done")
     return True

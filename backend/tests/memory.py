@@ -127,11 +127,14 @@ class MemoryFiles:
 class MemoryJobs:
     rows: dict[str, dict] = field(default_factory=dict)
 
-    async def enqueue(self, *, user_id, kind, payload, product_id=None, batch_id=None) -> dict:
+    async def enqueue(
+        self, *, user_id, kind, payload, product_id=None, batch_id=None, page_id=None
+    ) -> dict:
         row = {
             "id": str(uuid4()),
             "product_id": str(product_id) if product_id else None,
             "batch_id": str(batch_id) if batch_id else None,
+            "page_id": str(page_id) if page_id else None,
             "user_id": str(user_id),
             "kind": kind,
             "payload": payload,
@@ -167,6 +170,13 @@ class MemoryJobs:
             if r.get("batch_id") == str(batch_id)
             and r["status"] in ("queued", "running")
             and (kind is None or r["kind"] == kind)
+        ]
+
+    async def active_for_page(self, page_id) -> list[dict]:
+        return [
+            r
+            for r in self.rows.values()
+            if r.get("page_id") == str(page_id) and r["status"] in ("queued", "running")
         ]
 
 

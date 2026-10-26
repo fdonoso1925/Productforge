@@ -9,7 +9,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.ads.results_import import MAX_BYTES as REPORT_MAX_BYTES
-from app.api import ads, ads_meta, ads_results, catalog, content, cover, drive, hotmart, products
+from app.api import (
+    ads,
+    ads_meta,
+    ads_results,
+    catalog,
+    content,
+    cover,
+    drive,
+    hotmart,
+    pages,
+    products,
+)
 from app.auth import CurrentUser, get_current_user
 from app.config import get_settings
 from app.content.claude_client import LLMError
@@ -78,6 +89,7 @@ def create_app() -> FastAPI:
     app.include_router(ads_results.router)
     app.include_router(ads_meta.router)
     app.include_router(hotmart.router)
+    app.include_router(pages.router)
 
     @app.exception_handler(ContentRejected)
     async def content_rejected(_: Request, exc: ContentRejected) -> JSONResponse:
