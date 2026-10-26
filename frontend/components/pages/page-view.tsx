@@ -23,8 +23,8 @@ function message(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
 
-function download(html: string, filename: string) {
-  const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
+function download(html: string, filename: string, type = "text/html") {
+  const url = URL.createObjectURL(new Blob([html], { type: `${type};charset=utf-8` }));
   const a = document.createElement("a");
   a.href = url;
   a.download = filename;
@@ -255,6 +255,33 @@ export function PageView({ pageId }: { pageId: string }) {
             >
               <ExternalLink aria-hidden />
               {t("lovable")}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={blocked || generating || editing}
+              onClick={() =>
+                void run(async () => {
+                  await navigator.clipboard.writeText((await api.pagesLovable(pageId)).prompt);
+                }, t("promptCopied"))
+              }
+            >
+              <Copy aria-hidden />
+              {t("copyPrompt")}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={blocked || generating || editing}
+              onClick={() =>
+                void run(async () => {
+                  const out = await api.pagesLovable(pageId);
+                  download(out.prompt, `prompt-lovable-${page.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40)}.txt`, "text/plain");
+                })
+              }
+            >
+              <Download aria-hidden />
+              {t("downloadPrompt")}
             </Button>
             <Button
               variant={editing ? "default" : "outline"}

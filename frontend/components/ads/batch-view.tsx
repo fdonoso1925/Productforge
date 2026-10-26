@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, ImageIcon, Languages, Pencil, Repeat2, TrendingUp, Wand2 } from "lucide-react";
+import { Download, ImageIcon, Languages, Maximize2, Pencil, Repeat2, TrendingUp, Wand2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ConfirmButton } from "@/components/product/confirm-button";
@@ -24,6 +24,7 @@ import { createClient } from "@/lib/supabase/client";
 import { AdsDrive } from "./ads-drive";
 import { MetaPanel } from "./meta-panel";
 import { CreativeEditor } from "./creative-editor";
+import { CreativePreview } from "./creative-preview";
 import { ImportPanel } from "./import-panel";
 import { IteratePanel } from "./iterate-panel";
 import { PolicyBadge } from "./policy-badge";
@@ -47,6 +48,8 @@ export function BatchView({ batchId }: { batchId: string }) {
   const [panel, setPanel] = useState<{ id: string; kind: PanelKind } | null>(null);
   const [exported, setExported] = useState<AdExport | null>(null);
   const [busy, setBusy] = useState(false);
+  // Vista previa grande: id del anuncio abierto.
+  const [previewId, setPreviewId] = useState<string | null>(null);
   const [nonce, setNonce] = useState(0);
   // ¿Hay algún proveedor de fotos activo? Si sí, se ofrece ponerle foto a los anuncios ya hechos.
   const [photosOn, setPhotosOn] = useState(false);
@@ -143,6 +146,13 @@ export function BatchView({ batchId }: { batchId: string }) {
   }, []);
 
   const groups = useMemo(() => groupCreatives(data?.creatives ?? []), [data]);
+  // Las imágenes ya compuestas, en el orden de la pantalla, para recorrerlas en la vista previa.
+  const previewable = useMemo(
+    () =>
+      groups.flatMap((g) => g.items).flatMap((c) => (c.status === "rendered" && urls[c.id] ? [{ creative: c, url: urls[c.id] }] : [])),
+    [groups, urls],
+  );
+  const previewIndex = previewId ? previewable.findIndex((p) => p.creative.id === previewId) : -1;
 
   if (!data) return <Shell>{error ? <ErrorBox message={error} /> : <Loading text={tc("loading")} />}</Shell>;
 
@@ -266,6 +276,7 @@ export function BatchView({ batchId }: { batchId: string }) {
                 key={g.id}
                 group={g}
                 urls={urls}
+                onPreview={setPreviewId}
                 results={results}
                 parent={creatives.find((c) => c.id === g.lead.parent_creative_id)}
                 panel={panel?.id === g.id ? panel.kind : null}
@@ -282,6 +293,14 @@ export function BatchView({ batchId }: { batchId: string }) {
             ))}
           </div>
         </>
+      )}
+      {previewable.length > 0 && previewIndex >= 0 && (
+        <CreativePreview
+          items={previewable}
+          index={previewIndex}
+          onIndex={(i) => setPreviewId(previewable[i]?.creative.id ?? null)}
+          onClose={() => setPreviewId(null)}
+        />
       )}
     </Shell>
   );
@@ -323,6 +342,7 @@ function PlanningPanel({ job }: { job: AdJobRow | null }) {
 function GroupCard({
   group,
   urls,
+  onPreview,
   results,
   parent,
   panel,
@@ -335,6 +355,7 @@ function GroupCard({
 }: {
   group: CreativeGroup;
   urls: Record<string, string>;
+  onPreview: (id: string) => void;
   results: ResultRow[];
   parent?: CreativeRow;
   panel: PanelKind | null;
@@ -377,7 +398,7 @@ function GroupCard({
 
         <div className="flex flex-wrap items-start gap-3">
           {items.map((c) => (
-            <Thumb key={c.id} creative={c} url={urls[c.id]} />
+            <Thumb key={c.id} creative={c} url={urls[c.id]} onOpen={() => onPreview(c.id)} />
           ))}
         </div>
 
@@ -443,7 +464,7 @@ function GroupCard({
 
 const ASPECT: Record<string, string> = { "4x5": "4 / 5", "9x16": "9 / 16", "1x1": "1 / 1" };
 
-function Thumb({ creative, url }: { creative: CreativeRow; url?: string }) {
+function Thumb({ creative, url, onOpen }: { creative: CreativeRow; url?: string; onOpen: () => void }) {
   const t = useTranslations("ads");
   const width = creative.ratio === "9x16" ? "w-28" : "w-36";
   const label = t(`wizard.formats.${creative.ratio}`);
@@ -454,8 +475,19 @@ function Thumb({ creative, url }: { creative: CreativeRow; url?: string }) {
         style={{ aspectRatio: ASPECT[creative.ratio] }}
       >
         {creative.status === "rendered" && url ? (
-          // eslint-disable-next-line @next/next/no-img-element -- URL firmada temporal de Storage
-          <img src={url} alt={`${creative.copy.image.headline} (${label})`} className="size-full object-cover" loading="lazy" />
+          <button
+            type="button"
+            onClick={onOpen}
+            aria-label={t("batch.preview.open", { format: label })}
+            title={t("batch.preview.open", { format: label })}
+            className="group relative block size-full cursor-zoom-in"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element -- URL firmada temporal de Storage */}
+            <img src={url} alt={`${creative.copy.image.headline} (${label})`} className="size-full object-cover" loading="lazy" />
+            <span className="absolute right-1 bottom-1 flex size-7 items-center justify-center rounded-full bg-black/60 text-white opacity-90 group-hover:bg-black/80">
+              <Maximize2 className="size-3.5" aria-hidden />
+            </span>
+          </button>
         ) : (
           <div className="flex size-full flex-col items-center justify-center gap-1 p-2 text-center text-xs text-muted-foreground">
             <ImageIcon className="size-4" aria-hidden />

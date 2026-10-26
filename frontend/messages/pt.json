@@ -511,6 +511,14 @@
       }
     },
     "batch": {
+      "preview": {
+        "title": "Pré-visualização do anúncio",
+        "close": "Fechar",
+        "previous": "Anterior",
+        "next": "Próximo",
+        "counter": "{current} de {total}",
+        "open": "Ver em tamanho grande ({format})"
+      },
       "title": "Lote de anúncios",
       "back": "Meus lotes",
       "planning": "Escrevendo os textos…",
@@ -877,6 +885,9 @@
       "download": "Baixar HTML",
       "copy": "Copiar HTML",
       "copied": "HTML copiado.",
+      "copyPrompt": "Copiar prompt (Lovable)",
+      "downloadPrompt": "Baixar prompt (.txt)",
+      "promptCopied": "Prompt copiado: cole no Lovable quando quiser.",
       "lovable": "Abrir no Lovable",
       "lovableDone": "O Lovable foi aberto com as instruções e elas ficaram copiadas caso precise colá-las. Clique em enviar lá para ele construir a página.",
       "lovableHint": "O Lovable é outra ferramenta (com conta e plano próprios): constrói a página com a IA dele a partir dos seus textos e pode publicá-la. Revise o resultado: nossas regras de honestidade e o controle de semelhança não valem para o que for alterado lá.",
