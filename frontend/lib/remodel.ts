@@ -5,7 +5,15 @@ import type { Format, ItemRow } from "@/lib/types";
 // servidor es quien decide de verdad, así que si cambian, hay que cambiar ambos.
 
 /** Formatos livianos permitidos para un bonus. */
-export const BONUS_FORMATS: Format[] = ["mind_map", "concept_map", "swipe_file", "planner", "pdf_guide", "checklist"];
+export const BONUS_FORMATS: Format[] = [
+  "mind_map",
+  "concept_map",
+  "swipe_file",
+  "planner",
+  "pdf_guide",
+  "checklist",
+  "printable",
+];
 
 // Formatos que comparten schema de contenido: cambiar entre ellos no necesita IA.
 const SCHEMA_GROUP: Partial<Record<Format, string>> = { pdf_guide: "guide", epub: "guide" };

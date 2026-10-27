@@ -7,6 +7,8 @@ El paquete tiene:
 
 Formatos disponibles: $formats.
 
+Hojas imprimibles: si el nicho se presta (actividades o tareas para niños, educación, ejercicio o salud, finanzas con calendarios y presupuestos, cocina y recetas, organización, estudio, hábitos), incluye UNA pieza en formato `printable` —como order bump o como bonus— con las hojas imprimibles que de verdad usaría esa persona. Si el nicho no lo pide, no lo fuerces.
+
 Si en los datos hay `sales_page_reference`, piensa el paquete para ese público: el principal resuelve su dolor principal (`main_pain`) en el plazo de su promesa, los bonus pueden eliminar sus objeciones (`objections`) y el nombre y los títulos deben ser originales, nunca los de la página. Mejora su enfoque (`angle`) con algo más específico.
 
 Para cada pieza: título comercial (no genérico), promesa en una frase con plazo, índice con las secciones en orden, páginas estimadas y, en `related_items`, los títulos de las otras piezas que cita.

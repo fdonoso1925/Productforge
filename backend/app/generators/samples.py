@@ -9,6 +9,7 @@ from app.content.schemas.formats import (
     GuideContent,
     MindMapContent,
     PlannerContent,
+    PrintableContent,
     SheetContent,
     SwipeFileContent,
 )
@@ -296,6 +297,105 @@ TEMPLATE_PPTX = EditableTemplateContent.model_validate(
     }
 )
 
+PRINTABLE = PrintableContent.model_validate(
+    {
+        "title": "Pack imprimible: Orden y Ahorro en Casa",
+        "audience_note": "Para la familia: los niños pueden hacerlas con una persona adulta.",
+        "how_to_use": [
+            "Imprime en A4; en blanco y negro está bien.",
+            "Usa lápiz para poder repetir cada hoja las veces que quieras.",
+            "Pega el calendario y el seguimiento a la vista.",
+        ],
+        "pages": [
+            {
+                "kind": "worksheet",
+                "title": "Mis gastos de la semana",
+                "instructions": "Responde cada pregunta con tus propias palabras.",
+                "items": [
+                    {"text": "¿En qué gasté más esta semana?", "lines": 2},
+                    {"text": "¿Qué gasto pude evitar?", "lines": 2, "hint": "Piensa en lo pequeño"},
+                    {"text": "¿Qué voy a cambiar la próxima semana?", "lines": 3},
+                ],
+                "footer": "Cada decisión pequeña suma.",
+            },
+            {
+                "kind": "table",
+                "title": "Presupuesto del mes",
+                "instructions": "Anota lo que planeas y lo que realmente gastaste.",
+                "columns": ["Categoría", "Planeado", "Real", "Diferencia"],
+                "rows": 10,
+            },
+            {
+                "kind": "tracker",
+                "title": "Seguimiento de hábitos de ahorro",
+                "instructions": "Pinta un círculo cada día que lo cumplas.",
+                "habits": [
+                    "Anoté mis gastos",
+                    "No compré por impulso",
+                    "Revisé mi saldo",
+                    "Aparté mi ahorro",
+                ],
+                "days": 30,
+            },
+            {
+                "kind": "calendar",
+                "title": "Calendario del mes",
+                "calendar_kind": "month",
+                "instructions": "Escribe las fechas y marca los pagos.",
+            },
+            {"kind": "calendar", "title": "Plan de la semana", "calendar_kind": "week"},
+            {
+                "kind": "recipe",
+                "title": "Receta económica: arroz con verduras",
+                "servings": "4 porciones",
+                "time": "30 minutos",
+                "ingredients": ["1 taza de arroz", "1 zanahoria", "1 cebolla", "Sal y aceite"],
+                "steps": [
+                    "Lava y corta las verduras.",
+                    "Sofríe la cebolla y la zanahoria.",
+                    "Agrega el arroz y el agua.",
+                    "Cocina tapado 20 minutos.",
+                ],
+            },
+            {
+                "kind": "word_search",
+                "title": "Sopa de letras del ahorro",
+                "instructions": "Encuentra las palabras en horizontal, vertical y diagonal.",
+                "items": [
+                    {"text": t}
+                    for t in ["ahorro", "meta", "plan", "deuda", "gasto", "ingreso", "colchón"]
+                ],
+            },
+            {
+                "kind": "matching",
+                "title": "Une cada palabra con su significado",
+                "items": [
+                    {"text": "Ahorro", "match": "Guardar para después"},
+                    {"text": "Gasto", "match": "Dinero que sale"},
+                    {"text": "Ingreso", "match": "Dinero que entra"},
+                    {"text": "Meta", "match": "Lo que quiero lograr"},
+                ],
+            },
+            {
+                "kind": "tracing",
+                "title": "Repasa las palabras",
+                "items": [{"text": "ahorro"}, {"text": "meta"}, {"text": "plan"}],
+            },
+            {
+                "kind": "checklist",
+                "title": "Lista de compras inteligente",
+                "items": [
+                    {"text": "Revisar lo que ya tengo"},
+                    {"text": "Anotar solo lo necesario"},
+                    {"text": "Comparar precios"},
+                    {"text": "Llevar el monto exacto"},
+                ],
+            },
+            {"kind": "notes", "title": "Mis ideas para ahorrar", "rows": 14},
+        ],
+    }
+)
+
 SAMPLES = {
     Format.PDF_GUIDE: GUIDE,
     Format.EPUB: GUIDE,
@@ -303,8 +403,13 @@ SAMPLES = {
     Format.BLUEPRINT: BLUEPRINT,
     Format.PLANNER: PLANNER,
     Format.SWIPE_FILE: SWIPE,
+    Format.PRINTABLE: PRINTABLE,
     Format.MIND_MAP: MIND_MAP,
     Format.CONCEPT_MAP: CONCEPT_MAP,
     Format.SHEET: SHEET,
     Format.EDITABLE_TEMPLATE: TEMPLATE_DOCX,
 }
+
+
+# Los formatos con infografías usan sus versiones «ricas» (guía, blueprint, checklist, planner).
+from app.generators import samples_visuals  # noqa: E402,F401  (reemplaza entradas de SAMPLES)

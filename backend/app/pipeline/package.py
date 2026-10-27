@@ -18,6 +18,8 @@ from uuid import UUID
 
 from pydantic import ValidationError
 
+from app.ads import rules as ad_rules
+from app.ads.images.base import ImageRequest
 from app.content.engines import ContentService
 from app.content.schemas import (
     FORMAT_SCHEMAS,
@@ -58,6 +60,8 @@ class PipelineDeps:
     # Google Drive: destino al que se copian los archivos y cola que encola esas copias.
     sync_target: SyncTarget | None = None
     uploads: UploadQueue | None = None
+    # Fotos de stock para abrir capítulos (ImageRouter de los anuncios). None = sin fotos.
+    images: Any = None
 
 
 @dataclass
@@ -174,6 +178,45 @@ class PackageBuilder:
         _, art = art_for_piece(self.cover, self.product, self.template, row["role"], row["order"])
         return {"cover_art": art}
 
+    async def chapter_photos(self, content: Any) -> dict[str, str]:
+        """Fotos de stock de los capítulos que las piden: {"ch3": data URI}. Una foto que no se
+        consigue (sin proveedor, sin cuota, sin resultados) simplemente no sale: el capítulo se
+        maqueta igual, con sus infografías."""
+        router = getattr(self.deps, "images", None)
+        chapters = getattr(content, "chapters", None)
+        if router is None or not chapters or not router.active():
+            return {}
+        sensitive = ad_rules.is_sensitive(self.request.niche)
+        found: dict[str, str] = {}
+        semaphore = asyncio.Semaphore(3)
+
+        async def one(index: int, spec: Any) -> None:
+            async with semaphore:
+                try:
+                    image = await router.get(
+                        user_id=self.user_id,
+                        request=ImageRequest(
+                            prompt=spec.scene,
+                            keywords=tuple(k for k in spec.keywords if k.strip())[:3],
+                            aspect="16:9",
+                            sensitive=sensitive,
+                        ),
+                    )
+                except Exception:
+                    logger.warning("no se pudo traer la foto del capítulo %s", index)
+                    return
+                if image is not None:
+                    found[f"ch{index}"] = data_uri(image.jpeg)
+
+        await asyncio.gather(
+            *(
+                one(i, ch.photo)
+                for i, ch in enumerate(chapters, start=1)
+                if getattr(ch, "photo", None)
+            )
+        )
+        return found
+
     async def produce(self, row: dict, mode: Mode) -> list[FileArtifact]:
         """Contenido de la pieza (IA o guardado) → archivos. No sube nada."""
         item = self.slot(row["role"], row["order"])
@@ -202,6 +245,7 @@ class PackageBuilder:
             slug=slugify(item.title),
             product_name=self.outline.product_name,
             promise=item.promise,
+            photos=await self.chapter_photos(content),
             **await self.cover_fields(row),
         )
         return await asyncio.to_thread(

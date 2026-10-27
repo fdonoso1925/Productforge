@@ -102,6 +102,7 @@ class Services:
             templates_dir=self.settings.templates_dir,
             sync_target=self.drive,
             uploads=self.upload_queue,
+            images=self.ad_images,
         )
 
 

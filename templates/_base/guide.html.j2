@@ -1,5 +1,5 @@
 {% extends "_layout.html.j2" %}
-{% from "macros.html.j2" import callout, paragraphs, bullets, steps, toc %}
+{% from "macros.html.j2" import callout, paragraphs, bullets, steps, toc, visual, photo %}
 {% set L = ctx.labels %}
 {% block body %}
 {% set entries = [{'id': 'intro', 'title': L.introduction}] %}
@@ -10,12 +10,14 @@
 <section id="intro">
   <h1>{{ L.introduction }}</h1>
   {{ paragraphs(c.introduction, 'lead') }}
+  {{ visual(c.overview, ctx) }}
 </section>
 
 {% for ch in c.chapters %}
 <section class="chapter" id="ch-{{ loop.index }}">
   <div class="chapter-label">{{ L.chapter }} {{ loop.index }}</div>
   <h1>{{ ch.title }}</h1>
+  {% if ch.photo %}{{ photo(ctx.photos.get('ch' ~ loop.index), ch.photo.caption) }}{% endif %}
   <p class="summary">{{ ch.summary }}</p>
   {% for s in ch.sections %}
   <h2>{{ s.heading }}</h2>
@@ -24,6 +26,7 @@
   {% if s.steps %}<h3>{{ L.steps }}</h3>{{ steps(s.steps) }}{% endif %}
   {% if s.example %}<div class="example"><div class="example-label">{{ L.example }}</div>{{ s.example }}</div>{% endif %}
   {% for co in s.callouts %}{{ callout(co, L) }}{% endfor %}
+  {{ visual(s.visual, ctx) }}
   {% endfor %}
 </section>
 {% endfor %}

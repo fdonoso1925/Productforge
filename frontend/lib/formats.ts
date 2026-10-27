@@ -8,6 +8,7 @@ import {
   type LucideIcon,
   Map as MapIcon,
   Network,
+  Printer,
   Share2,
   Sheet,
 } from "lucide-react";
@@ -24,4 +25,5 @@ export const FORMAT_ICONS: Record<Format, LucideIcon> = {
   editable_template: FilePen,
   planner: CalendarDays,
   swipe_file: Copy,
+  printable: Printer,
 };

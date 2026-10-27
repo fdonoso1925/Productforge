@@ -71,7 +71,7 @@ def test_fit_image_rejects_what_it_cannot_use(data: bytes) -> None:
     with pytest.raises(UnusableImage):
         fit_image(data, "9:16")
     with pytest.raises(UnusableImage):
-        fit_image(jpeg(), "16:9")
+        fit_image(jpeg(), "3:2")
 
 
 # ───────────────────────────── Pixabay ─────────────────────────────

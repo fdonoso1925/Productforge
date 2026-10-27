@@ -1,10 +1,11 @@
 {% extends "_layout.html.j2" %}
-{% from "macros.html.j2" import write_lines %}
+{% from "macros.html.j2" import write_lines, visual %}
 {% set L = ctx.labels %}
 {% block body %}
 <section>
   <h1>{{ L.how_to_use }}</h1>
   <p class="lead">{{ c.introduction }}</p>
+  {{ visual(c.roadmap, ctx) }}
 </section>
 {% for d in c.days %}
 <section class="card"{% if loop.first %} style="break-before: page;"{% endif %}>

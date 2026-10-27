@@ -1,4 +1,4 @@
-{% from "macros.html.j2" import callout, paragraphs, bullets, steps %}
+{% from "macros.html.j2" import callout, paragraphs, bullets, steps, visual %}
 {% set L = ctx.labels %}
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
 <head><title>{{ heading }}</title><link rel="stylesheet" type="text/css" href="style/book.css"/></head>
@@ -6,6 +6,7 @@
 {% if label %}<p class="chapter-label">{{ label }}</p>{% endif %}
 <h1>{{ heading }}</h1>
 {% if chapter %}
+  {% if photo_file %}<figure class="photo"><img src="{{ photo_file }}" alt="{{ chapter.photo.caption if chapter.photo else '' }}"/>{% if chapter.photo and chapter.photo.caption %}<figcaption>{{ chapter.photo.caption }}</figcaption>{% endif %}</figure>{% endif %}
   <p class="summary">{{ chapter.summary }}</p>
   {% for s in chapter.sections %}
   <h2>{{ s.heading }}</h2>
@@ -14,9 +15,11 @@
   {% if s.steps %}<h3>{{ L.steps }}</h3>{{ steps(s.steps) }}{% endif %}
   {% if s.example %}<div class="example"><p class="example-label">{{ L.example }}</p><p>{{ s.example }}</p></div>{% endif %}
   {% for co in s.callouts %}{{ callout(co, L) }}{% endfor %}
+  {{ visual(s.visual, ctx) }}
   {% endfor %}
 {% else %}
   {{ paragraphs(texts) }}
+  {{ visual(overview, ctx) }}
   {% if next_steps %}<h2>{{ L.next_steps }}</h2>{{ steps(next_steps) }}{% endif %}
 {% endif %}
 </body>

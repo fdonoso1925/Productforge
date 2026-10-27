@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Literal
 
 from jinja2 import ChoiceLoader, Environment, FileSystemLoader, StrictUndefined, select_autoescape
+from markupsafe import Markup
 from pydantic import BaseModel, Field
 
 from app.templates_engine.fonts import font_path
@@ -81,7 +82,7 @@ class Template(BaseModel):
 
     @cached_property
     def _env(self) -> Environment:
-        return Environment(
+        env = Environment(
             loader=ChoiceLoader(
                 [FileSystemLoader(self.base_dir), FileSystemLoader(self.templates_root / "_base")]
             ),
@@ -91,6 +92,15 @@ class Template(BaseModel):
             trim_blocks=True,
             lstrip_blocks=True,
         )
+
+        def visual_svg(visual: object, market: str = "es-LATAM") -> Markup:
+            # Import tardío: los generadores importan este módulo. El SVG ya sale escapado.
+            from app.generators.visuals import render_visual
+
+            return Markup(render_visual(visual, self, market))  # type: ignore[arg-type]  # noqa: S704
+
+        env.globals["visual_svg"] = visual_svg
+        return env
 
     def render_html(self, kind: str, **context: object) -> str:
         return self._env.get_template(f"{kind}.html.j2").render(t=self, **context)

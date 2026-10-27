@@ -34,7 +34,7 @@ OUT_WIDTH = 1080
 MIN_CROP_WIDTH = 720  # menos que esto se ve pixelado al subirlo a 1080
 MAX_PIXELS = 40_000_000
 ALLOWED = {"JPEG", "PNG", "WEBP"}
-ASPECTS = {"4:5": (4, 5), "9:16": (9, 16), "1:1": (1, 1)}
+ASPECTS = {"4:5": (4, 5), "9:16": (9, 16), "1:1": (1, 1), "16:9": (16, 9)}
 
 
 _FAILED = object()  # marca de «esta operación accesoria falló»

@@ -8,12 +8,16 @@ from pydantic import BaseModel
 from app.content.schemas import Format, PackageOutline, PackageRequest
 from app.content.schemas.common import BONUS_FORMATS
 from app.content.schemas.formats import (
+    BlueprintContent,
+    ChecklistContent,
     ConceptMapContent,
     EditableTemplateContent,
     GuideContent,
     MindMapContent,
     PlannerContent,
+    PrintableContent,
     SheetContent,
+    Visual,
 )
 
 MIN_ORDER_BUMPS = 3
@@ -72,7 +76,15 @@ def check_content_rules(content: BaseModel) -> list[str]:
     """Coherencia interna del contenido que los generadores de archivos necesitan."""
     match content:
         case GuideContent():
-            return [] if content.chapters else ["chapters no puede estar vacío."]
+            if not content.chapters:
+                return ["chapters no puede estar vacío."]
+            return _guide_visual_errors(content)
+        case BlueprintContent():
+            return _blueprint_visual_errors(content)
+        case PrintableContent():
+            return _printable_errors(content)
+        case ChecklistContent():
+            return _visual_errors(content.visual, "visual", required=True)
         case MindMapContent():
             return [] if 3 <= len(content.branches) <= 9 else ["Usa entre 3 y 9 ramas principales."]
         case ConceptMapContent():
@@ -83,7 +95,7 @@ def check_content_rules(content: BaseModel) -> list[str]:
             days = [d.day for d in content.days]
             if days != list(range(1, content.duration_days + 1)):
                 return [f"days debe tener los días 1..{content.duration_days} en orden."]
-            return []
+            return _visual_errors(content.roadmap, "roadmap", required=True)
         case EditableTemplateContent():
             if content.output == "docx" and not content.documents:
                 return ["output=docx requiere al menos un documento en documents."]
@@ -92,6 +104,134 @@ def check_content_rules(content: BaseModel) -> list[str]:
             return []
         case _:
             return []
+
+
+# Cuántos elementos admite cada tipo de infografía (si no, el dibujo se corta o se aprieta).
+VISUAL_ITEMS = {
+    "process": (3, 6),
+    "timeline": (3, 7),
+    "cycle": (3, 6),
+    "pyramid": (3, 5),
+    "funnel": (3, 5),
+    "cards": (3, 4),
+    "checklist": (2, 8),
+    "bars": (2, 8),
+    "donut": (2, 7),
+}
+
+
+def _visual_errors(visual: Visual | None, where: str, *, required: bool = False) -> list[str]:
+    """Una infografía debe poder dibujarse: tipo y cantidad de elementos coherentes."""
+    if visual is None:
+        return (
+            [f"{where}: falta la infografía (todo el producto debe llevar visuales)."]
+            if required
+            else []
+        )
+    errors: list[str] = []
+    if any(not item.label.strip() for item in visual.items):
+        errors.append(f"{where}: cada item necesita un label.")
+    kind = visual.kind
+    if kind in VISUAL_ITEMS:
+        lo, hi = VISUAL_ITEMS[kind]
+        if not lo <= len(visual.items) <= hi:
+            errors.append(
+                f"{where}: {kind} lleva entre {lo} y {hi} items (tiene {len(visual.items)})."
+            )
+    if kind == "matrix":
+        if len(visual.items) != 4:
+            errors.append(f"{where}: matrix lleva exactamente 4 items.")
+        if not (visual.axis_x.strip() and visual.axis_y.strip()):
+            errors.append(f"{where}: matrix necesita axis_x y axis_y.")
+    if kind == "comparison":
+        if len(visual.items) < 2 or len(visual.right_items) < 2:
+            errors.append(f"{where}: comparison necesita al menos 2 items en cada columna.")
+        if not (visual.left_title.strip() and visual.right_title.strip()):
+            errors.append(f"{where}: comparison necesita left_title y right_title.")
+    if kind in ("bars", "donut"):
+        values = [i.value for i in visual.items]
+        if any(v is None or v < 0 for v in values) or not any(values):
+            errors.append(f"{where}: {kind} necesita un value positivo en cada item.")
+    return errors
+
+
+def _guide_visual_errors(content: GuideContent) -> list[str]:
+    errors = _visual_errors(content.overview, "overview", required=True)
+    for n, chapter in enumerate(content.chapters, start=1):
+        visuals = [s.visual for s in chapter.sections if s.visual is not None]
+        if not visuals:
+            errors.append(f"Capítulo {n}: agrega al menos una infografía (visual) en una sección.")
+        for visual in visuals:
+            errors += _visual_errors(visual, f"capítulo {n}")
+    return errors
+
+
+def _blueprint_visual_errors(content: BlueprintContent) -> list[str]:
+    errors = _visual_errors(content.roadmap, "roadmap", required=True)
+    for n, phase in enumerate(content.phases, start=1):
+        errors += _visual_errors(phase.flow, f"fase {n} (flow)", required=True)
+    errors += _visual_errors(content.success_visual, "success_visual", required=True)
+    return errors
+
+
+PRINTABLE_PAGES = (4, 14)
+TRACKER_DAYS = (7, 14, 21, 28, 30, 31)
+
+
+def _printable_errors(content: PrintableContent) -> list[str]:
+    """Cada hoja debe poder imprimirse y completarse: lo que su tipo necesita para dibujarse."""
+    from app.generators.printable import MAX_WORD, MIN_WORD, normalize_word, valid_words
+
+    lo, hi = PRINTABLE_PAGES
+    errors: list[str] = []
+    if not lo <= len(content.pages) <= hi:
+        errors.append(f"pages debe tener entre {lo} y {hi} hojas (tiene {len(content.pages)}).")
+    if len(content.how_to_use) < 2:
+        errors.append("how_to_use necesita al menos 2 puntos.")
+    kinds = {p.kind for p in content.pages}
+    if len(kinds) < 3 and len(content.pages) >= 3:
+        errors.append("Usa al menos 3 tipos de hoja distintos (kind) para que el pack sea variado.")
+    for n, page in enumerate(content.pages, start=1):
+        where = f"hoja {n} ({page.kind})"
+        items = [i for i in page.items if i.text.strip()]
+        match page.kind:
+            case "worksheet" if len(items) < 3:
+                errors.append(f"{where}: lleva al menos 3 items (consignas).")
+            case "checklist" if len(items) < 4:
+                errors.append(f"{where}: lleva al menos 4 items.")
+            case "table":
+                if not 2 <= len([c for c in page.columns if c.strip()]) <= 7:
+                    errors.append(f"{where}: columns lleva entre 2 y 7 encabezados.")
+                if page.rows < 5:
+                    errors.append(f"{where}: rows debe ser al menos 5 filas vacías.")
+            case "tracker":
+                if not 3 <= len([h for h in page.habits if h.strip()]) <= 10:
+                    errors.append(f"{where}: habits lleva entre 3 y 10 hábitos.")
+                if page.days not in TRACKER_DAYS:
+                    errors.append(f"{where}: days debe ser uno de {list(TRACKER_DAYS)}.")
+            case "recipe" if len(page.ingredients) < 3 or len(page.steps) < 3:
+                errors.append(f"{where}: necesita al menos 3 ingredients y 3 steps.")
+            case "word_search":
+                words = valid_words([i.text for i in items])
+                if len(words) < 5:
+                    errors.append(
+                        f"{where}: necesita al menos 5 palabras de {MIN_WORD} a {MAX_WORD} letras "
+                        "(sin espacios; las tildes se quitan solas)."
+                    )
+                if len({normalize_word(i.text) for i in items}) != len(items):
+                    errors.append(f"{where}: no repitas palabras.")
+            case "matching":
+                pairs = [i for i in items if i.match.strip()]
+                if not 4 <= len(pairs) <= 8:
+                    errors.append(f"{where}: lleva entre 4 y 8 pares (text y match).")
+            case "tracing":
+                if not 3 <= len(items) <= 8:
+                    errors.append(f"{where}: lleva entre 3 y 8 palabras para repasar.")
+                if any(len(i.text) > 14 for i in items):
+                    errors.append(f"{where}: cada palabra de tracing mide hasta 14 caracteres.")
+            case "notes" if page.rows and page.rows < 8:
+                errors.append(f"{where}: rows debe ser al menos 8 líneas.")
+    return errors
 
 
 def _concept_map_errors(content: ConceptMapContent) -> list[str]:

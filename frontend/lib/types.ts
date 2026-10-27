@@ -14,6 +14,7 @@ export const FORMATS = [
   "editable_template",
   "planner",
   "swipe_file",
+  "printable",
 ] as const;
 export type Format = (typeof FORMATS)[number];
 

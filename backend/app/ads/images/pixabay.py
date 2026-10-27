@@ -33,7 +33,7 @@ TRUSTED_HOST = "pixabay.com"
 LARGE_SIDE = 1280  # `largeImageURL` mide como mucho esto en su lado largo
 MIN_CROP_WIDTH = 720  # igual que el recorte del router: menos se ve pixelado a 1080 px
 VARIETY = 5  # se elige entre las N mejores: dos anuncios con la misma búsqueda no repiten foto
-RATIO = {"4:5": (4, 5), "9:16": (9, 16), "1:1": (1, 1)}
+RATIO = {"4:5": (4, 5), "9:16": (9, 16), "1:1": (1, 1), "16:9": (16, 9)}
 
 
 def fits_aspect(hit: dict, aspect: str) -> bool:
@@ -64,7 +64,7 @@ def trusted_image_url(url: object) -> bool:
     )
 
 
-ORIENTATION = {"4:5": "vertical", "9:16": "vertical", "1:1": "all"}
+ORIENTATION = {"4:5": "vertical", "9:16": "vertical", "1:1": "all", "16:9": "horizontal"}
 
 
 class PixabayProvider:

@@ -99,6 +99,10 @@
     "swipe_file": {
       "name": "Swipe file",
       "description": "Banco de textos prontos para copiar e colar."
+    },
+    "printable": {
+      "name": "Folhas imprimíveis",
+      "description": "Fichas, tabelas, calendários, receitas e jogos para imprimir e preencher à mão."
     }
   },
   "wizard": {
@@ -232,6 +236,24 @@
       "error": "Erro"
     },
     "ready": "Seu pacote está pronto",
+    "resume": {
+      "title": {
+            "start": "Este pacote ainda não foi gerado",
+            "failed": "A geração não terminou",
+            "partial": "Faltam peças a gerar"
+      },
+      "hint": {
+            "start": "Seu nicho, problema e as peças já estão salvos. Faltam criar os arquivos: você pode gerá-los agora com este mesmo conteúdo, sem recomeçar.",
+            "failed": "Ela caiu antes de criar os arquivos. Seu conteúdo continua salvo: você pode tentar de novo.",
+            "partial": "{count, plural, one {Falta # peça} other {Faltam # peças}}. As que já estão prontas são mantidas: só se completa o que falta (e a ficha comercial e o ZIP, se faltavam). O que já tinha conteúdo salvo não gasta IA de novo."
+      },
+      "action": {
+            "start": "Gerar pacote agora",
+            "failed": "Gerar de novo",
+            "partial": "Completar o que falta"
+      },
+      "confirm": "Clique de novo: pode usar IA"
+    },
     "partial": "Algumas peças falharam; você pode gerá-las de novo pelo histórico.",
     "failed": "A geração falhou ({error}).",
     "downloadZip": "Baixar tudo (ZIP)",

@@ -1,25 +1,41 @@
 {% extends "_layout.html.j2" %}
-{% from "macros.html.j2" import bullets, steps %}
+{% from "macros.html.j2" import bullets, steps, visual %}
 {% set L = ctx.labels %}
 {% block body %}
 <section>
   <h1>{{ c.title }}</h1>
   <p class="lead">{{ c.overview }}</p>
-  {% for ph in c.phases %}
-  <div class="card">
-    <span class="badge">{{ L.phase }} {{ loop.index }}</span>
-    <h2>{{ ph.name }}</h2>
-    <div class="meta"><span><b>{{ L.duration }}:</b> {{ ph.duration }}</span></div>
-    <p><b>{{ L.objective }}:</b> {{ ph.objective }}</p>
-    <h3>{{ L.steps }}</h3>
-    {{ steps(ph.steps) }}
-    <div class="cols">
-      <div><h3>{{ L.deliverables }}</h3>{{ bullets(ph.deliverables) }}</div>
-      <div><h3>{{ L.mistakes }}</h3>{{ bullets(ph.common_mistakes) }}</div>
-    </div>
+  {{ visual(c.roadmap, ctx) }}
+</section>
+{% for ph in c.phases %}
+{% if ph.flow %}
+<section class="chapter phase-board">
+  <div class="chapter-label">{{ L.phase }} {{ loop.index }} · {{ ph.duration }}</div>
+  <h1>{{ ph.name }}</h1>
+  <p class="summary"><b>{{ L.objective }}:</b> {{ ph.objective }}</p>
+  {{ visual(ph.flow, ctx) }}
+  <div class="cols chips-row">
+    <div class="chips chips-ok"><h3>{{ L.deliverables }}</h3>{% for d in ph.deliverables %}<div class="chip">{{ d }}</div>{% endfor %}</div>
+    <div class="chips chips-warn"><h3>{{ L.mistakes }}</h3>{% for m in ph.common_mistakes %}<div class="chip">{{ m }}</div>{% endfor %}</div>
   </div>
-  {% endfor %}
-  <h2>{{ L.success_metrics }}</h2>
-  {{ bullets(c.success_metrics) }}
+</section>
+{% else %}
+<div class="card">
+  <span class="badge">{{ L.phase }} {{ loop.index }}</span>
+  <h2>{{ ph.name }}</h2>
+  <div class="meta"><span><b>{{ L.duration }}:</b> {{ ph.duration }}</span></div>
+  <p><b>{{ L.objective }}:</b> {{ ph.objective }}</p>
+  <h3>{{ L.steps }}</h3>
+  {{ steps(ph.steps) }}
+  <div class="cols">
+    <div><h3>{{ L.deliverables }}</h3>{{ bullets(ph.deliverables) }}</div>
+    <div><h3>{{ L.mistakes }}</h3>{{ bullets(ph.common_mistakes) }}</div>
+  </div>
+</div>
+{% endif %}
+{% endfor %}
+<section class="chapter">
+  <h1>{{ L.success_metrics }}</h1>
+  {% if c.success_visual %}{{ visual(c.success_visual, ctx) }}{% else %}{{ bullets(c.success_metrics) }}{% endif %}
 </section>
 {% endblock %}

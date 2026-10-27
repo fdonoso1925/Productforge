@@ -101,6 +101,29 @@ export function ProductView({
   const running = product.status === "generating" || (job && ["queued", "running"].includes(job.status));
   const zip = files.find((f) => f.file_type === "zip");
   const settled = !running && files.length > 0 && (product.status === "ready" || product.status === "error");
+  // Paquete que nunca llegó a generarse (se quedó en «sin generar», o la generación cayó antes de
+  // producir archivos): se puede retomar con el outline ya guardado, sin volver al asistente.
+  const pending = items.filter((i) => i.status !== "ready").length;
+  const resumeKind: "start" | "failed" | "partial" | null =
+    running || !product.outline
+      ? null
+      : files.length === 0 && product.status === "outline_ready"
+        ? "start"
+        : files.length === 0 && product.status === "error"
+          ? "failed"
+          : product.status === "error" && pending > 0
+            ? "partial"
+            : null;
+
+  const resume = async () => {
+    setActionError(null);
+    try {
+      await api.generate(product.id);
+      setNonce((n) => n + 1);
+    } catch (e) {
+      setActionError(e instanceof ApiError ? e.message : String(e));
+    }
+  };
 
   const regenerate = async (item: ItemRow) => {
     setActionError(null);
@@ -120,6 +143,10 @@ export function ProductView({
         <p className="rounded-lg bg-amber-500/10 p-3 text-sm">{t("partial")}</p>
       )}
       {actionError && <ErrorBox message={actionError} />}
+
+      {resumeKind && product.outline && (
+        <ResumePanel outline={product.outline} kind={resumeKind} pending={pending} onResume={() => void resume()} />
+      )}
 
       {settled && (
         <>
@@ -169,6 +196,49 @@ export function ProductView({
         refreshKey={`${product.status}|${product.updated_at ?? ""}`}
       />
     </Shell>
+  );
+}
+
+/** Un paquete con outline pero sin archivos: se retoma con un clic (usa IA, por eso pide confirmar). */
+function ResumePanel({
+  outline,
+  kind,
+  pending,
+  onResume,
+}: {
+  outline: NonNullable<ProductRow["outline"]>;
+  kind: "start" | "failed" | "partial";
+  pending: number;
+  onResume: () => void;
+}) {
+  const t = useTranslations("product.resume");
+  const pieces = [outline.main, ...outline.order_bumps, ...outline.bonuses];
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t(`title.${kind}`)}</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <p className="text-sm text-muted-foreground">{t(`hint.${kind}`, { count: pending })}</p>
+        <ul className="flex flex-col gap-1 text-sm">
+          {(kind === "partial" ? [] : pieces).map((p) => (
+            <li key={`${p.role}-${p.title}`} className="flex flex-wrap gap-x-2">
+              <span className="font-medium">{p.title}</span>
+              <span className="text-muted-foreground">· {p.format}</span>
+            </li>
+          ))}
+        </ul>
+        <div>
+          <ConfirmButton
+            size="default"
+            label={t(`action.${kind}`)}
+            confirmLabel={t("confirm")}
+            onConfirm={onResume}
+            icon={<RefreshCw aria-hidden />}
+          />
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

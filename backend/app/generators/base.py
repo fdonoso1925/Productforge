@@ -6,7 +6,7 @@ importarlo en `app/generators/__init__.py`. Nada más cambia.
 
 import re
 import unicodedata
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import ClassVar, Protocol
 
 from pydantic import BaseModel
@@ -34,6 +34,8 @@ class RenderContext:
     cover_art: str = ""
     cover_image: str = ""
     cover_veil: float = 0.0
+    # Fotos de capítulo ya descargadas: {"ch1": data URI JPEG}. Vacío = sin fotos.
+    photos: dict[str, str] = field(default_factory=dict)
 
     @property
     def cover_extra(self) -> dict[str, object]:

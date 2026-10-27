@@ -1,5 +1,6 @@
 """Ebook EPUB (ebooklib) con la paleta y las tipografías de la plantilla."""
 
+import base64
 import io
 import uuid
 from pathlib import Path
@@ -29,6 +30,16 @@ def cover_png(template: Template, ctx: RenderContext, cover: dict, width: int = 
     return pdf_page_to_png(html_to_pdf(html, template.base_dir), width=width)
 
 
+def photo_bytes(data_uri: str) -> bytes:
+    """Los bytes de una foto que viaja como `data:image/jpeg;base64,…` (vacío si no hay)."""
+    if not data_uri.startswith("data:image/jpeg;base64,"):
+        return b""
+    try:
+        return base64.b64decode(data_uri.split(",", 1)[1], validate=True)
+    except ValueError:
+        return b""
+
+
 def book_css(template: Template, font_files: list[tuple[str, int, str]]) -> str:
     p = template.palette
     faces = "".join(
@@ -51,6 +62,10 @@ h3 {{ color: {p.secondary}; }}
 .callout-title {{ font-weight: bold; }}
 .example {{ background: {p.surface}; padding: 0.4em 0.8em; }}
 .example-label {{ font-weight: bold; font-size: 0.8em; color: {p.secondary}; }}
+figure {{ margin: 1em 0; }}
+.visual svg, .photo img {{ max-width: 100%; height: auto; }}
+.visual-title {{ font-weight: bold; color: {p.primary}; margin-bottom: 0.4em; }}
+figcaption {{ font-size: 0.8em; color: {p.muted}; text-align: center; }}
 """
     )
 
@@ -87,7 +102,14 @@ def build_epub(content: GuideContent, template: Template, ctx: RenderContext) ->
     book.add_item(css)
 
     def page(name: str, heading: str, **context) -> epub.EpubHtml:
-        defaults = {"label": "", "chapter": None, "texts": [], "next_steps": []}
+        defaults = {
+            "label": "",
+            "chapter": None,
+            "texts": [],
+            "next_steps": [],
+            "photo_file": "",
+            "overview": None,
+        }
         html = template.render_html(
             "epub_chapter", ctx=ctx, heading=heading, **{**defaults, **context}
         )
@@ -97,10 +119,27 @@ def build_epub(content: GuideContent, template: Template, ctx: RenderContext) ->
         book.add_item(item)
         return item
 
-    chapters = [page("intro", labels["introduction"], texts=content.introduction)]
+    chapters = [
+        page("intro", labels["introduction"], texts=content.introduction, overview=content.overview)
+    ]
     for i, chapter in enumerate(content.chapters, start=1):
+        photo_file = ""
+        photo = photo_bytes(ctx.photos.get(f"ch{i}", ""))
+        if photo and chapter.photo:
+            photo_file = f"images/ch{i}.jpg"
+            book.add_item(
+                epub.EpubItem(
+                    uid=f"img-ch{i}", file_name=photo_file, media_type="image/jpeg", content=photo
+                )
+            )
         chapters.append(
-            page(f"ch-{i}", chapter.title, chapter=chapter, label=f"{labels['chapter']} {i}")
+            page(
+                f"ch-{i}",
+                chapter.title,
+                chapter=chapter,
+                label=f"{labels['chapter']} {i}",
+                photo_file=photo_file,
+            )
         )
     chapters.append(
         page("end", labels["conclusion"], texts=content.conclusion, next_steps=content.next_steps)

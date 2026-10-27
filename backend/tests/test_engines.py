@@ -75,19 +75,9 @@ def test_invalid_schema_output_is_retried() -> None:
 
 
 def guide() -> GuideContent:
-    return GuideContent.model_validate(
-        {
-            "title": "t",
-            "subtitle": "s",
-            "promise": "p",
-            "introduction": ["i"],
-            "chapters": [
-                {"title": "c", "summary": "r", "sections": [{"heading": "h", "paragraphs": ["p"]}]}
-            ],
-            "conclusion": ["c"],
-            "next_steps": ["n"],
-        }
-    )
+    from app.generators.samples_visuals import rich_guide  # con infografías, como exigen las reglas
+
+    return rich_guide()
 
 
 def test_generate_main_item_uses_format_schema_and_big_budget() -> None:

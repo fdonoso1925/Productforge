@@ -17,6 +17,16 @@
 {% if items %}<ol class="steps">{% for i in items %}<li>{{ i }}</li>{% endfor %}</ol>{% endif %}
 {%- endmacro %}
 
+{% macro visual(v, ctx) -%}
+{% if v %}{% set svg = visual_svg(v, ctx.market) %}{% if svg %}
+<figure class="visual"><div class="visual-title">{{ v.title }}</div>{{ svg }}{% if v.caption %}<figcaption>{{ v.caption }}</figcaption>{% endif %}</figure>
+{% endif %}{% endif %}
+{%- endmacro %}
+
+{% macro photo(src, caption) -%}
+{% if src %}<figure class="photo"><img src="{{ src }}" alt="{{ caption }}"/>{% if caption %}<figcaption>{{ caption }}</figcaption>{% endif %}</figure>{% endif %}
+{%- endmacro %}
+
 {% macro write_lines(n) -%}
 <div class="write">{% for _ in range(n) %}<div class="write-line"></div>{% endfor %}</div>
 {%- endmacro %}

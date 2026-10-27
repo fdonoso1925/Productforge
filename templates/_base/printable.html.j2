@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="{{ 'pt-BR' if ctx.market == 'pt-BR' else 'es' }}">
+<head>
+<meta charset="utf-8">
+<title>{{ c.title }}</title>
+<style>
+{% set p = t.palette %}
+{% for f in t.font_faces() %}
+@font-face { font-family: '{{ f.family }}'; font-weight: {{ f.weight }}; src: url('{{ f.url }}'); }
+{% endfor %}
+/* Papel blanco y poca tinta: la paleta solo colorea títulos y filetes, nunca fondos. */
+@page { size: A4; margin: 12mm 14mm 14mm 14mm; @bottom-center { content: counter(page); font-family: '{{ t.fonts.body.family }}', sans-serif; font-size: 8pt; color: #888; } }
+html { font-family: '{{ t.fonts.body.family }}', sans-serif; font-size: 10.5pt; line-height: 1.4; color: #1a1a1a; }
+body { margin: 0; background: #fff; }
+h1, h2 { font-family: '{{ t.fonts.heading.family }}', sans-serif; font-weight: {{ t.fonts.heading.weights[0] }}; color: {{ p.primary }}; line-height: 1.15; margin: 0; }
+h1 { font-size: 21pt; margin: 3mm 0 2mm; }
+h2 { font-size: 13pt; margin: 4mm 0 2mm; }
+.sheet { break-after: page; }
+.sheet:last-child { break-after: auto; }
+.sheet-head { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 0.8mm solid {{ p.accent }}; padding-bottom: 2mm; font-size: 9pt; color: #555; }
+.who { display: flex; gap: 8mm; }
+.who span { display: inline-block; min-width: 38mm; border-bottom: 0.3mm solid #888; }
+.instr { font-size: 10.5pt; color: #444; margin: 0 0 4mm; }
+.foot { margin-top: 5mm; padding: 2.5mm 4mm; border: 0.3mm dashed #999; border-radius: 3mm; font-size: 9.5pt; color: #444; text-align: center; }
+.line { border-bottom: 0.3mm solid #999; height: 9mm; }
+.box { display: inline-block; width: 4.5mm; height: 4.5mm; border: 0.5mm solid #555; border-radius: 1mm; vertical-align: -1mm; margin-right: 2.5mm; flex: none; }
+.row { display: flex; align-items: flex-start; margin-bottom: 3.2mm; }
+
+/* Ejercicios */
+.work { margin-bottom: 5mm; break-inside: avoid; }
+.work .q { font-weight: 700; }
+.work .n { display: inline-block; min-width: 7mm; height: 7mm; line-height: 7mm; text-align: center; border-radius: 50%; background: {{ p.primary }}; color: #fff; margin-right: 2mm; font-size: 9pt; }
+.hint { font-size: 9pt; color: #777; font-style: italic; }
+
+/* Tablas, seguimientos, calendarios */
+table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+th { background: #f1f1f1; border: 0.35mm solid #777; padding: 2mm; font-size: 9.5pt; text-align: left; }
+td { border: 0.35mm solid #888; height: 9.5mm; padding: 1mm 2mm; }
+.cal td { height: 25mm; vertical-align: top; font-size: 8pt; color: #999; }
+.cal th { text-align: center; }
+.week td { height: 22mm; vertical-align: top; }
+.week td.day { width: 28mm; background: #f6f6f6; font-weight: 700; font-size: 9.5pt; }
+.track th.d { text-align: center; padding: 1mm 0; font-size: 7.5pt; }
+.track td.c { padding: 0; text-align: center; }
+.track td.c span { display: inline-block; border: 0.35mm solid #888; border-radius: 50%; vertical-align: middle; }
+
+/* Receta */
+.recipe-meta { display: flex; gap: 10mm; font-size: 10pt; margin-bottom: 4mm; color: #444; }
+.cols { display: flex; gap: 8mm; }
+.cols > div { flex: 1; }
+.cols .ing { flex: 0 0 62mm; }
+ol.steps { margin: 0; padding-left: 6mm; } ol.steps li { margin-bottom: 3mm; }
+
+/* Sopa de letras */
+.ws { width: auto; margin: 0 auto 6mm; table-layout: fixed; }
+.ws td { width: 10mm; height: 10mm; padding: 0; border: 0.25mm solid #bbb; text-align: center; font-family: '{{ t.fonts.heading.family }}', sans-serif; font-size: 14pt; text-transform: uppercase; }
+.words { columns: 3; column-gap: 8mm; font-size: 11pt; }
+.words div { margin-bottom: 2mm; }
+
+/* Unir con líneas */
+.match { display: flex; justify-content: space-between; gap: 30mm; }
+.match .col { flex: 1; }
+.match .item { display: flex; align-items: center; gap: 3mm; min-height: 15mm; font-size: 12pt; border-bottom: 0.2mm dotted #ccc; }
+.match .l { justify-content: space-between; }
+.dot { display: inline-block; width: 4.5mm; height: 4.5mm; border-radius: 50%; border: 0.6mm solid {{ p.primary }}; flex: none; }
+
+/* Repasar palabras */
+.trace { margin-bottom: 6mm; break-inside: avoid; }
+.trace .big { font-family: '{{ t.fonts.heading.family }}', sans-serif; font-size: 34pt; color: #c9c9c9; letter-spacing: 1.5mm; line-height: 1.1; border-bottom: 0.3mm solid #999; padding: 1mm 0; }
+.trace .practice { height: 13mm; border-bottom: 0.3mm solid #999; border-top: 0.2mm dashed #ccc; }
+.lined .line { height: 9.5mm; }
+</style>
+</head>
+<body>
+<section class="sheet">
+  <div class="sheet-head"><div>{{ ctx.product_name }}</div></div>
+  <h1>{{ c.title }}</h1>
+  {% if c.audience_note %}<p class="instr">{{ c.audience_note }}</p>{% endif %}
+  <h2>{{ P.how_to_use }}</h2>
+  <ol class="steps">{% for s in c.how_to_use %}<li>{{ s }}</li>{% endfor %}</ol>
+</section>
+{% for v in pages %}{% set pg = v.p %}
+<section class="sheet">
+  <div class="sheet-head"><div>{{ ctx.product_name }}</div><div class="who"><div>{{ P.name }}: <span></span></div><div>{{ P.date }}: <span></span></div></div></div>
+  <h1>{{ pg.title }}</h1>
+  {% if pg.instructions %}<p class="instr">{{ pg.instructions }}</p>{% endif %}
+
+  {% if v.kind == 'worksheet' %}
+    {% for item, lines in v.work %}
+    <div class="work"><div class="q"><span class="n">{{ loop.index }}</span>{{ item.text }}</div>{% if item.hint %}<div class="hint">{{ item.hint }}</div>{% endif %}{% for _ in lines %}<div class="line"></div>{% endfor %}</div>
+    {% endfor %}
+
+  {% elif v.kind == 'checklist' %}
+    {% for item in pg.items %}<div class="row"><span class="box"></span><div>{{ item.text }}{% if item.hint %} <span class="hint">{{ item.hint }}</span>{% endif %}</div></div>{% endfor %}
+
+  {% elif v.kind == 'table' %}
+    <table><thead><tr>{% for col in pg.columns %}<th>{{ col }}</th>{% endfor %}</tr></thead>
+    <tbody>{% for _ in v.blank_rows %}<tr>{% for col in pg.columns %}<td></td>{% endfor %}</tr>{% endfor %}</tbody></table>
+
+  {% elif v.kind == 'tracker' %}
+    <table class="track"><thead><tr><th style="width: 52mm">{{ P.habit }}</th>{% for d in v.day_numbers %}<th class="d">{{ d }}</th>{% endfor %}</tr></thead>
+    <tbody>{% for h in pg.habits %}<tr><td>{{ h }}</td>{% for d in v.day_numbers %}<td class="c"><span style="width: {{ v.dot }}mm; height: {{ v.dot }}mm"></span></td>{% endfor %}</tr>{% endfor %}</tbody></table>
+
+  {% elif v.kind == 'calendar' and pg.calendar_kind == 'month' %}
+    <p>{{ P.month }}: ________________________</p>
+    <table class="cal"><thead><tr>{% for d in P.short %}<th>{{ d }}</th>{% endfor %}</tr></thead>
+    <tbody>{% for _ in v.weeks %}<tr>{% for d in P.short %}<td></td>{% endfor %}</tr>{% endfor %}</tbody></table>
+
+  {% elif v.kind == 'calendar' %}
+    <p>{{ P.week_of }}: ________________________</p>
+    <table class="week"><tbody>{% for d in P.weekdays %}<tr><td class="day">{{ d }}</td><td></td></tr>{% endfor %}</tbody></table>
+    <h2>{{ P.priorities }}</h2><div class="line"></div><div class="line"></div><div class="line"></div>
+
+  {% elif v.kind == 'recipe' %}
+    <div class="recipe-meta">{% if pg.servings %}<div><b>{{ P.servings }}:</b> {{ pg.servings }}</div>{% endif %}{% if pg.time %}<div><b>{{ P.time }}:</b> {{ pg.time }}</div>{% endif %}</div>
+    <div class="cols">
+      <div class="ing"><h2>{{ P.ingredients }}</h2>{% for i in pg.ingredients %}<div class="row"><span class="box"></span><div>{{ i }}</div></div>{% endfor %}</div>
+      <div><h2>{{ P.steps }}</h2><ol class="steps">{% for s in pg.steps %}<li>{{ s }}</li>{% endfor %}</ol></div>
+    </div>
+    <h2>{{ P.notes }}</h2><div class="line"></div><div class="line"></div>
+
+  {% elif v.kind == 'word_search' %}
+    <table class="ws"><tbody>{% for row in v.grid %}<tr>{% for ch in row %}<td>{{ ch }}</td>{% endfor %}</tr>{% endfor %}</tbody></table>
+    <h2>{{ P.words }}</h2>
+    <div class="words">{% for w in v.placed %}<div><span class="box"></span>{{ w }}</div>{% endfor %}</div>
+
+  {% elif v.kind == 'matching' %}
+    <div class="match">
+      <div class="col">{% for t in v.left %}<div class="item l"><span>{{ t }}</span><span class="dot"></span></div>{% endfor %}</div>
+      <div class="col">{% for t in v.right %}<div class="item"><span class="dot"></span><span>{{ t }}</span></div>{% endfor %}</div>
+    </div>
+
+  {% elif v.kind == 'tracing' %}
+    <p class="hint">{{ P.trace }}</p>
+    {% for item in pg.items %}<div class="trace"><div class="big">{{ item.text }}</div><div class="practice"></div></div>{% endfor %}
+
+  {% elif v.kind == 'notes' %}
+    <div class="lined">{% for _ in v.blank_rows %}<div class="line"></div>{% endfor %}</div>
+  {% endif %}
+
+  {% if pg.footer %}<div class="foot">{{ pg.footer }}</div>{% endif %}
+</section>
+{% endfor %}
+</body>
+</html>
