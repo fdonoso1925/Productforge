@@ -163,6 +163,13 @@ def _guide_visual_errors(content: GuideContent) -> list[str]:
             errors.append(f"Capítulo {n}: agrega al menos una infografía (visual) en una sección.")
         for visual in visuals:
             errors += _visual_errors(visual, f"capítulo {n}")
+    with_photo = sum(1 for chapter in content.chapters if chapter.photo is not None)
+    needed = len(content.chapters) // 3
+    if with_photo < needed:
+        errors.append(
+            f"Faltan fotos: pide `photo` en al menos {needed} capítulos (hay {with_photo}), "
+            "los más fotografiables (actividades, espacios, materiales)."
+        )
     return errors
 
 

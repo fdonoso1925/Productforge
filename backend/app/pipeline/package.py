@@ -190,7 +190,7 @@ class PackageBuilder:
         found: dict[str, str] = {}
         semaphore = asyncio.Semaphore(3)
 
-        async def one(index: int, spec: Any) -> None:
+        async def one(index: int, title: str, spec: Any) -> None:
             async with semaphore:
                 try:
                     image = await router.get(
@@ -200,6 +200,8 @@ class PackageBuilder:
                             keywords=tuple(k for k in spec.keywords if k.strip())[:3],
                             aspect="16:9",
                             sensitive=sensitive,
+                            curate=True,
+                            context=f"{spec.caption} (chapter: {title})",
                         ),
                     )
                 except Exception:
@@ -210,7 +212,7 @@ class PackageBuilder:
 
         await asyncio.gather(
             *(
-                one(i, ch.photo)
+                one(i, ch.title, ch.photo)
                 for i, ch in enumerate(chapters, start=1)
                 if getattr(ch, "photo", None)
             )

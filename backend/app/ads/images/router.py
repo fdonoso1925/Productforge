@@ -186,10 +186,12 @@ class ImageRouter:
         return None
 
 
-def build_router(settings: Settings, cache: Any, usage: Any, storage: Any) -> ImageRouter:
+def build_router(
+    settings: Settings, cache: Any, usage: Any, storage: Any, curator: Any = None
+) -> ImageRouter:
     """Arma los proveedores en el orden de `IMAGE_PROVIDERS`; los desconocidos se ignoran."""
     available: dict[str, ImageProvider] = {
-        "pixabay": PixabayProvider(settings.pixabay_api_key),
+        "pixabay": PixabayProvider(settings.pixabay_api_key, curator=curator),
         "gemini": GeminiImageProvider(
             settings.gemini_api_key,
             settings.gemini_image_model,

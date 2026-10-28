@@ -7,7 +7,7 @@ fórmulas de planillas se describen como operaciones sobre columnas.
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.content.schemas.common import Format
 
@@ -86,7 +86,11 @@ class Section(BaseModel):
     paragraphs: list[str]
     bullets: list[str] = Field(default_factory=list)
     steps: list[str] = Field(default_factory=list, description="Pasos numerados accionables")
-    example: str | None = Field(default=None, description="Ejemplo concreto y local")
+    example: str | None = Field(
+        default=None,
+        description="Ejemplo concreto del nicho, como situación hipotética («Imagina que…»); "
+        "nunca un caso real inventado ni nombres propios",
+    )
     callouts: list[Callout] = Field(default_factory=list)
     visual: Visual | None = Field(
         default=None, description="Infografía que ilustra esta sección (va después de su texto)"
@@ -330,7 +334,18 @@ PrintableKind = Literal[
 ]  # fmt: skip
 
 
+def _all_required(schema: dict) -> None:
+    # La API de salida estructurada rechaza ("Schema is too complex") los esquemas con muchos
+    # campos opcionales: se le declaran todos obligatorios (vacío = no aplica). Al leer la
+    # respuesta, los valores por defecto siguen valiendo.
+    for prop in schema.get("properties", {}).values():
+        prop.pop("default", None)
+    schema["required"] = list(schema.get("properties", {}))
+
+
 class PrintableItem(BaseModel):
+    model_config = ConfigDict(json_schema_extra=_all_required)
+
     text: str = Field(
         description="Consigna o pregunta (worksheet), tarea (checklist), palabra (word_search y "
         "tracing) o el lado izquierdo (matching)"
@@ -344,6 +359,8 @@ class PrintableItem(BaseModel):
 
 class PrintablePage(BaseModel):
     """Una hoja para imprimir (A4). El sistema la dibuja; la persona la completa a mano."""
+
+    model_config = ConfigDict(json_schema_extra=_all_required)
 
     kind: PrintableKind = Field(
         description="worksheet = ejercicios con espacio para responder; table = tabla con filas "
@@ -369,6 +386,8 @@ class PrintablePage(BaseModel):
 
 
 class PrintableContent(BaseModel):
+    model_config = ConfigDict(json_schema_extra=_all_required)
+
     title: str
     how_to_use: list[str] = Field(description="Cómo imprimir y usar las hojas (3 a 5 puntos)")
     audience_note: str = Field(default="", description="Para quién es (p. ej. edad de los niños)")

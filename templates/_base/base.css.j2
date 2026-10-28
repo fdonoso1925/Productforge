@@ -41,6 +41,11 @@ ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
 li { margin-bottom: 1.2mm; }
 
 .chapter { break-before: page; }
+/* Guía: los capítulos fluyen uno tras otro (sin media página en blanco al cerrar cada uno); el
+   título nunca queda solo al pie de una página. */
+.chapter.flow { break-before: auto; margin-top: 12mm; }
+.chapter.flow .chapter-label, .chapter.flow h1, .chapter.flow h2 { break-after: avoid; }
+.chapter.flow .photo { break-inside: avoid; break-after: avoid; }
 .chapter-label { font-family: var(--body); font-size: 9pt; font-weight: 700; color: var(--accent);
   text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 2mm; }
 {% if t.style.decoration == 'rule' %}

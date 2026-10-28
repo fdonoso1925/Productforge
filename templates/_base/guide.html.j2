@@ -14,7 +14,7 @@
 </section>
 
 {% for ch in c.chapters %}
-<section class="chapter" id="ch-{{ loop.index }}">
+<section class="chapter flow" id="ch-{{ loop.index }}">
   <div class="chapter-label">{{ L.chapter }} {{ loop.index }}</div>
   <h1>{{ ch.title }}</h1>
   {% if ch.photo %}{{ photo(ctx.photos.get('ch' ~ loop.index), ch.photo.caption) }}{% endif %}
@@ -31,7 +31,7 @@
 </section>
 {% endfor %}
 
-<section class="chapter" id="end">
+<section class="chapter flow" id="end">
   <h1>{{ L.conclusion }}</h1>
   {{ paragraphs(c.conclusion) }}
   <h2>{{ L.next_steps }}</h2>

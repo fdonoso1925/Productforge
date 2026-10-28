@@ -9,6 +9,7 @@ from typing import Annotated
 
 from fastapi import Depends
 
+from app.ads.images.curator import LLMPhotoCurator
 from app.ads.images.router import ImageRouter, build_router
 from app.ads.jobs import AdDeps
 from app.ads.meta.client import MetaClient
@@ -147,7 +148,13 @@ def build_services(settings: Settings) -> Services:
         ad_creatives=AdCreativeRepo(db),
         ad_proofs=AdProofRepo(db),
         ad_results=AdResultRepo(db),
-        ad_images=build_router(settings, AdImageCacheRepo(db), ProviderUsageRepo(db), storage),
+        ad_images=build_router(
+            settings,
+            AdImageCacheRepo(db),
+            ProviderUsageRepo(db),
+            storage,
+            curator=LLMPhotoCurator(ClaudeClient(settings.anthropic_api_key)),
+        ),
         meta=MetaClient(
             access_token=settings.meta_access_token,
             ad_account_id=settings.meta_ad_account_id,

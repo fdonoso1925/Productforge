@@ -4,7 +4,7 @@ Siga o índice (`table_of_contents`) da peça e cumpra a promessa dela. Tamanho 
 
 Regras:
 - Cada seção entrega algo que a pessoa consegue aplicar hoje: um passo, um exemplo, um cálculo, um roteiro.
-- Use exemplos com nomes, números e situações brasileiras plausíveis.
+- Os exemplos vêm do nicho e do tema exato da peça (seu público, seu material, seu problema), nunca genéricos. Apresente-os como situações hipotéticas («Imagine que…», «Suponha que…», «Por exemplo, se você tem…»): NÃO invente casos reais nem histórias com nomes próprios de pessoas, escolas, empresas ou lugares específicos, nem depoimentos, estudos ou números de mercado. Pode usar números de cálculo do próprio exercício (quantidades, tempos, medidas) se forem claramente parte do exemplo.
 - Cite as outras peças do pacote (`related_items`) no ponto em que elas ajudam, pelo título.
 - Não repita o mesmo conselho com outras palavras para encher espaço.
 - Se nos dados houver `sales_page_reference`, escreva com o tom dela (`tone`) e o vocabulário do público (`key_terms`), e use as dores (`pains`) como ponto de partida de exemplos e exercícios. O conteúdo é original: nada de frases nem estrutura copiadas dessa página.

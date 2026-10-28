@@ -326,3 +326,14 @@ def test_a_package_with_a_printable_piece_generates_its_pdf() -> None:
     files = [f for f in deps.files.rows.values() if f["product_item_id"] == printable["id"]]
     assert [f["file_type"] for f in files] == ["pdf"]
     assert printable["content"]["pages"] and printable["status"] == "ready"
+
+
+def test_ai_schema_marks_every_printable_field_required():
+    # La API rechaza ("Schema is too complex") los esquemas con muchos campos opcionales.
+    from app.content.schemas.formats import PrintableContent
+
+    schema = PrintableContent.model_json_schema()
+    for name in ("PrintableContent", "PrintablePage", "PrintableItem"):
+        node = schema if name == "PrintableContent" else schema["$defs"][name]
+        assert set(node["required"]) == set(node["properties"])
+        assert all("default" not in p for p in node["properties"].values())

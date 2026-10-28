@@ -31,6 +31,8 @@ class ImageRequest:
     aspect: Aspect
     sensitive: bool = False  # salud, deudas, maternidad…: sin rostros reconocibles
     style: str | None = None
+    curate: bool = False  # un modelo elige entre las candidatas la que muestra la escena
+    context: str = ""  # dónde se usa la foto (para el curador)
     negative_prompt: str = NEGATIVE_PROMPT
 
     def scene_hash(self, user_id: object) -> str:
@@ -44,6 +46,7 @@ class ImageRequest:
                 str(self.sensitive),
                 self.style or "",
             ]
+            + (["curated"] if self.curate else [])
         )
         return hashlib.sha256(raw.encode()).hexdigest()[:40]
 

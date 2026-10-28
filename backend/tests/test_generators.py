@@ -99,8 +99,8 @@ def test_docx_highlights_placeholders() -> None:
 @pytest.mark.parametrize("template", TEMPLATES, ids=lambda t: t.id)
 def test_every_template_renders_guide_with_toc(template) -> None:
     [file] = generate_files(Format.PDF_GUIDE, SAMPLES[Format.PDF_GUIDE], template, ctx())
-    # portada + índice + intro + 2 capítulos + conclusión
-    assert pdf_page_count(file.content) == 6
+    # portada + índice + el resto fluye (capítulos seguidos, sin página en blanco)
+    assert 4 <= pdf_page_count(file.content) <= 6
 
 
 @pytest.mark.parametrize("template", TEMPLATES, ids=lambda t: t.id)
