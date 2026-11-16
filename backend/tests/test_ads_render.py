@@ -84,7 +84,7 @@ def test_specs_are_read_from_a_config_file() -> None:
 
 
 def test_the_twelve_templates_exist_and_only_the_photo_one_needs_an_image() -> None:
-    assert set(R.available_ids()) == set(TEMPLATE_IDS) and len(R.templates) == 12
+    assert set(R.available_ids()) == set(TEMPLATE_IDS) and len(R.templates) == 15
     assert {t.id for t in R.templates.values() if t.uses_image} == {"photo_headline"}
     assert R.templates["product_mockup"].uses_mockup
 

@@ -14,11 +14,14 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined, select_autoescape
+from markupsafe import Markup, escape
 from pydantic import BaseModel
 
+from app.ads.marks import MARK, strip_marks
 from app.ads.schemas import ImageCopy, Ratio
 from app.content.schemas import Market
 from app.generators.cover_image import contrast, hex_rgb, luminance
+from app.generators.mockups import mockup_info
 from app.generators.render import html_to_pdf, pdf_page_to_png
 from app.templates_engine.fonts import font_path
 from app.templates_engine.model import Template
@@ -31,12 +34,22 @@ LABELS = {
         "after": "Después",
         "usual": "Lo de siempre",
         "method": "Con el método",
+        "myth": "Mito",
+        "truth": "Verdad",
+        "doubt": "La duda",
+        "answer": "La respuesta",
+        "step": "Paso",
     },
     "pt-BR": {
         "before": "Antes",
         "after": "Depois",
         "usual": "O de sempre",
         "method": "Com o método",
+        "myth": "Mito",
+        "truth": "Verdade",
+        "doubt": "A dúvida",
+        "answer": "A resposta",
+        "step": "Passo",
     },
 }
 MIN_VEIL, MAX_VEIL = 0.28, 0.9
@@ -198,6 +211,13 @@ def scheme_colors(template: Template, scheme: str) -> dict[str, str]:
     }
 
 
+def highlight(text: str) -> Markup:
+    """Escapa el texto y dibuja las palabras entre asteriscos sobre el bloque de acento:
+    `Cocina *natural*` → `Cocina <mark>natural</mark>`. Un asterisco suelto queda tal cual."""
+    # Seguro: todo el texto se escapa ANTES; lo único que se agrega sin escapar es <mark>.
+    return Markup(MARK.sub(lambda m: f"<mark>{m.group(1)}</mark>", str(escape(text))))  # noqa: S704
+
+
 # ───────────────────────────── tamaños de texto ─────────────────────────────
 
 
@@ -228,13 +248,16 @@ def font_sizes(
         "question": 0.115,
         "testimonial": 0.07,
         "offer_stack": 0.078,
+        "how": 0.092,
+        "myth": 0.08,
+        "objection": 0.082,
     }[template_id]
     if wide:
         base *= 0.9
     if template_id == "product_mockup" and wide:
         base *= 0.78
-    headline = round(w * base * _fit(len(copy.headline), steps))
-    note_len = len(copy.note or copy.headline)
+    headline = round(w * base * _fit(len(strip_marks(copy.headline)), steps))
+    note_len = len(copy.note or strip_marks(copy.headline))
     note = round(w * 0.092 * _fit(note_len, [(40, 1.0), (80, 0.84), (130, 0.7), (999, 0.58)]))
     if wide:
         note = round(note * 0.85)
@@ -253,9 +276,20 @@ def font_sizes(
     return {k: max(round(v * shrink), 22) for k, v in sizes.items()}
 
 
-def mock_size(spec: RatioSpec, shrink: float = 1.0) -> dict[str, int]:
+def mock_size(
+    spec: RatioSpec, shrink: float = 1.0, aspect: float | None = None
+) -> dict[str, int | bool]:
+    """Caja del mockup en el anuncio. Con `aspect` (alto / ancho de un mockup con transparencia,
+    que trae su propia sombra) se respeta su forma; sin él, es la portada plana de siempre."""
     img_w = round({"4x5": 280, "9x16": 250, "1x1": 330}[spec.id] * shrink)
-    return {"w": img_w + 28, "h": round(img_w / A4_RATIO) + 28}
+    if aspect is None:
+        return {"w": img_w + 28, "h": round(img_w / A4_RATIO) + 28, "real": False}
+    height = round(img_w / A4_RATIO * 1.12)  # alto de referencia: el de la portada, algo mayor
+    room = (
+        spec.width - 2 * spec.pad["side"] - (420 if spec.id == "1x1" else 0)
+    )  # y el texto al lado
+    width = min(round(height / aspect), room)
+    return {"w": width, "h": round(width * aspect), "real": True}
 
 
 # ───────────────────────────── medición ─────────────────────────────
@@ -310,6 +344,7 @@ class AdRenderer:
             trim_blocks=True,
             lstrip_blocks=True,
         )
+        self._env.filters["hl"] = highlight
 
     def available_ids(self) -> list[str]:
         return list(self.templates)
@@ -356,7 +391,7 @@ class AdRenderer:
         fonts = product_template.fonts
         mockup_uri = (
             "data:image/png;base64," + base64.b64encode(mockup_png).decode() if mockup_png else None
-        )
+        )  # portada plana (opaca) o mockup con transparencia: la plantilla los trata distinto
         bg_uri = "data:image/jpeg;base64," + base64.b64encode(bg_jpeg).decode() if bg_jpeg else None
         veil_hex = veil_color(c["bg"])
         veil = photo_veil(bg_jpeg, veil_hex, c["fg"], spec) if bg_jpeg else 0.0
@@ -364,8 +399,12 @@ class AdRenderer:
         pdf = b""
         outside: list[str] = []
         shrink = SHRINKS[0]
+        aspect = None
+        if mockup_png:
+            width, height, opaque = mockup_info(mockup_png)
+            aspect = None if opaque else height / width
         for shrink in SHRINKS:
-            mock = mock_size(spec, shrink)
+            mock = mock_size(spec, shrink, aspect)
             html = page.render(
                 W=spec.width,
                 H=spec.height,

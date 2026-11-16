@@ -1,9 +1,13 @@
 """Jobs de Meta: subir un lote como anuncios EN PAUSA y traer sus métricas.
 
 `ad_meta_publish` es reanudable: lo ya creado (campaña, conjunto, imagen, creativo, anuncio) queda
-guardado en `ad_batches.meta` / `ad_creatives.meta`, así que repetirlo tras un fallo completa lo
-que falta sin duplicar nada. `ad_meta_sync` copia el rendimiento diario de cada anuncio a
-`ad_results` (`source = 'meta'`); las métricas derivadas se siguen calculando de los totales.
+guardado en `ad_batches.meta` / `ad_creatives.meta` / `ad_videos.meta`, así que repetirlo tras un
+fallo completa lo que falta sin duplicar nada. Los videos del lote se suben en el mismo conjunto
+(miniatura → video → espera a que Meta lo procese → creativo de video → anuncio en pausa).
+
+`ad_meta_sync` copia el rendimiento diario de cada anuncio de imagen a `ad_results`
+(`source = 'meta'`); las métricas derivadas se siguen calculando de los totales. Las métricas de
+los anuncios de video todavía no se leen (`ad_results` cuelga de un creativo de imagen).
 """
 
 import asyncio
@@ -13,6 +17,7 @@ from typing import Any
 from uuid import UUID
 
 from app.ads.meta.client import MetaClient, MetaError
+from app.integrations.credentials import resolve_meta
 
 logger = logging.getLogger("productforge.meta")
 
@@ -60,6 +65,26 @@ def ad_text(creative: dict) -> dict[str, str]:
     }
 
 
+def video_text(video: dict) -> dict[str, str]:
+    ad = video.get("ad_copy") or {}
+    return {
+        "message": ad.get("primary_long") or ad.get("primary_short") or "",
+        "headline": ad.get("headline", ""),
+        "description": ad.get("description", ""),
+        "cta": ad.get("cta") or "LEARN_MORE",
+    }
+
+
+def publishable_video(video: dict) -> bool:
+    """Igual que los creativos: listo, con archivo, con miniatura y nunca en rojo."""
+    return (
+        video.get("status") == "ready"
+        and bool(video.get("storage_path"))
+        and bool(video.get("thumb_path"))
+        and video.get("policy_status") != "red"
+    )
+
+
 def publishable(creative: dict) -> bool:
     """Rojo del semáforo de políticas = no se sube; sin imagen compuesta tampoco."""
     return (
@@ -70,16 +95,21 @@ def publishable(creative: dict) -> bool:
 
 
 async def run_ad_meta_publish(job: dict, deps: Any) -> None:
-    meta: MetaClient | None = deps.meta
+    user_id = UUID(job["user_id"])
+    meta: MetaClient | None = await resolve_meta(deps, user_id)
     if meta is None or not meta.configured():
         raise MetaError("Meta no está configurado")
     payload = job["payload"]
-    user_id = UUID(job["user_id"])
     batch = await deps.batches.get(job["batch_id"], user_id)
     state: dict = {**(batch.get("meta") or {}), **{k: payload[k] for k in payload}}
-    creatives = [c for c in await deps.creatives.list_for_batch(batch["id"]) if publishable(c)]
-    skipped = len(await deps.creatives.list_for_batch(batch["id"])) - len(creatives)
-    state.update(status="publishing", total=len(creatives), skipped=skipped, uploaded=0, failed=0)
+    every = await deps.creatives.list_for_batch(batch["id"])
+    creatives = [c for c in every if publishable(c)]
+    video_repo = getattr(deps, "videos", None)
+    all_videos = await video_repo.list_for_batch(batch["id"]) if video_repo else []
+    videos = [v for v in all_videos if publishable_video(v)]
+    skipped = len(every) - len(creatives) + len(all_videos) - len(videos)
+    total = len(creatives) + len(videos)
+    state.update(status="publishing", total=total, skipped=skipped, uploaded=0, failed=0)
     state.pop("error", None)
     await deps.batches.update(batch["id"], meta=state)
 
@@ -140,7 +170,45 @@ async def run_ad_meta_publish(job: dict, deps: Any) -> None:
                 errors.append(str(exc))
                 state["failed"] += 1
 
-    await asyncio.gather(*(one(c) for c in creatives))
+    async def one_video(v: dict) -> None:
+        ids: dict = dict(v.get("meta") or {})
+        if ids.get("ad_id"):
+            state["uploaded"] += 1
+            return
+        async with semaphore:
+            try:
+                name = v["filename"].removesuffix(".mp4")
+                if not ids.get("thumbnail_hash"):
+                    thumb = await deps.storage.download(v["thumb_path"])
+                    ids["thumbnail_hash"] = await meta.upload_image(f"{name}.png", thumb)
+                    await deps.videos.update(v["id"], meta=ids)
+                if not ids.get("video_id"):
+                    data = await deps.storage.download(v["storage_path"])
+                    ids["video_id"] = await meta.upload_video(v["filename"], data)
+                    await deps.videos.update(v["id"], meta=ids)
+                if not ids.get("creative_id"):
+                    await meta.wait_video_ready(ids["video_id"])
+                    ids["creative_id"] = await meta.create_video_creative(
+                        name=name,
+                        video_id=ids["video_id"],
+                        thumbnail_hash=ids["thumbnail_hash"],
+                        link=state["link_url"],
+                        **video_text(v),
+                    )
+                    await deps.videos.update(v["id"], meta=ids)
+                ids["ad_id"] = await meta.create_ad(
+                    name=name, adset_id=state["adset_id"], creative_id=ids["creative_id"]
+                )
+                ids.pop("error", None)
+                await deps.videos.update(v["id"], meta=ids)
+                state["uploaded"] += 1
+            except MetaError as exc:
+                logger.warning("falló un video en Meta (código %s)", exc.code)
+                errors.append(str(exc))
+                state["failed"] += 1
+                await deps.videos.update(v["id"], meta={**ids, "error": str(exc)[:300]})
+
+    await asyncio.gather(*(one(c) for c in creatives), *(one_video(v) for v in videos))
     status = "done" if not state["failed"] else ("partial" if state["uploaded"] else "error")
     final = {**state, "status": status, "published_at": datetime.now(UTC).isoformat()}
     if errors:
@@ -151,10 +219,10 @@ async def run_ad_meta_publish(job: dict, deps: Any) -> None:
 
 
 async def run_ad_meta_sync(job: dict, deps: Any) -> None:
-    meta: MetaClient | None = deps.meta
+    user_id = UUID(job["user_id"])
+    meta: MetaClient | None = await resolve_meta(deps, user_id)
     if meta is None or not meta.configured():
         raise MetaError("Meta no está configurado")
-    user_id = UUID(job["user_id"])
     batch = await deps.batches.get(job["batch_id"], user_id)
     creatives = [
         c

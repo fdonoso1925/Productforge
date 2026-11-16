@@ -20,6 +20,7 @@ from app.ads.repo import (
     AdImageCacheRepo,
     AdProofRepo,
     AdResultRepo,
+    AdVideoRepo,
     ProviderUsageRepo,
 )
 from app.ads.strategy import AdStrategyService
@@ -37,7 +38,9 @@ from app.db.supabase import (
     UsageRepo,
 )
 from app.hotmart.client import HotmartClient
+from app.hotmart.fx import FxRates
 from app.hotmart.sync import HotmartRepo
+from app.integrations.credentials import CredentialRepo, CredentialStore
 from app.pages.jobs import PageDeps
 from app.pages.repo import SalesPageRepo
 from app.pages.strategy import PageService
@@ -70,8 +73,11 @@ class Services:
     meta: MetaClient | None = None
     hotmart: HotmartClient | None = None
     hotmart_repo: HotmartRepo | None = None
+    fx: FxRates | None = None
+    credentials: CredentialStore | None = None
     sales_pages: SalesPageRepo | None = None
     page_service: PageService | None = None
+    ad_videos: AdVideoRepo | None = None
 
     def page_deps(self) -> PageDeps:
         return PageDeps(service=self.page_service, pages=self.sales_pages)  # type: ignore[arg-type]
@@ -90,6 +96,8 @@ class Services:
             sync_target=self.drive,
             results=self.ad_results,
             meta=self.meta,
+            credentials=self.credentials,
+            videos=self.ad_videos,
         )
 
     def pipeline(self) -> PipelineDeps:
@@ -169,7 +177,14 @@ def build_services(settings: Settings) -> Services:
             basic=settings.hotmart_basic,
         ),
         hotmart_repo=HotmartRepo(db),
+        fx=FxRates(),
+        credentials=CredentialStore(
+            CredentialRepo(db),
+            TokenCipher(settings.token_encryption_key) if settings.token_encryption_key else None,
+            settings,
+        ),
         sales_pages=SalesPageRepo(db),
+        ad_videos=AdVideoRepo(db),
         page_service=PageService(content),
     )
 

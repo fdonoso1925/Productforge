@@ -35,7 +35,16 @@
     "createAds": "Criar anúncios",
     "view": "Ver",
     "empty": "Você ainda não tem produtos.",
-    "noResults": "Sem resultados"
+    "noResults": "Sem resultados",
+    "library": "Sua biblioteca · {count} produtos",
+    "tagline": "Um pouco a cada noite constrói grandes coisas. Seu próximo pacote espera sob a luminária.",
+    "continueTitle": "Continuar de onde parou",
+    "continueCta": "Continuar",
+    "filterAll": "Tudo",
+    "filters": "Filtrar por status",
+    "shown": "{count} produtos",
+    "allLanguages": "Todos os idiomas",
+    "filterLanguage": "Filtrar por idioma"
   },
   "locale": {
     "switch": "Ver en español"
@@ -238,19 +247,19 @@
     "ready": "Seu pacote está pronto",
     "resume": {
       "title": {
-            "start": "Este pacote ainda não foi gerado",
-            "failed": "A geração não terminou",
-            "partial": "Faltam peças a gerar"
+        "start": "Este pacote ainda não foi gerado",
+        "failed": "A geração não terminou",
+        "partial": "Faltam peças a gerar"
       },
       "hint": {
-            "start": "Seu nicho, problema e as peças já estão salvos. Faltam criar os arquivos: você pode gerá-los agora com este mesmo conteúdo, sem recomeçar.",
-            "failed": "Ela caiu antes de criar os arquivos. Seu conteúdo continua salvo: você pode tentar de novo.",
-            "partial": "{count, plural, one {Falta # peça} other {Faltam # peças}}. As que já estão prontas são mantidas: só se completa o que falta (e a ficha comercial e o ZIP, se faltavam). O que já tinha conteúdo salvo não gasta IA de novo."
+        "start": "Seu nicho, problema e as peças já estão salvos. Faltam criar os arquivos: você pode gerá-los agora com este mesmo conteúdo, sem recomeçar.",
+        "failed": "Ela caiu antes de criar os arquivos. Seu conteúdo continua salvo: você pode tentar de novo.",
+        "partial": "{count, plural, one {Falta # peça} other {Faltam # peças}}. As que já estão prontas são mantidas: só se completa o que falta (e a ficha comercial e o ZIP, se faltavam). O que já tinha conteúdo salvo não gasta IA de novo."
       },
       "action": {
-            "start": "Gerar pacote agora",
-            "failed": "Gerar de novo",
-            "partial": "Completar o que falta"
+        "start": "Gerar pacote agora",
+        "failed": "Gerar de novo",
+        "partial": "Completar o que falta"
       },
       "confirm": "Clique de novo: pode usar IA"
     },
@@ -319,6 +328,20 @@
       "titleNext": "Seu pacote está pronto: criamos os anúncios?",
       "hint": "Gere criativos com diferentes ângulos de venda (dor, solução, transformação, objeção…), com texto, semáforo de políticas e imagens prontas para subir. Você escolhe os ângulos e quantas variações.",
       "cta": "Criar anúncios"
+    },
+    "mockups": {
+      "title": "Mockups da capa",
+      "hint": "Sua capa em um livro, um tablet, um celular e um pacote digital, em PNG com fundo transparente, para anúncios, redes e a página de vendas.",
+      "cta": "Criar mockups",
+      "remake": "Criar de novo",
+      "making": "Desenhando mockups…",
+      "download": "Baixar mockup de {kind}",
+      "kinds": {
+        "book": "Livro",
+        "tablet": "Tablet",
+        "phone": "Celular",
+        "bundle": "Pacote digital"
+      }
     }
   },
   "history": {
@@ -416,6 +439,80 @@
         "connected": "Google Drive conectado. Os pacotes que já existiam estão sendo copiados.",
         "denied": "Você cancelou a autorização: nada foi conectado.",
         "error": "Não foi possível conectar com o Google. Deixe marcada a permissão do Drive e tente de novo."
+      }
+    },
+    "integrations": {
+      "title": "Meta Ads e Hotmart",
+      "connected": "Conectado",
+      "notConnected": "Não conectado",
+      "incomplete": "Falta {count, plural, one {# dado} other {# dados}}",
+      "optional": "(opcional)",
+      "saved": "Salvo",
+      "fromEnv": "Do ambiente",
+      "keep": "vazio = deixar como está",
+      "save": "Salvar",
+      "saving": "Salvando…",
+      "test": "Testar conexão",
+      "testOk": "Conexão correta. {detail}",
+      "testFail": "Não foi possível conectar: {detail}",
+      "disconnect": "Desconectar",
+      "disconnectConfirm": "Apagar o que foi salvo?",
+      "noKey": "O backend não tem TOKEN_ENCRYPTION_KEY: sem ela não dá para salvar chaves aqui. Adicione-a ao ambiente do backend e reinicie.",
+      "securityNote": "Os dados são salvos criptografados no backend e nunca voltam a ser exibidos por completo. Se você já tem variáveis de ambiente, elas continuam valendo; o que salvar aqui tem prioridade.",
+      "meta": {
+        "title": "Meta Ads",
+        "description": "Envia seus anúncios para a Meta sempre pausados e traz as métricas. Nada é ativado nem gasta até você ativar no Gerenciador de Anúncios.",
+        "steps": [
+          "Em developers.facebook.com crie um app do tipo «Empresa» e adicione o produto Marketing API.",
+          "No Business Manager crie um usuário do sistema com acesso à sua conta de anúncios e à sua página.",
+          "Gere o token dele com as permissões ads_management e ads_read (o token longo, que não expira).",
+          "Copie aqui o ID da conta de anúncios e o da página do Facebook."
+        ],
+        "fields": {
+          "access_token": "Token de acesso",
+          "ad_account_id": "ID da conta de anúncios",
+          "page_id": "ID da página do Facebook",
+          "instagram_user_id": "ID do Instagram",
+          "pixel_id": "ID do pixel"
+        },
+        "placeholders": {
+          "access_token": "EAAB…",
+          "ad_account_id": "act_1234567890",
+          "page_id": "1234567890",
+          "instagram_user_id": "1234567890",
+          "pixel_id": "1234567890"
+        },
+        "hints": {
+          "access_token": "É um segredo: fica criptografado e não é exibido de novo.",
+          "ad_account_id": "Gerenciador de Anúncios › Configurações da conta. Com ou sem o prefixo act_.",
+          "page_id": "A página pela qual os anúncios são publicados.",
+          "instagram_user_id": "Para os anúncios também saírem pelo Instagram.",
+          "pixel_id": "Necessário só para o objetivo «vendas»."
+        }
+      },
+      "hotmart": {
+        "title": "Hotmart",
+        "description": "Lê suas vendas e reembolsos para o painel da Hotmart e para cruzar com o gasto em anúncios. Somente leitura: nunca altera nada.",
+        "steps": [
+          "Na Hotmart, vá em Ferramentas › Credenciais de desenvolvedor e crie credenciais.",
+          "Copie o Client ID e o Client Secret.",
+          "Se a Hotmart mostrar o valor «Basic …», cole também; se não, ele é montado sozinho."
+        ],
+        "fields": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "basic": "Basic"
+        },
+        "placeholders": {
+          "client_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "client_secret": "",
+          "basic": "Basic …"
+        },
+        "hints": {
+          "client_id": "Identificador público das suas credenciais.",
+          "client_secret": "É um segredo: fica criptografado e não é exibido de novo.",
+          "basic": "Opcional: só se a Hotmart entregar já montado."
+        }
       }
     }
   },
@@ -625,7 +722,14 @@
         "bulletsPaired": "Este template precisa de 2 ou 4 itens: antes e depois (há {n}).",
         "noteRequired": "O template de nota precisa do texto da nota.",
         "sceneRequired": "Descreva a cena da foto de fundo.",
-        "keywordsRange": "A foto precisa de {min} a {max} palavras-chave (há {n})."
+        "keywordsRange": "A foto precisa de {min} a {max} palavras-chave (há {n}).",
+        "bulletsExact": {
+          "myth": "Mito vs. verdade precisa de 2 itens: o mito e a verdade (há {n}).",
+          "objection": "Objeção precisa de 2 itens: a dúvida e a resposta (há {n}).",
+          "how": "Como X sem Y precisa de 3 ou 4 passos (há {n})."
+        },
+        "marksInvalid": "As palavras destacadas vão entre dois asteriscos, *assim*: até 3 trechos de no máximo 3 palavras.",
+        "marksOnlyHeadline": "Só o título da imagem pode levar asteriscos (palavras destacadas)."
       },
       "photo": "Foto de fundo",
       "photoHint": "Todos os anúncios levam uma foto atrás do texto. Mude as palavras-chave para buscar outra e salve: recompõe em segundos, sem IA.",
@@ -651,7 +755,12 @@
       "back": "← Anúncios",
       "hotmart": "Ver Hotmart",
       "period": "Período",
-      "periods": { "7": "Últimos 7 dias", "30": "Últimos 30 dias", "90": "Últimos 90 dias", "all": "Tudo" },
+      "periods": {
+        "7": "Últimos 7 dias",
+        "30": "Últimos 30 dias",
+        "90": "Últimos 90 dias",
+        "all": "Tudo"
+      },
       "market": "Mercado",
       "allMarkets": "Todos",
       "empty": "Ainda não há resultados neste período. Vai encher quando você trouxer métricas do Meta ou carregar o CSV do Gerenciador de Anúncios em um lote.",
@@ -663,8 +772,8 @@
     },
     "meta": {
       "title": "Enviar para o Meta Ads",
-      "hint": "Cria a campanha, o conjunto e um anúncio por imagem direto na sua conta. Tudo fica pausado: nada é gasto até você ativar no Gerenciador de Anúncios.",
-      "notConfigured": "O Meta não está configurado no backend (falta: {missing}). Os passos estão em DEPLOY.md, seção Meta Ads.",
+      "hint": "Cria a campanha, o conjunto e um anúncio por imagem e por vídeo pronto direto na sua conta. Tudo fica pausado: nada é gasto até você ativar no Gerenciador de Anúncios.",
+      "notConfigured": "A Meta não está conectada (falta: {missing}).",
       "account": "Conta de anúncios: {name} ({currency})",
       "inactive": "A conta de anúncios não está ativa no Meta.",
       "link": "Link de destino",
@@ -689,7 +798,8 @@
       "paused": "Estão pausados. Revise e ative no Gerenciador de Anúncios quando quiser começar a investir.",
       "active": "{count, plural, one {# anúncio já está ativo no Meta.} other {# anúncios já estão ativos no Meta.}}",
       "sync": "Trazer métricas",
-      "syncedAt": "Última leitura: {date}"
+      "syncedAt": "Última leitura: {date}",
+      "connectLink": "Conectar em Configurações"
     },
     "angleNames": {
       "dolor": "Dor",
@@ -719,7 +829,10 @@
       "comparison": "Comparação",
       "question": "Pergunta",
       "testimonial": "Depoimento",
-      "offer_stack": "Oferta empilhada"
+      "offer_stack": "Oferta empilhada",
+      "how": "Como X sem Y",
+      "myth": "Mito vs. verdade",
+      "objection": "Objeção respondida"
     },
     "results": {
       "title": "Resultados",
@@ -805,10 +918,38 @@
       "off": "{name} desligado (sem gasto)",
       "paid": "{name}: hoje US$ {spent} de US$ {cap}",
       "exhausted": "sem cota hoje, usa-se a reserva"
+    },
+    "videos": {
+      "title": "Vídeos para Reels e o feed",
+      "hint": "Um vídeo curto de motion graphics (texto e ícones animados com música) por ângulo e avatar, com a paleta e a capa do seu produto. A IA escreve o roteiro uma vez só; refazer o vídeo não a usa. Confira com som antes de publicar.",
+      "angle": "Ângulo e avatar",
+      "format": "Formato",
+      "create": "Criar vídeo",
+      "confirmCreate": "Clique de novo: usa IA",
+      "working": "Escrevendo o roteiro e montando o vídeo (alguns segundos)…",
+      "download": "Baixar",
+      "rerender": "Montar de novo",
+      "delete": "Apagar vídeo",
+      "inMeta": "Na Meta",
+      "failed": "Não foi possível criar: {error}",
+      "ratios": {
+        "9x16": "Reels 9:16",
+        "4x5": "Feed 4:5"
+      },
+      "status": {
+        "planned": "Na fila…",
+        "rendering": "Montando…",
+        "ready": "Pronto",
+        "error": "Erro"
+      }
     }
   },
   "pages": {
-    "status": { "planning": "Escrevendo…", "ready": "Pronta", "error": "Com erro" },
+    "status": {
+      "planning": "Escrevendo…",
+      "ready": "Pronta",
+      "error": "Com erro"
+    },
     "similarity": {
       "warn": {
         "title": "Atenção: parte do texto se aproxima da página modelo",
@@ -935,19 +1076,45 @@
       "hint": "Edite com suas palavras. Preço, garantia e urgência vêm do que você informou e não se editam aqui. As alterações passam pelas mesmas regras de honestidade.",
       "similar": "Parece com a página modelo: reescreva.",
       "sections": {
-        "seo_title": "Buscadores", "seo_description": "Buscadores", "hero": "Início", "problem": "Problema",
-        "solution": "Solução", "journey": "Etapas do caminho", "benefits": "Benefícios",
-        "deliverable_blurbs": "O que inclui", "for_you": "É para você se…", "not_for_you": "Não é para você se…",
-        "about": "Quem criou", "proof": "Provas", "offer": "Oferta", "faq": "Perguntas frequentes",
-        "final_cta": "Fechamento", "disclaimer": "Aviso legal"
+        "seo_title": "Buscadores",
+        "seo_description": "Buscadores",
+        "hero": "Início",
+        "problem": "Problema",
+        "solution": "Solução",
+        "journey": "Etapas do caminho",
+        "benefits": "Benefícios",
+        "deliverable_blurbs": "O que inclui",
+        "for_you": "É para você se…",
+        "not_for_you": "Não é para você se…",
+        "about": "Quem criou",
+        "proof": "Provas",
+        "offer": "Oferta",
+        "faq": "Perguntas frequentes",
+        "final_cta": "Fechamento",
+        "disclaimer": "Aviso legal"
       },
       "fields": {
-        "seo_title": "Título para buscadores", "seo_description": "Descrição para buscadores",
-        "eyebrow": "Etiqueta", "headline": "Título", "subheadline": "Subtítulo", "bullets": "Ponto-chave",
-        "cta_text": "Texto do botão", "microcopy": "Linha abaixo do botão", "title": "Título", "intro": "Introdução",
-        "pains": "Dor", "agitation": "Custo de continuar igual", "mechanism_name": "Nome do método",
-        "mechanism": "Como funciona", "text": "Texto", "q": "Pergunta", "a": "Resposta",
-        "deliverable_blurbs": "Frase de valor", "for_you": "Sinal", "not_for_you": "Caso", "about": "Texto",
+        "seo_title": "Título para buscadores",
+        "seo_description": "Descrição para buscadores",
+        "eyebrow": "Etiqueta",
+        "headline": "Título",
+        "subheadline": "Subtítulo",
+        "bullets": "Ponto-chave",
+        "cta_text": "Texto do botão",
+        "microcopy": "Linha abaixo do botão",
+        "title": "Título",
+        "intro": "Introdução",
+        "pains": "Dor",
+        "agitation": "Custo de continuar igual",
+        "mechanism_name": "Nome do método",
+        "mechanism": "Como funciona",
+        "text": "Texto",
+        "q": "Pergunta",
+        "a": "Resposta",
+        "deliverable_blurbs": "Frase de valor",
+        "for_you": "Sinal",
+        "not_for_you": "Caso",
+        "about": "Texto",
         "disclaimer": "Aviso"
       }
     }
@@ -955,23 +1122,39 @@
   "hotmart": {
     "title": "Dashboard da Hotmart",
     "hint": "Vendas, receita e reembolsos dos seus produtos, lidos da sua conta Hotmart (somente leitura).",
-    "notConfigured": "A Hotmart não está configurada no backend (HOTMART_CLIENT_ID, HOTMART_CLIENT_SECRET e HOTMART_BASIC). Os passos estão em DEPLOY.md, seção Hotmart.",
-    "empty": "A Hotmart não devolveu vendas dos últimos 90 dias.",
+    "notConfigured": "A Hotmart não está conectada.",
+    "empty": "A Hotmart não devolveu vendas dos últimos 90 dias. Escolha «Intervalo de datas» para ler outras datas.",
+    "emptyRange": "Não há vendas neste período. Escolha «Intervalo de datas», marque as datas no calendário e clique em «Ler da Hotmart».",
     "refresh": "Atualizar",
     "syncing": "Lendo a Hotmart…",
     "syncedAt": "Última leitura: {date}",
     "period": "Período",
-    "periods": { "7": "Últimos 7 dias", "30": "Últimos 30 dias", "90": "Últimos 90 dias", "all": "Tudo o que foi lido" },
+    "periods": {
+      "7": "Últimos 7 dias",
+      "30": "Últimos 30 dias",
+      "90": "Últimos 90 dias",
+      "all": "Tudo o que foi lido",
+      "custom": "Intervalo de datas"
+    },
+    "from": "De",
+    "to": "Até",
+    "apply": "Ler da Hotmart",
+    "rangeHint": "Lê da Hotmart as vendas dessas datas (até {max} dias) e as mostra aqui. Os dias são completos e o último é incluído.",
+    "rangeIncomplete": "Escolha as duas datas.",
+    "rangeOrder": "A data «Até» não pode ser anterior a «De».",
+    "rangeTooLong": "O intervalo não pode passar de {max} dias.",
     "currency": "Moeda",
     "sales": "Vendas",
     "gross": "Receita bruta",
-    "net": "Líquido estimado",
+    "net": "Faturamento líquido real",
     "avgTicket": "Ticket médio",
     "refunds": "Reembolsos",
     "refundedAmount": "Valor reembolsado",
     "pending": "Pendentes",
     "lost": "Perdidas",
-    "netNote": "Líquido estimado = preço menos a taxa da Hotmart. Não desconta impostos nem comissões de coprodutores ou afiliados. Cada moeda é mostrada separadamente.",
+    "netNote": "Todos os valores estão em USD, com a cotação que a Hotmart aplicou ao pagar você. O faturamento líquido real é o que a Hotmart paga por cada venda: já desconta a taxa dela e o que é dividido com coprodutores ou afiliados.",
+    "netEstimatedWarn": "{count, plural, one {# venda paga ainda não tem} other {# vendas pagas ainda não têm}} o dado real da Hotmart e foi contada com uma estimativa (preço menos taxa). Clique em «Atualizar» para trazê-lo.",
+    "unconverted": "{count, plural, one {# venda não foi incluída} other {# vendas não foram incluídas}}: não há cotação para a moeda.",
     "chart": "Receita por dia",
     "products": "Por produto",
     "product": "Produto",
@@ -983,8 +1166,9 @@
       "empty": "Vincule um produto da Hotmart a um do app que tenha campanhas enviadas ao Meta para ver o cruzamento.",
       "spend": "Gasto em anúncios",
       "profit": "Líquido menos gasto",
-      "excluded": "{count, plural, one {# campanha não foi incluída} other {# campanhas não foram incluídas}}: a moeda não é {currency} ou não é conhecida (as carregadas à mão não guardam moeda)."
-    }
+      "excluded": "{count, plural, one {# campanha não foi incluída} other {# campanhas não foram incluídas}}: a moeda não é conhecida (as carregadas à mão não a guardam)."
+    },
+    "connectLink": "Conectar em Configurações"
   },
   "shell": {
     "brand": "Produtos Aurora",
@@ -1000,5 +1184,22 @@
     "createPage": "Página de vendas",
     "createPageHint": "Uma página pensada para converter, a partir do seu pacote",
     "createAdsHint": "Criativos para Meta Ads prontos para subir"
+  },
+  "detail": {
+    "backHistory": "Voltar ao histórico",
+    "backAds": "Voltar aos meus lotes",
+    "backPages": "Voltar às minhas páginas",
+    "includes": "O que inclui",
+    "includesAds": "Abordagens do lote",
+    "includesPage": "Entregáveis da página",
+    "pieces": "Peças",
+    "formats": "Formatos",
+    "updated": "Atualizado",
+    "drafts": "Rascunhos",
+    "rendered": "Imagens prontas",
+    "measures": "Medidas",
+    "deliverables": "Entregáveis",
+    "template": "Modelo",
+    "ready": "Pacote pronto"
   }
 }

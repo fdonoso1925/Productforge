@@ -23,6 +23,7 @@ def ctx():
         jobs=MemoryJobs(),
         files=MemoryFiles(),
         storage=MemoryStorage(),
+        settings=settings,
     )
     request = make_request()
     product = services.products.add(
@@ -88,6 +89,29 @@ def test_download_returns_signed_url_only_for_owner(ctx) -> None:
     assert response.json()["url"].startswith("https://storage.test/")
     client.headers["Authorization"] = f"Bearer {make_token(sub=str(uuid4()))}"
     assert client.get(f"/files/{file['id']}/download").status_code == 404
+
+
+def test_mockups_of_the_cover_are_stored_and_signed(ctx) -> None:
+    client, services, product = ctx
+    response = client.post(f"/products/{product['id']}/mockups")
+    assert response.status_code == 200
+    urls = response.json()["urls"]
+    assert set(urls) == {"book", "tablet", "phone", "bundle"}
+    for kind, url in urls.items():
+        path = f"{USER}/{product['id']}/mockups/{kind}.png"
+        assert url.startswith(f"https://storage.test/{path}")
+        assert services.storage.objects[path].startswith(b"\x89PNG")
+    # repetirlo no duplica nada: reemplaza los mismos cuatro archivos
+    assert client.post(f"/products/{product['id']}/mockups").status_code == 200
+    assert len([p for p in services.storage.objects if "/mockups/" in p]) == 4
+
+
+def test_mockups_are_only_for_the_owner_and_need_a_cover(ctx) -> None:
+    client, services, product = ctx
+    product["outline"] = None
+    assert client.post(f"/products/{product['id']}/mockups").status_code == 422
+    client.headers["Authorization"] = f"Bearer {make_token(sub=str(uuid4()))}"
+    assert client.post(f"/products/{product['id']}/mockups").status_code == 404
 
 
 def test_templates_catalog_and_preview(ctx) -> None:

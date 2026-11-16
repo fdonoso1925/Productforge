@@ -8,10 +8,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
 
 from app.ads.meta.client import MetaError
-from app.ads.meta.jobs import publishable
+from app.ads.meta.jobs import publishable, publishable_video
 from app.api.ads import JobOut, owned_batch
 from app.auth import CurrentUser, get_current_user
 from app.deps import ServicesDep
+from app.integrations.credentials import meta_pixel, resolve_meta
 from app.security import work_rate_limit
 
 router = APIRouter(prefix="/ads")
@@ -34,25 +35,36 @@ class MetaStatusOut(BaseModel):
 
 @router.get("/meta/status")
 async def meta_status(user: User, services: ServicesDep) -> MetaStatusOut:
-    s = services.settings
-    required = {
-        "META_ACCESS_TOKEN": s.meta_access_token,
-        "META_AD_ACCOUNT_ID": s.meta_ad_account_id,
-        "META_PAGE_ID": s.meta_page_id,
-    }
-    missing = [name for name, value in required.items() if not value.strip()]
-    if missing or services.meta is None:
+    meta = await resolve_meta(services, user.id)
+    pixel = await meta_pixel(services, user.id)
+    store = getattr(services, "credentials", None)
+    if store is not None:
+        values = await store.effective(user.id, "meta")
+        missing = [
+            f"META_{k.upper()}"
+            for k in ("access_token", "ad_account_id", "page_id")
+            if not values[k]
+        ]
+    else:
+        s = services.settings
+        required = {
+            "META_ACCESS_TOKEN": s.meta_access_token,
+            "META_AD_ACCOUNT_ID": s.meta_ad_account_id,
+            "META_PAGE_ID": s.meta_page_id,
+        }
+        missing = [name for name, value in required.items() if not value.strip()]
+    if missing or meta is None or not meta.configured():
         return MetaStatusOut(configured=False, missing=missing)
     try:
-        account = await services.meta.account_info()
+        account = await meta.account_info()
     except MetaError as exc:
-        return MetaStatusOut(configured=True, error=str(exc), sales_available=bool(s.meta_pixel_id))
+        return MetaStatusOut(configured=True, error=str(exc), sales_available=bool(pixel))
     return MetaStatusOut(
         configured=True,
         account_name=account.name,
         currency=account.currency,
         account_active=account.status == 1,
-        sales_available=bool(s.meta_pixel_id),
+        sales_available=bool(pixel),
     )
 
 
@@ -122,8 +134,9 @@ async def batch_meta(batch_id: UUID, user: User, services: ServicesDep) -> MetaB
     return batch_meta_out(batch.get("meta") or {}, publishing=running)
 
 
-def require_meta(services) -> None:
-    if services.meta is None or not services.meta.configured():
+async def require_meta(services, user_id: UUID) -> None:
+    meta = await resolve_meta(services, user_id)
+    if meta is None or not meta.configured():
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Meta no está configurado")
 
 
@@ -137,15 +150,17 @@ async def batch_to_meta(
 ) -> JobOut:
     """Crea campaña, conjunto y anuncios del lote en Meta, todo en PAUSA. No activa nada."""
     batch = await owned_batch(services, batch_id, user)
-    require_meta(services)
-    if body.objective == "sales" and not services.settings.meta_pixel_id.strip():
+    await require_meta(services, user.id)
+    if body.objective == "sales" and not (await meta_pixel(services, user.id)).strip():
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_CONTENT, {"errors": ["falta META_PIXEL_ID"]}
         )
     creatives = await services.ad_creatives.list_for_batch(batch["id"])
-    if not any(publishable(c) for c in creatives):
+    video_repo = getattr(services, "ad_videos", None)
+    videos = await video_repo.list_for_batch(batch["id"]) if video_repo else []
+    if not any(publishable(c) for c in creatives) and not any(publishable_video(v) for v in videos):
         raise HTTPException(
-            status.HTTP_409_CONFLICT, "no hay imágenes compuestas y aptas para subir"
+            status.HTTP_409_CONFLICT, "no hay imágenes ni videos listos y aptas para subir"
         )
     for kind in ("ad_meta_publish", "ad_meta_sync"):
         if await services.jobs.active_for_batch(batch_id, kind=kind):
@@ -180,7 +195,7 @@ async def batch_to_meta(
 async def batch_meta_sync(batch_id: UUID, user: User, services: ServicesDep) -> JobOut:
     """Trae de Meta el gasto, impresiones, clics y compras de los últimos 30 días."""
     batch = await owned_batch(services, batch_id, user)
-    require_meta(services)
+    await require_meta(services, user.id)
     if not (batch.get("meta") or {}).get("campaign_id"):
         raise HTTPException(status.HTTP_409_CONFLICT, "este lote aún no se subió a Meta")
     for kind in ("ad_meta_publish", "ad_meta_sync"):

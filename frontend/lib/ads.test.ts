@@ -15,6 +15,7 @@ import {
   LIMITS,
   lines,
   normalizeSearch,
+  stripMarks,
   sumResults,
   validateResult,
   validatePicks,
@@ -83,6 +84,24 @@ describe("copyIssues (mismas reglas que el backend)", () => {
       expect(keys(draft({ template_id: template }, { bullets: items(2) }))).not.toContain("bulletsPaired");
       expect(keys(draft({ template_id: template }, { bullets: items(4) }))).not.toContain("bulletsPaired");
     }
+  });
+
+  it("las plantillas por ángulo piden sus ítems exactos", () => {
+    const items = (n: number) => Array.from({ length: n }, (_, i) => `ítem ${i}`);
+    expect(keys(draft({ template_id: "myth" }, { bullets: items(2) }))).not.toContain("bulletsExact.myth");
+    expect(keys(draft({ template_id: "myth" }, { bullets: items(3) }))).toContain("bulletsExact.myth");
+    expect(keys(draft({ template_id: "objection" }, { bullets: items(1) }))).toContain("bulletsExact.objection");
+    expect(keys(draft({ template_id: "how" }, { bullets: items(4) }))).not.toContain("bulletsExact.how");
+    expect(keys(draft({ template_id: "how" }, { bullets: items(2) }))).toContain("bulletsExact.how");
+  });
+
+  it("las palabras destacadas van *así*, solo en el titular y sin contar como palabras", () => {
+    expect(copyIssues(draft({}, { headline: "Pedidos *ordenados* en una sola lista" }))).toEqual([]);
+    expect(stripMarks("Cocina *natural*")).toBe("Cocina natural");
+    expect(wordCount("*uno* dos")).toBe(2);
+    expect(keys(draft({}, { headline: "Pedidos *ordenados en una lista" }))).toContain("marksInvalid");
+    expect(keys(draft({}, { headline: "*a* *b* *c* *d*" }))).toContain("marksInvalid");
+    expect(keys(draft({}, { subheadline: "Un método *simple*" }))).toContain("marksOnlyHeadline");
   });
 
   it("todo anuncio lleva foto de fondo: escena y 2 o 3 palabras clave", () => {
@@ -208,7 +227,7 @@ describe("textos es/pt", () => {
   it("cada ángulo, plantilla y aviso del editor tiene su texto", () => {
     const { ads } = load("es");
     expect(Object.keys(ads.angleNames)).toHaveLength(14);
-    expect(Object.keys(ads.templates)).toHaveLength(12);
+    expect(Object.keys(ads.templates)).toHaveLength(15);
     for (const key of ["headlineEmpty", "imageHeadlineWords", "primaryLongRange", "bulletsRange", "bulletsPaired", "noteRequired"]) {
       expect(ads.editor.issues[key]).toBeTruthy();
     }

@@ -4,6 +4,7 @@ import { Download, ImageIcon, Languages, Maximize2, Pencil, Repeat2, TrendingUp,
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ConfirmButton } from "@/components/product/confirm-button";
+import { DetailHero } from "@/components/library/detail-hero";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,6 +30,7 @@ import { ImportPanel } from "./import-panel";
 import { IteratePanel } from "./iterate-panel";
 import { PolicyBadge } from "./policy-badge";
 import { MetricsLine, ResultsPanel } from "./results-panel";
+import { VideosPanel } from "./videos-panel";
 
 const POLL_MS = 2500;
 const URL_REFRESH_MS = 8 * 60 * 1000; // las URLs firmadas duran 10 min
@@ -40,6 +42,8 @@ export function BatchView({ batchId }: { batchId: string }) {
   const t = useTranslations("ads.batch");
   const tc = useTranslations("common");
   const tm = useTranslations("markets");
+  const td = useTranslations("detail");
+  const tan = useTranslations("ads.angleNames");
   const router = useRouter();
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -198,7 +202,32 @@ export function BatchView({ batchId }: { batchId: string }) {
     setPanel(panel?.id === id && panel.kind === kind ? null : { id, kind });
 
   return (
-    <Shell title={batch.brief.product_name} meta={`${tm(batch.market)} · ${batch.niche}`}>
+    <Shell
+      hero={
+        <DetailHero
+          backHref="/ads"
+          backLabel={td("backAds")}
+          cover={{ seed: batch.id, title: batch.brief.product_name, label: tm(batch.market) }}
+          chips={
+            <>
+              <Badge variant="secondary">{tm(batch.market)}</Badge>
+              <span className="text-xs text-muted-foreground">{batch.niche}</span>
+            </>
+          }
+          title={batch.brief.product_name}
+          description={batch.brief.promise}
+          stats={[
+            { value: String(groups.length), label: td("drafts") },
+            { value: `${rendered.length}/${live.length}`, label: td("rendered") },
+            ...(batch.ratios.length ? [{ value: batch.ratios.join(" · "), label: td("measures") }] : []),
+          ]}
+          includes={{
+            title: td("includesAds"),
+            items: [...new Set(live.map((c) => c.angle))].slice(0, 8).map((a) => tan(a)),
+          }}
+        />
+      }
+    >
       {batch.status === "planning" && <PlanningPanel job={job} />}
       {batch.status === "error" && live.length === 0 && <ErrorBox message={t("planFailed")} />}
       {job?.status === "error" && live.length > 0 && <ErrorBox message={t("jobFailed")} />}
@@ -261,6 +290,7 @@ export function BatchView({ batchId }: { batchId: string }) {
             </p>
           )}
           {rendered.length > 0 && <AdsDrive batchId={batchId} refreshKey={renderedKey} />}
+          {batch.status !== "planning" && <VideosPanel batch={batch} />}
           {rendered.length > 0 && <MetaPanel batchId={batchId} market={batch.market} refreshKey={renderedKey} />}
           {rendered.length > 0 && <ImportPanel onImported={refresh} />}
           {working && batch.status !== "planning" && (
@@ -306,19 +336,18 @@ export function BatchView({ batchId }: { batchId: string }) {
   );
 }
 
-function Shell({ title, meta, children }: { title?: string; meta?: string; children: React.ReactNode }) {
+function Shell({ hero, children }: { hero?: React.ReactNode; children: React.ReactNode }) {
   const t = useTranslations("ads.batch");
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-5 py-4 md:py-10">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[26px] font-bold">{title ?? t("title")}</h1>
-          {meta && <p className="text-sm text-muted-foreground">{meta}</p>}
-        </div>
-        <Link href="/ads" className="text-sm text-muted-foreground hover:underline">
-          {t("back")}
-        </Link>
-      </header>
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-5 py-4 md:px-10 md:py-10">
+      {hero ?? (
+        <header className="flex flex-wrap items-start justify-between gap-3">
+          <h1 className="text-[26px] font-semibold">{t("title")}</h1>
+          <Link href="/ads" className="text-sm text-muted-foreground hover:underline">
+            {t("back")}
+          </Link>
+        </header>
+      )}
       {children}
     </main>
   );

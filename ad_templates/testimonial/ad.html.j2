@@ -8,7 +8,7 @@
 </style>
 <div class="safe">
   {% if copy.kicker %}<div class="kicker">{{ copy.kicker }}</div>{% endif %}
-  <div class="h">{{ copy.headline }}</div>
+  <div class="h">{{ copy.headline | hl }}</div>
   <div class="qcard">
     <div class="qm">&ldquo;</div>
     <div class="q">{{ copy.note or copy.headline }}</div>

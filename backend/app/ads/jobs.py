@@ -21,6 +21,7 @@ from app.ads.repo import AdBatchRepo, AdCreativeRepo, AdProofRepo
 from app.ads.schemas import AdBrief, AdProof, Avatar, CreativeDraft, ImageCopy
 from app.ads.strategy import AdStrategyService, PlanStats
 from app.db.supabase import JobRepo
+from app.generators.mockups import cached_mockup
 from app.storage.base import StorageProvider
 from app.templates_engine.model import Template, load_template
 
@@ -45,7 +46,9 @@ class AdDeps:
     images: ImageRouter | None = None
     sync_target: Any = None  # destino externo (Google Drive); None = sin copia
     results: Any = None  # AdResultRepo: resultados de Ads Manager (aprendizaje)
-    meta: Any = None  # MetaClient: subida en pausa y métricas; None = sin Meta
+    meta: Any = None  # MetaClient del entorno; None = sin Meta
+    credentials: Any = None  # CredentialStore: lo guardado en Ajustes manda sobre `meta`
+    videos: Any = None  # AdVideoRepo: videos de motion graphics del lote
 
 
 def failure_status(creative: dict) -> str:
@@ -192,6 +195,21 @@ def make_mockup(template: Template, batch: dict, brief: AdBrief) -> bytes:
     return product_mockup(template, batch["market"], brief.product_name, brief.promise[:120])
 
 
+# Qué mockup de la portada acompaña a cada ángulo: el pack (libro + tablet + celular) para
+# vender una oferta, la tablet para el dolor y el libro para todo lo demás.
+MOCKUP_BY_ANGLE = {
+    "oferta": "bundle",
+    "urgencia": "bundle",
+    "dolor": "tablet",
+    "error": "tablet",
+    "curiosidad": "tablet",
+}
+
+
+def mockup_kind(creative: dict) -> str:
+    return MOCKUP_BY_ANGLE.get(creative.get("angle", ""), "book")
+
+
 def compose_png(
     renderer: AdRenderer,
     creative: dict,
@@ -203,9 +221,14 @@ def compose_png(
     bg_jpeg: bytes | None = None,
     hires: bool = False,
 ) -> bytes:
-    """PNG del creativo. Es CPU (WeasyPrint + pdfium): se llama desde un hilo."""
+    """PNG del creativo. Es CPU (WeasyPrint + pdfium): se llama desde un hilo.
+
+    `mockup` es la portada plana del producto; aquí se convierte en el mockup realista que toca
+    al ángulo del creativo (libro, tablet o pack)."""
     draft = draft_of(creative)
     image: ImageCopy = draft.image
+    if mockup and renderer.templates[creative["template_id"]].uses_mockup:
+        mockup = cached_mockup(mockup_kind(creative), mockup)
     return renderer.render(
         template_id=creative["template_id"],
         copy=image,

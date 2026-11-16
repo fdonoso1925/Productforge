@@ -247,6 +247,43 @@ class MemoryAdCreatives:
 
 
 @dataclass
+class MemoryAdVideos:
+    rows: dict[str, dict] = field(default_factory=dict)
+
+    async def insert(self, row: dict) -> dict:
+        row = {
+            "id": str(uuid4()),
+            "status": "planned",
+            "script": None,
+            "ad_copy": None,
+            "storage_path": None,
+            "thumb_path": None,
+            "meta": {},
+            "created_at": "2026-01-01T00:00:00Z",
+            **row,
+        }
+        self.rows[row["id"]] = row
+        return row
+
+    async def get(self, video_id, user_id=None) -> dict:
+        row = self.rows.get(str(video_id))
+        if not row or (user_id is not None and row["user_id"] != str(user_id)):
+            raise NotFound(str(video_id))
+        return row
+
+    async def list_for_batch(self, batch_id) -> list[dict]:
+        return [r for r in self.rows.values() if r["batch_id"] == str(batch_id)]
+
+    async def update(self, video_id, **values) -> None:
+        self.rows[str(video_id)].update(values)
+
+    async def delete(self, video_id, user_id) -> None:
+        row = self.rows.get(str(video_id))
+        if row and row["user_id"] == str(user_id):
+            del self.rows[str(video_id)]
+
+
+@dataclass
 class MemoryAdProofs:
     rows: dict[str, dict] = field(default_factory=dict)
 

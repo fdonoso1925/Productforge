@@ -12,6 +12,7 @@ Dos capas con propósitos distintos:
 import re
 from collections.abc import Iterable
 
+from app.ads.marks import mark_errors, strip_marks
 from app.ads.schemas import (
     TEMPLATE_IDS,
     AdBrief,
@@ -37,6 +38,12 @@ BULLETS = (3, 5)
 NOTE_MAX = 220
 LIST_TEMPLATES = {"checklist", "product_mockup", "offer_stack", "before_after", "comparison"}
 PAIRED_TEMPLATES = {"before_after", "comparison"}  # mitad «antes» y mitad «después»
+# Plantillas por ángulo: cuántos bullets necesitan y qué es cada uno.
+EXACT_BULLETS = {
+    "myth": ((2,), "el primero es el mito y el segundo la verdad que lo desmiente"),
+    "objection": ((2,), "el primero es la duda típica y el segundo la respuesta concreta"),
+    "how": ((3, 4), "cada uno es un paso corto, en orden"),
+}
 ANGLES_RANGE = (5, 6)
 AVATARS_RANGE = (2, 3)
 
@@ -53,7 +60,7 @@ def is_sensitive(niche: str) -> bool:
 
 
 def words(text: str) -> int:
-    return len(text.split())
+    return len(strip_marks(text).split())
 
 
 # ───────────────────────────── ángulos disponibles ─────────────────────────────
@@ -139,6 +146,20 @@ def check_draft(
         e.append(
             f"image.headline tiene {words(img.headline)} palabras (máximo {IMAGE_HEADLINE_WORDS})."
         )
+    e += mark_errors(img.headline)
+    for name, text in (
+        ("image.subheadline", img.subheadline),
+        ("image.kicker", img.kicker),
+        ("image.cta_text", img.cta_text),
+        ("image.note", img.note),
+        ("ad.primary_short", ad.primary_short),
+        ("ad.primary_long", ad.primary_long),
+        ("ad.headline", ad.headline),
+        ("ad.description", ad.description),
+        *((f"image.bullets[{i}]", b) for i, b in enumerate(img.bullets)),
+    ):
+        if "*" in text:
+            e.append(f"{name} no lleva asteriscos: solo image.headline marca palabras destacadas.")
     if words(img.subheadline) > IMAGE_SUB_WORDS:
         e.append(f"image.subheadline supera {IMAGE_SUB_WORDS} palabras.")
     if words(img.kicker) > KICKER_WORDS:
@@ -156,6 +177,11 @@ def check_draft(
             f"La plantilla {draft.template_id} necesita 2 o 4 bullets: la primera mitad es "
             "«antes / lo de siempre» y la segunda «después / con el método»."
         )
+    if draft.template_id in EXACT_BULLETS:
+        counts, meaning = EXACT_BULLETS[draft.template_id]
+        if len(img.bullets) not in counts:
+            wanted = " o ".join(str(n) for n in counts)
+            e.append(f"La plantilla {draft.template_id} necesita {wanted} bullets: {meaning}.")
     if draft.template_id == "offer_stack" and not brief.price_text.strip():
         e.append("La plantilla offer_stack exige un precio real en el brief; usa otra plantilla.")
     # Todos los anuncios llevan foto de fondo: sin escena ni palabras clave no hay qué buscar.
@@ -325,7 +351,7 @@ def visible_text(draft: CreativeDraft) -> str:
     """Todo lo que ve la persona: texto de la imagen y del anuncio."""
     img, ad = draft.image, draft.ad
     parts = [
-        img.headline, img.subheadline, img.kicker, img.cta_text, img.price_text, img.note,
+        strip_marks(img.headline), img.subheadline, img.kicker, img.cta_text, img.price_text, img.note,
         *img.bullets, ad.primary_short, ad.primary_long, ad.headline, ad.description,
     ]  # fmt: skip
     return "\n".join(p for p in parts if p)
@@ -336,14 +362,10 @@ def _allowed_by_proofs(fragment: str, proofs: list[AdProof], brief: AdBrief) -> 
     return fragment.lower().strip() in haystack
 
 
-def policy_verdict(
-    draft: CreativeDraft,
-    brief: AdBrief,
-    proofs: list[AdProof],
-    market: Market | None = None,
-) -> PolicyVerdict:
-    market = market or brief.market
-    text = visible_text(draft)
+def text_policy_notes(
+    text: str, brief: AdBrief, proofs: list[AdProof], market: Market
+) -> list[PolicyNote]:
+    """Observaciones de políticas sobre un texto cualquiera (anuncio estático o guion de video)."""
     notes: list[PolicyNote] = []
     for rule, severity, patterns, messages in _COMPILED:
         found = patterns[market].search(text)
@@ -357,6 +379,21 @@ def policy_verdict(
         notes.append(PolicyNote(rule=rule, text=messages[market], severity=sev))  # type: ignore[arg-type]
     if is_sensitive(brief.niche) and _WEIGHT[market].search(text):
         notes.append(PolicyNote(rule="salud", text=_WEIGHT_MSG[market], severity="red"))
+    return notes
+
+
+def worst_status(notes: list[PolicyNote]) -> str:
+    return _worst([n.severity for n in notes])
+
+
+def policy_verdict(
+    draft: CreativeDraft,
+    brief: AdBrief,
+    proofs: list[AdProof],
+    market: Market | None = None,
+) -> PolicyVerdict:
+    market = market or brief.market
+    notes = text_policy_notes(visible_text(draft), brief, proofs, market)
     if draft.template_id == "testimonial" and draft.proof_id is None:
         msg = {
             "es-LATAM": "Testimonio sin una prueba real cargada.",

@@ -149,6 +149,27 @@ export type FileRow = {
 
 export type DriveStatus = { configured: boolean; connected: boolean; account: string | null };
 
+/** Meta Ads y Hotmart: credenciales guardadas en Ajustes (nunca llegan los valores, solo el estado). */
+export type IntegrationProvider = "meta" | "hotmart";
+export type IntegrationField = {
+  key: string;
+  secret: boolean;
+  required: boolean;
+  set: boolean;
+  source: "saved" | "env" | null;
+  /** Secretos: «••••1234»; el resto, el valor. */
+  hint: string | null;
+};
+export type IntegrationStatus = {
+  provider: IntegrationProvider;
+  connected: boolean;
+  can_save: boolean;
+  has_saved: boolean;
+  fields: IntegrationField[];
+  missing: string[];
+};
+export type Integrations = Record<IntegrationProvider, IntegrationStatus>;
+
 export type ProductDrive = {
   connected: boolean;
   total: number;

@@ -9,6 +9,7 @@ import io
 import zipfile
 from datetime import date
 
+from app.ads.marks import strip_marks
 from app.generators.base import slugify
 
 MAX_ZIP_BYTES = 200 * 1024 * 1024  # un lote real pesa unas decenas de MB
@@ -65,7 +66,7 @@ def build_csv(market: str, creatives: list[dict]) -> bytes:
                     c["avatar"],
                     c.get("policy_status") or "",
                     c.get("pre_score") or "",
-                    image["headline"],
+                    strip_marks(image["headline"]),
                     image.get("subheadline", ""),
                     image.get("cta_text", ""),
                     ad["primary_short"],

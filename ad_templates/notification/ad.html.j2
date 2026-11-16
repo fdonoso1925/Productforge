@@ -11,7 +11,7 @@
 <div class="safe">
   <div class="card">
     <div class="head"><div class="ico"></div><div class="ttl">{{ copy.kicker or product_name }}</div></div>
-    <div class="body">{{ copy.headline }}</div>
+    <div class="body">{{ copy.headline | hl }}</div>
   </div>
   {% if copy.subheadline %}
   <div class="card second"><div class="body">{{ copy.subheadline }}</div></div>

@@ -287,6 +287,16 @@ class FakeMeta:
             raise MetaError("anuncio rechazado", code=100)
         return self._id("ad", **info)
 
+    async def upload_video(self, filename, data) -> str:
+        assert data[4:8] == b"ftyp"
+        return self._id("video", filename=filename)
+
+    async def wait_video_ready(self, video_id) -> None:
+        self._id("waited", video_id=video_id)
+
+    async def create_video_creative(self, **info) -> str:
+        return self._id("video_creative", **info)
+
     async def insights(self, ad_ids, since, until) -> list[dict]:
         return [r for r in self.insight_rows if r["ad_id"] in ad_ids]
 
@@ -346,6 +356,109 @@ def test_publishing_creates_campaign_adset_and_one_paused_ad_per_creative() -> N
     assert names == {c["filename"].removesuffix(".png") for c in creatives}
     # Y no se llamó a la IA para subir.
     assert len(w.llm.calls) == 2
+
+
+TINY_MP4 = b"\x00\x00\x00\x18ftypmp42" + b"\x00" * 32
+
+
+def add_video(w: AdsWorld, batch_id: str, **over) -> dict:
+    """Un video ya listo en el lote (sin renderizar de verdad: eso lo prueba test_video)."""
+    path = f"{USER}/ads/{batch_id}/videos/x_mecanismo_video_9x16_v1.mp4"
+    w.storage.objects[path] = TINY_MP4
+    w.storage.objects[path.removesuffix(".mp4") + ".png"] = TINY_PNG
+    row = {
+        "batch_id": batch_id,
+        "user_id": USER,
+        "angle": "mecanismo",
+        "avatar": "a",
+        "ratio": "9x16",
+        "filename": "x_mecanismo_video_9x16_v1.mp4",
+        "status": "ready",
+        "storage_path": path,
+        "thumb_path": path.removesuffix(".mp4") + ".png",
+        "policy_status": "green",
+        "ad_copy": {
+            "primary_short": "Corto",
+            "primary_long": "Largo",
+            "headline": "Titular",
+            "description": "Desc",
+            "cta": "LEARN_MORE",
+        },
+        **over,
+    }
+    return asyncio.run(w.videos.insert(row))
+
+
+def test_videos_are_published_paused_with_their_thumbnail_and_resume_without_duplicates() -> None:
+    w, batch_id, meta = meta_world()
+    video = add_video(w, batch_id)
+    add_video(w, batch_id, filename="rojo.mp4", policy_status="red")  # nunca se sube
+    assert publish(w, batch_id).status_code == 202
+    w.run_worker()
+    state = w.client.get(f"/ads/batches/{batch_id}/meta").json()
+    assert state["status"] == "done" and state["total"] == 5 and state["uploaded"] == 5
+    ids = w.videos.rows[video["id"]]["meta"]
+    assert ids["video_id"].startswith("video-") and ids["ad_id"].startswith("ad-")
+    [creative] = meta.kinds("video_creative")
+    assert creative["thumbnail_hash"] == ids["thumbnail_hash"]  # miniatura = el gancho completo
+    assert creative["name"] == "x_mecanismo_video_9x16_v1" and creative["headline"] == "Titular"
+    assert len(meta.kinds("waited")) == 1  # se esperó a que Meta procesara el video
+    assert len(meta.kinds("video")) == 1  # el rojo no se subió
+    # Repetir completa lo que falte sin volver a subir el video.
+    assert publish(w, batch_id).status_code == 202
+    w.run_worker()
+    assert len(meta.kinds("video")) == 1 and len(meta.kinds("ad")) == 5
+
+
+def test_a_batch_with_only_videos_can_be_published() -> None:
+    w, batch_id, _ = meta_world()
+    for c in w.creatives.rows.values():
+        c.update(status="planned", storage_path=None)
+    assert publish(w, batch_id).status_code == 409  # nada apto todavía
+    add_video(w, batch_id)
+    assert publish(w, batch_id).status_code == 202
+
+
+def test_the_video_client_waits_for_processing_and_creates_a_paused_ad() -> None:
+    seen: list[httpx.Request] = []
+    polls = iter(["processing", "ready"])
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        if request.url.path.endswith("/advideos"):
+            return httpx.Response(200, json={"id": "V1"})
+        if request.method == "GET":
+            return httpx.Response(200, json={"status": {"video_status": next(polls)}})
+        return httpx.Response(200, json={"id": "777"})
+
+    async def flow() -> None:
+        c = make_client(handler)
+        c.video_poll_seconds = 0
+        assert await c.upload_video("v.mp4", TINY_MP4) == "V1"
+        await c.wait_video_ready("V1")
+        creative = await c.create_video_creative(
+            name="v", video_id="V1", thumbnail_hash="H", link="https://x.example.com",
+            message="m", headline="h", description="d", cta="LEARN_MORE",
+        )  # fmt: skip
+        await c.create_ad(name="v", adset_id="S", creative_id=creative)
+
+    run(flow())
+    gets = [r for r in seen if r.method == "GET"]
+    assert len(gets) == 2  # «processing» y luego «ready»
+    spec = parse_qs(next(r for r in seen if r.url.path.endswith("/adcreatives")).content.decode())
+    assert '"video_id": "V1"' in spec["object_story_spec"][0]
+    ad = next(r for r in seen if r.url.path.endswith("/ads"))
+    assert parse_qs(ad.content.decode())["status"] == ["PAUSED"]
+    assert all(TOKEN not in str(r.url) for r in seen)
+
+
+def test_a_video_meta_could_not_process_is_reported() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"status": {"video_status": "error"}})
+
+    c = make_client(handler)
+    with pytest.raises(MetaError, match="procesar"):
+        run(c.wait_video_ready("V1"))
 
 
 def test_a_failed_ad_leaves_the_batch_partial_and_retrying_only_completes_the_rest() -> None:

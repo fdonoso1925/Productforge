@@ -1,6 +1,7 @@
 "use client";
 
 import { RefreshCw, Rocket } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { ConfirmButton } from "@/components/product/confirm-button";
@@ -80,7 +81,10 @@ export function MetaPanel({
   if (!account.configured) {
     return (
       <p className="text-xs text-muted-foreground">
-        {t("notConfigured", { missing: account.missing.join(", ") })}
+        {t("notConfigured", { missing: account.missing.join(", ") })}{" "}
+        <Link href="/settings" className="text-primary underline underline-offset-2">
+          {t("connectLink")}
+        </Link>
       </p>
     );
   }

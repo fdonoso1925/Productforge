@@ -14,6 +14,9 @@ function Progress({
       value={value}
       data-slot="progress"
       className={cn("flex flex-wrap gap-3", className)}
+      // El texto por defecto usa Intl con el idioma del entorno: el servidor y el navegador no
+      // coinciden («25 %» contra «25%») y React avisa de un error de hidratación.
+      getAriaValueText={(_, v) => (v == null ? "" : `${Math.round(v)}%`)}
       {...props}
     >
       {children}
@@ -28,7 +31,7 @@ function ProgressTrack({ className, ...props }: ProgressPrimitive.Track.Props) {
   return (
     <ProgressPrimitive.Track
       className={cn(
-        "relative flex h-1 w-full items-center overflow-x-hidden rounded-full bg-border",
+        "relative flex h-1 w-full items-center overflow-x-hidden rounded-full bg-white/12",
         className
       )}
       data-slot="progress-track"
@@ -44,7 +47,7 @@ function ProgressIndicator({
   return (
     <ProgressPrimitive.Indicator
       data-slot="progress-indicator"
-      className={cn("h-full bg-primary transition-all", className)}
+      className={cn("h-full rounded-full bg-primary shadow-[0_0_12px_rgb(245_199_107/0.6)] transition-all", className)}
       {...props}
     />
   )

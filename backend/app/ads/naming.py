@@ -21,6 +21,26 @@ def creative_filename(
     return "_".join(parts) + ".png"
 
 
+def video_filename(*, product_name: str, market: str, angle: str, ratio: str, version: int) -> str:
+    """`<producto>_<mercado>_<angulo>_video_<ratio>_v<n>.mp4`: el mismo nombre del anuncio en Meta
+    (así lo empareja también el CSV de resultados)."""
+    return (
+        creative_filename(
+            product_name=product_name,
+            market=market,
+            angle=angle,
+            template_id="video",
+            ratio=ratio,
+            version=version,
+        ).removesuffix(".png")
+        + ".mp4"
+    )
+
+
+def video_path(user_id: UUID | str, batch_id: UUID | str, filename: str) -> str:
+    return f"{user_id}/ads/{batch_id}/videos/{filename}"
+
+
 def storage_path(
     user_id: UUID | str, batch_id: UUID | str, ratio_folder: str, filename: str
 ) -> str:

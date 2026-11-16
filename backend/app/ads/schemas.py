@@ -11,7 +11,8 @@ from pydantic import BaseModel, Field
 
 from app.content.schemas import Market, SalesReference
 
-# Plantillas de anuncio (las 12 del plan; la fase 3 implementa 4). `ad_templates/<id>/`.
+# Plantillas de anuncio (`ad_templates/<id>/`): las 12 del plan y 3 por ángulo (cómo, mito,
+# objeción).
 TEMPLATE_IDS = (
     "headline_bold",
     "photo_headline",
@@ -25,6 +26,9 @@ TEMPLATE_IDS = (
     "question",
     "testimonial",
     "offer_stack",
+    "how",
+    "myth",
+    "objection",
 )
 Ratio = Literal["4x5", "9x16", "1x1"]
 MetaCta = Literal["LEARN_MORE", "SHOP_NOW", "GET_OFFER", "DOWNLOAD", "SIGN_UP"]

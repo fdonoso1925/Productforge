@@ -15,11 +15,13 @@ from app.ads.jobs import AdDeps, run_ad_drive, run_ad_iterate, run_ad_plan, run_
 from app.ads.meta.jobs import run_ad_meta_publish, run_ad_meta_sync
 from app.config import get_settings
 from app.deps import Services, build_services
+from app.integrations.credentials import resolve_meta
 from app.pages.jobs import PageDeps, run_page_generate
 from app.pipeline.drive_sync import run_upload
 from app.pipeline.generate import PipelineDeps, run_generate
 from app.pipeline.remodel import run_duplicate, run_regenerate_item, run_remodel
 from app.security import configure_logging, ensure_production_ready
+from app.video.jobs import run_ad_video
 
 logger = logging.getLogger("productforge.worker")
 
@@ -38,6 +40,7 @@ AD_HANDLERS: dict[str, Callable[[dict, AdDeps], Awaitable[None]]] = {
     "ad_iterate": run_ad_iterate,
     "ad_meta_publish": run_ad_meta_publish,
     "ad_meta_sync": run_ad_meta_sync,
+    "ad_video": run_ad_video,
 }
 # Los jobs de páginas de ventas cuelgan de una página.
 PAGE_HANDLERS: dict[str, Callable[[dict, PageDeps], Awaitable[None]]] = {
@@ -67,8 +70,8 @@ async def fail_batch(services: Services, job: dict) -> None:
     """Un lote cuyo job cayó no puede quedar en «planificando» o «componiendo» para siempre."""
     try:
         batch = await services.ad_batches.get(job["batch_id"])
-        if job["kind"] == "ad_drive":
-            return  # la copia a Drive no cambia el estado del lote (queda en `drive`)
+        if job["kind"] in ("ad_drive", "ad_video"):
+            return  # la copia a Drive y los videos no cambian el estado del lote
         if job["kind"] in ("ad_meta_publish", "ad_meta_sync"):
             # Meta tampoco: su estado vive en `meta`; una subida cortada no queda «publicando».
             meta = batch.get("meta") or {}
@@ -134,10 +137,11 @@ async def run_one(services: Services) -> bool:
 
 async def enqueue_meta_syncs(services: Services) -> int:
     """Encola la lectura de métricas de cada lote ya publicado en Meta (sin duplicar jobs)."""
-    if services.meta is None or not services.meta.configured():
-        return 0
     count = 0
     for batch in await services.ad_batches.list_published():
+        meta = await resolve_meta(services, UUID(batch["user_id"]))
+        if meta is None or not meta.configured():
+            continue
         if await services.jobs.active_for_batch(UUID(batch["id"])):
             continue
         await services.jobs.enqueue(

@@ -8,6 +8,8 @@ from collections import defaultdict
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 
+from app.ads.marks import strip_marks
+
 MIN_IMPRESSIONS = 1000  # con menos, el CTR y el resto son ruido
 TOP_WINNERS = 3
 Row = dict
@@ -153,7 +155,7 @@ def build_insights(creatives: list[Row], results: list[Row], batches: dict[str, 
         draft = lead["copy"]
         return {
             "creative_id": lead["id"],
-            "headline": draft["image"]["headline"],
+            "headline": strip_marks(draft["image"]["headline"]),
             "ad_headline": draft["ad"]["headline"],
             "angle": lead["angle"],
             "template_id": lead["template_id"],

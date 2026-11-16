@@ -7,7 +7,7 @@
 <div class="safe">
   <div class="tp">
     {% if copy.kicker %}<div class="kicker">{{ copy.kicker }}</div>{% endif %}
-    <div class="t">{{ copy.headline }}</div>
+    <div class="t">{{ copy.headline | hl }}</div>
     {% if copy.subheadline %}<div class="s">{{ copy.subheadline }}</div>{% endif %}
     {% if copy.cta_text %}<div class="link">{{ copy.cta_text }}</div>{% endif %}
   </div>

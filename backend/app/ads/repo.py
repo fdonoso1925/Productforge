@@ -65,6 +65,35 @@ class AdCreativeRepo:
         return await self._db.select("ad_creatives", user_id=eq(user_id), limit=str(limit))
 
 
+class AdVideoRepo:
+    """Videos de motion graphics de un lote (tabla `ad_videos`)."""
+
+    def __init__(self, db: SupabaseRest) -> None:
+        self._db = db
+
+    async def insert(self, row: Row) -> Row:
+        [created] = await self._db.insert("ad_videos", row)
+        return created
+
+    async def get(self, video_id: UUID | str, user_id: UUID | None = None) -> Row:
+        filters = {"id": eq(video_id)}
+        if user_id:
+            filters["user_id"] = eq(user_id)
+        rows = await self._db.select("ad_videos", **filters)
+        if not rows:
+            raise NotFound(f"video {video_id}")
+        return rows[0]
+
+    async def list_for_batch(self, batch_id: UUID | str) -> list[Row]:
+        return await self._db.select("ad_videos", batch_id=eq(batch_id), order="created_at.asc")
+
+    async def update(self, video_id: UUID | str, **values: Any) -> None:
+        await self._db.update("ad_videos", values, id=eq(video_id))
+
+    async def delete(self, video_id: UUID | str, user_id: UUID) -> None:
+        await self._db.delete("ad_videos", id=eq(video_id), user_id=eq(user_id))
+
+
 class AdProofRepo:
     def __init__(self, db: SupabaseRest) -> None:
         self._db = db

@@ -19,6 +19,9 @@ import type {
   Proof,
   Ratio,
   ResultInput,
+  VideoRatio,
+  VideoRow,
+  VideoScript,
 } from "@/lib/ads";
 import type {
   PageBriefPreview,
@@ -32,6 +35,9 @@ import type {
   CoverSpec,
   DriveStatus,
   Format,
+  IntegrationProvider,
+  Integrations,
+  IntegrationStatus,
   Market,
   PackageOutline,
   Problem,
@@ -155,6 +161,12 @@ export const api = {
     }),
   regenerateItem: (productId: string, itemId: string) =>
     call<{ job_id: string }>(`/products/${productId}/items/${itemId}/regenerate`, { method: "POST" }),
+  integrations: () => call<Integrations>("/integrations"),
+  saveIntegration: (provider: IntegrationProvider, values: Record<string, string>) =>
+    call<IntegrationStatus>(`/integrations/${provider}`, { method: "PUT", body: JSON.stringify(values) }),
+  disconnectIntegration: (provider: IntegrationProvider) => call<void>(`/integrations/${provider}`, { method: "DELETE" }),
+  testIntegration: (provider: IntegrationProvider) =>
+    call<{ ok: boolean; detail: string }>(`/integrations/${provider}/test`, { method: "POST" }),
   driveStatus: () => call<DriveStatus>("/storage/drive/status"),
   driveConnect: (locale: "es" | "pt") =>
     call<{ url: string }>("/storage/drive/connect", { method: "POST", body: JSON.stringify({ locale }) }),
@@ -211,6 +223,21 @@ export const api = {
   adsDiscard: (creativeId: string) =>
     call<CreativeRow>(`/ads/creatives/${creativeId}/discard`, { method: "POST" }),
   adsExport: (batchId: string) => call<AdExport>(`/ads/batches/${batchId}/export`, { method: "POST" }),
+  /** Video de motion graphics de un ángulo y avatar del lote (la IA escribe el guion una vez). */
+  adsVideoCreate: (
+    batchId: string,
+    body: { angle: string; avatar: string; ratio: VideoRatio; creative_id?: string },
+  ) =>
+    call<{ video_id: string; job_id: string }>(`/ads/batches/${batchId}/videos`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  adsVideoRender: (videoId: string) =>
+    call<{ video_id: string; job_id: string }>(`/ads/videos/${videoId}/render`, { method: "POST" }),
+  adsVideoScript: (videoId: string, script: VideoScript) =>
+    call<VideoRow>(`/ads/videos/${videoId}/script`, { method: "PUT", body: JSON.stringify(script) }),
+  adsVideoUrl: (videoId: string) => call<{ url: string; thumb_url: string | null }>(`/ads/videos/${videoId}/url`),
+  adsVideoDelete: (videoId: string) => call<void>(`/ads/videos/${videoId}`, { method: "DELETE" }),
   adsDrive: (batchId: string) => call<AdDrive>(`/ads/batches/${batchId}/drive`),
   adsDriveStart: (batchId: string) =>
     call<{ job_id: string }>(`/ads/batches/${batchId}/drive`, { method: "POST" }),
@@ -231,8 +258,21 @@ export const api = {
   pagesDelete: (pageId: string) => call<void>(`/pages/${pageId}`, { method: "DELETE" }),
   hotmartStatus: () =>
     call<{ configured: boolean; synced_at: string | null; last_error: string | null; count: number }>("/hotmart/status"),
-  hotmartSync: (days = 90) =>
-    call<{ sales: number }>("/hotmart/sync", { method: "POST", body: JSON.stringify({ days }) }),
+  /** Los últimos `days` días o un rango de fechas `YYYY-MM-DD` (días completos, el final incluido). */
+  hotmartSync: (range: number | { start: string; end: string } = 90) =>
+    call<{ sales: number }>("/hotmart/sync", {
+      method: "POST",
+      body: JSON.stringify(typeof range === "number" ? { days: range } : range),
+    }),
+  /** Mockups de la portada (libro, tablet, celular, pack): URLs firmadas de PNG transparentes. */
+  productMockups: (productId: string) =>
+    call<{ urls: Record<string, string> }>(`/products/${productId}/mockups`, { method: "POST" }),
+  /** Tipos de cambio a USD (unidades por dólar) por día y el último conocido. */
+  hotmartRates: (days: string[], currencies: string[]) =>
+    call<{ by_day: Record<string, Record<string, number>>; latest: Record<string, number> }>("/hotmart/rates", {
+      method: "POST",
+      body: JSON.stringify({ days, currencies }),
+    }),
   hotmartLink: (hotmartProductId: number, productId: string | null) =>
     call<void>(`/hotmart/products/${hotmartProductId}/link`, {
       method: "PUT",

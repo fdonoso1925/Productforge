@@ -1,18 +1,32 @@
 "use client";
 
 import { RefreshCw } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatMetric } from "@/components/ads/results-panel";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ErrorBox, Loading } from "@/components/wizard/step-nav";
 import { ApiError, api } from "@/lib/api";
-import { byProduct, crossWithAds, currenciesOf, dailySales, type SaleRow, summarize } from "@/lib/hotmart";
+import {
+  adsToUsd,
+  byProduct,
+  crossWithAds,
+  dailySales,
+  inRange,
+  type Rates,
+  ratesNeeded,
+  type SaleRow,
+  saleDay,
+  salesToUsd,
+  summarize,
+} from "@/lib/hotmart";
 import { createClient } from "@/lib/supabase/client";
 
 const SELECT_CLASS = "h-11 w-full min-w-0 rounded-[14px] border border-border bg-card px-3 text-sm font-semibold";
-const PERIODS = ["7", "30", "90", "all"] as const;
+const PERIODS = ["7", "30", "90", "all", "custom"] as const;
 const STALE_MS = 30 * 60 * 1000; // al abrir, si la última lectura es más vieja, se actualiza sola
 
 type Link = { hotmart_product_id: number; product_id: string };
@@ -29,6 +43,8 @@ type Data = {
 };
 
 const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
+const MAX_RANGE_DAYS = 365; // lo mismo que acepta el backend
+const NO_RATES: Rates = { by_day: {}, latest: {} };
 const productName = (p: AppProduct) => p.outline?.main?.title || p.niche;
 
 /** Dashboard de Hotmart: ventas, ingresos, reembolsos y cruce con el gasto en Meta Ads. */
@@ -41,14 +57,20 @@ export function HotmartDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [period, setPeriod] = useState<(typeof PERIODS)[number]>("30");
-  const [currency, setCurrency] = useState("");
+  const [rates, setRates] = useState<Rates | null>(null);
+  // Calendario: rango elegido y el que ya se leyó de Hotmart (el filtro usa solo el leído).
+  const [from, setFrom] = useState(() => daysAgo(29));
+  const [to, setTo] = useState(() => daysAgo(0));
+  const [applied, setApplied] = useState<{ from: string; to: string } | null>(null);
 
   const load = useCallback(async () => {
     const db = createClient();
     const [sales, links, products, batches, creatives, spend] = await Promise.all([
       db
         .from("hotmart_sales")
-        .select("transaction, product_id, product_name, status, order_date, approved_date, price, currency, fee")
+        .select(
+          "transaction, product_id, product_name, status, order_date, approved_date, price, currency, fee, net_usd, payout_rate",
+        )
         .order("order_date", { ascending: false })
         .limit(20000),
       db.from("hotmart_product_links").select("hotmart_product_id, product_id"),
@@ -69,16 +91,18 @@ export function HotmartDashboard() {
     });
   }, []);
 
-  const sync = useCallback(async () => {
+  const sync = useCallback(async (range?: { start: string; end: string }) => {
     setSyncing(true);
     setError(null);
     try {
-      await api.hotmartSync(90);
+      await api.hotmartSync(range ?? 90);
       setStatus(await api.hotmartStatus());
       await load();
+      return true;
     } catch (e) {
       setError(e instanceof ApiError ? e.message : String(e));
       setStatus(await api.hotmartStatus().catch(() => null));
+      return false;
     } finally {
       setSyncing(false);
     }
@@ -104,23 +128,59 @@ export function HotmartDashboard() {
     };
   }, [load, sync]);
 
-  const since = period === "all" ? "" : daysAgo(Number(period) - 1);
+  // Todo se muestra en USD: ventas (y gasto en anuncios) al tipo de cambio del día de cada una.
+  const needed = useMemo(() => (data ? ratesNeeded(data) : null), [data]);
+  const neededKey = needed ? `${needed.currencies.join(",")}|${needed.days.join(",")}` : null;
+  useEffect(() => {
+    if (!needed || needed.currencies.length === 0) return; // todo en USD: no hace falta nada
+    let alive = true;
+    api
+      .hotmartRates(needed.days, needed.currencies)
+      .then((res) => alive && setRates(res))
+      .catch((e: unknown) => {
+        if (!alive) return;
+        setRates(NO_RATES); // sin tipos de cambio: lo que no esté en USD se avisa
+        setError(e instanceof ApiError ? e.message : String(e));
+      });
+    return () => {
+      alive = false;
+    };
+    // `needed` cambia de identidad con cada carga; `neededKey` es su contenido.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [neededKey]);
+
+  // Con el calendario, el filtro es el rango ya leído de Hotmart (no el que se está tecleando).
+  const custom = period === "custom";
+  const since = custom ? (applied?.from ?? "") : period === "all" ? "" : daysAgo(Number(period) - 1);
+  const until = custom ? (applied?.to ?? "") : "";
+  const rangeDays = from && to ? Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000) + 1 : 0;
+  const rangeError = !from || !to ? "rangeIncomplete" : rangeDays < 1 ? "rangeOrder" : rangeDays > MAX_RANGE_DAYS ? "rangeTooLong" : null;
+  const usable = needed && needed.currencies.length === 0 ? NO_RATES : rates;
   const view = useMemo(() => {
-    if (!data) return null;
-    const currencies = currenciesOf(data.sales);
-    const active = currency && currencies.includes(currency) ? currency : (currencies[0] ?? "");
-    const inPeriod = data.sales.filter(
-      (s) => s.currency === active && (!since || (s.approved_date ?? s.order_date ?? "").slice(0, 10) >= since),
-    );
+    if (!data || !usable) return null;
+    const usd = salesToUsd(data.sales, usable);
+    const ads = adsToUsd(data, usable);
+    const inPeriod = usd.rows.filter((s) => inRange(saleDay(s), since, until));
     return {
-      currencies,
-      active,
+      count: inPeriod.length,
+      unconverted: usd.unconverted,
       summary: summarize(inPeriod),
       series: dailySales(inPeriod),
       products: byProduct(inPeriod),
-      cross: crossWithAds({ ...data, currency: active, since }),
+      cross: crossWithAds({ ...data, sales: usd.rows, batches: ads.batches, spend: ads.spend, currency: "USD", since, until }),
     };
-  }, [data, currency, since]);
+  }, [data, usable, since, until]);
+
+  const applyRange = async () => {
+    if (rangeError) return;
+    if (await sync({ start: from, end: to })) setApplied({ from, to });
+  };
+
+  const pickPeriod = (value: (typeof PERIODS)[number]) => {
+    setPeriod(value);
+    // Al abrir el calendario ya se ve lo guardado en esas fechas; «Aplicar» lo lee de Hotmart.
+    if (value === "custom" && !applied) setApplied({ from, to });
+  };
 
   const linkOf = (hotmartId: number | null) => data?.links.find((l) => l.hotmart_product_id === hotmartId)?.product_id ?? "";
 
@@ -134,7 +194,7 @@ export function HotmartDashboard() {
     }
   };
 
-  const money = (v: number | null) => (v === null ? "—" : `${formatMetric(v, "money")} ${view?.active ?? ""}`);
+  const money = (v: number | null) => (v === null ? "—" : `${formatMetric(v, "money")} USD`);
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-5 py-4 md:py-10">
@@ -162,19 +222,20 @@ export function HotmartDashboard() {
       {status?.last_error && !error && <p className="text-sm text-destructive">{status.last_error}</p>}
       {!status && !error && <Loading text={tc("loading")} />}
       {status && !status.configured && (
-        <p className="rounded-lg border p-4 text-sm text-muted-foreground">{t("notConfigured")}</p>
+        <p className="rounded-lg border p-4 text-sm text-muted-foreground">
+          {t("notConfigured")}{" "}
+          <Link href="/settings" className="text-primary underline underline-offset-2">
+            {t("connectLink")}
+          </Link>
+        </p>
       )}
 
-      {view && status?.configured && view.currencies.length === 0 && !syncing && (
-        <p className="rounded-lg border p-4 text-sm text-muted-foreground">{t("empty")}</p>
-      )}
-
-      {view && view.currencies.length > 0 && (
-        <>
-          <div className="grid gap-3 sm:grid-cols-2">
+      {view && status?.configured && (
+        <section aria-label={t("period")} className="flex flex-col gap-3">
+          <div className="grid gap-3 sm:max-w-sm">
             <div className="flex flex-col gap-1">
               <Label htmlFor="hm-period">{t("period")}</Label>
-              <select id="hm-period" value={period} onChange={(e) => setPeriod(e.target.value as typeof period)} className={SELECT_CLASS}>
+              <select id="hm-period" value={period} onChange={(e) => pickPeriod(e.target.value as typeof period)} className={SELECT_CLASS}>
                 {PERIODS.map((p) => (
                   <option key={p} value={p}>
                     {t(`periods.${p}`)}
@@ -182,17 +243,48 @@ export function HotmartDashboard() {
                 ))}
               </select>
             </div>
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="hm-currency">{t("currency")}</Label>
-              <select id="hm-currency" value={view.active} onChange={(e) => setCurrency(e.target.value)} className={SELECT_CLASS}>
-                {view.currencies.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
+
+          {custom && (
+            <div className="glass flex flex-col gap-3 rounded-[18px] p-4">
+              <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="hm-from">{t("from")}</Label>
+                  <Input id="hm-from" type="date" value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="hm-to">{t("to")}</Label>
+                  <Input id="hm-to" type="date" value={to} min={from || undefined} max={daysAgo(0)} onChange={(e) => setTo(e.target.value)} />
+                </div>
+                <Button onClick={() => void applyRange()} disabled={syncing || rangeError !== null}>
+                  <RefreshCw className={syncing ? "animate-spin" : ""} aria-hidden />
+                  {syncing ? t("syncing") : t("apply")}
+                </Button>
+              </div>
+              <p className={`text-xs ${rangeError && from && to ? "text-destructive" : "text-muted-foreground"}`}>
+                {rangeError && from && to ? t(rangeError, { max: MAX_RANGE_DAYS }) : t("rangeHint", { max: MAX_RANGE_DAYS })}
+              </p>
+            </div>
+          )}
+
+          {view.count === 0 && !syncing && (
+            <p className="rounded-lg border p-4 text-sm text-muted-foreground">
+              {data?.sales.length === 0 && !custom ? t("empty") : t("emptyRange")}
+            </p>
+          )}
+          {view.summary.netEstimated > 0 && (
+            <p className="text-xs text-muted-foreground">{t("netEstimatedWarn", { count: view.summary.netEstimated })}</p>
+          )}
+          {view.unconverted > 0 && (
+            <p className="text-xs text-destructive">{t("unconverted", { count: view.unconverted })}</p>
+          )}
+        </section>
+      )}
+
+      {data && !usable && !error && <Loading text={tc("loading")} />}
+
+      {view && view.count > 0 && (
+        <>
 
           <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {(
@@ -301,7 +393,7 @@ export function HotmartDashboard() {
               </div>
             )}
             {view.cross.excludedBatches > 0 && (
-              <p className="text-xs text-muted-foreground">{t("cross.excluded", { count: view.cross.excludedBatches, currency: view.active })}</p>
+              <p className="text-xs text-muted-foreground">{t("cross.excluded", { count: view.cross.excludedBatches })}</p>
             )}
           </section>
         </>

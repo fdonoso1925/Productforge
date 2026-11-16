@@ -10,7 +10,7 @@ table.cmp td.m { background: {{ c.accent }}; color: {{ c.accent_fg }}; border-ra
 .cta { align-self: flex-start; margin-top: 36px; }
 </style>
 <div class="safe">
-  <div class="h">{{ copy.headline }}</div>
+  <div class="h">{{ copy.headline | hl }}</div>
   <table class="cmp">
     <tr><th>{{ labels.usual }}</th><th class="m">{{ labels.method }}</th></tr>
     {% for i in range(half) %}<tr><td class="u">{{ copy.bullets[i] }}</td><td class="m">{{ copy.bullets[half + i] }}</td></tr>{% endfor %}

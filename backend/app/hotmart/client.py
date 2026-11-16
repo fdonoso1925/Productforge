@@ -22,6 +22,13 @@ MAX_ATTEMPTS = 4
 WINDOW_DAYS = 30
 PAGE_SIZE = 500
 TOKEN_MARGIN = 300  # se renueva 5 min antes de vencer
+# Sin `transaction_status` Hotmart devuelve solo las COMPLETE: se perderían reembolsos, canceladas
+# y pendientes. Se piden todos los estados (verificado contra la API real: separados por coma).
+STATUSES = (
+    "APPROVED,BLOCKED,CANCELLED,CHARGEBACK,COMPLETE,EXPIRED,NO_FUNDS,OVERDUE,PARTIALLY_REFUNDED,"
+    "PRE_ORDER,PRINTED_BILLET,PROCESSING_TRANSACTION,PROTESTED,REFUNDED,STARTED,UNDER_ANALISYS,"
+    "WAITING_PAYMENT"
+)
 
 
 class HotmartError(Exception):
@@ -128,8 +135,11 @@ class HotmartClient:
             return response.json() if response.content else {}
         raise HotmartError("Hotmart rechazó el token")  # pragma: no cover
 
-    async def sales_history(self, since: datetime, until: datetime) -> list[dict]:
-        """Todas las ventas entre dos fechas, en ventanas de 30 días y con paginación."""
+    async def _windows(
+        self, path: str, since: datetime, until: datetime, extra: dict | None = None
+    ) -> list[dict]:
+        """Todos los registros de un endpoint entre dos fechas, en ventanas de 30 días y con
+        paginación."""
         items: list[dict] = []
         start = since
         while start < until:
@@ -140,16 +150,26 @@ class HotmartClient:
                     "start_date": millis(start),
                     "end_date": millis(end),
                     "max_results": PAGE_SIZE,
+                    **(extra or {}),
                 }
                 if token:
                     params["page_token"] = token
-                page = await self._get("/sales/history", params)
+                page = await self._get(path, params)
                 items.extend(page.get("items") or [])
                 token = (page.get("page_info") or {}).get("next_page_token")
                 if not token:
                     break
             start = end
         return items
+
+    async def sales_history(self, since: datetime, until: datetime) -> list[dict]:
+        """Todas las ventas entre dos fechas, con todos sus estados."""
+        return await self._windows("/sales/history", since, until, {"transaction_status": STATUSES})
+
+    async def sales_commissions(self, since: datetime, until: datetime) -> list[dict]:
+        """Lo que Hotmart paga a cada parte por cada venta (la del usuario es su facturación neta
+        real) y el tipo de cambio que aplicó. Solo hay comisiones de las ventas pagadas."""
+        return await self._windows("/sales/commissions", since, until)
 
 
 def now_utc() -> datetime:

@@ -32,6 +32,7 @@ from tests.memory import (
     MemoryAdCreatives,
     MemoryAdProofs,
     MemoryAdResults,
+    MemoryAdVideos,
     MemoryImageCache,
     MemoryJobs,
     MemoryProducts,
@@ -71,6 +72,7 @@ class AdsWorld:
         self.batches, self.creatives = MemoryAdBatches(), MemoryAdCreatives()
         self.proofs, self.jobs, self.storage = MemoryAdProofs(), MemoryJobs(), MemoryStorage()
         self.results = MemoryAdResults()
+        self.videos = MemoryAdVideos()
         renderer = AdRenderer(SETTINGS.ad_templates_dir, SETTINGS.templates_dir)
         strategy = AdStrategyService(content)
         self.drive = drive or FakeTarget(connected=False)
@@ -90,6 +92,7 @@ class AdsWorld:
             ad_proofs=self.proofs,
             ad_images=self.images,
             ad_results=self.results,
+            ad_videos=self.videos,
             drive=self.drive,
             meta=meta,
             ads=lambda: AdDeps(
@@ -105,6 +108,7 @@ class AdsWorld:
                 sync_target=self.drive,
                 results=self.results,
                 meta=meta,
+                videos=self.videos,
             ),
         )
         app = create_app()
@@ -195,7 +199,7 @@ def test_the_ad_endpoints_require_a_session() -> None:
 def test_templates_endpoint_lists_templates_and_ratios_with_safe_zones() -> None:
     w = AdsWorld()
     data = w.client.get("/ads/templates").json()
-    assert len(data["templates"]) == 12
+    assert len(data["templates"]) == 15
     assert {t["id"] for t in data["templates"] if t["uses_image"]} == {"photo_headline"}
     assert {r["id"] for r in data["ratios"]} == {"4x5", "9x16", "1x1"}
 

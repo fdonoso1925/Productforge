@@ -628,7 +628,7 @@ def test_templates_offered_to_the_ai_depend_on_images_price_and_proofs() -> None
     )
     deps.images = make_router(Fake("a"))[0]
     full = available_templates(deps, brief(price_text="USD 12"), [PROOF])
-    assert len(full) == 12
+    assert len(full) == 15
     assert "photo_headline" in full and "offer_stack" in full and "testimonial" in full
 
 

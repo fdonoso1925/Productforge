@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ErrorBox } from "@/components/wizard/step-nav";
 import {
   type AdCopy,
+  BULLET_TEMPLATES,
   copyIssues,
   type CreativeRow,
   type ImageCopy,
@@ -73,7 +74,7 @@ export function CreativeEditor({
   );
   const issues = useMemo(() => copyIssues(draft), [draft]);
   const templateId = creative.template_id;
-  const usesBullets = ["checklist", "product_mockup", "before_after", "comparison", "offer_stack"].includes(templateId);
+  const usesBullets = (BULLET_TEMPLATES as readonly string[]).includes(templateId);
   const usesNote = ["note", "testimonial"].includes(templateId);
 
   const setImg = <K extends keyof ImageCopy>(key: K, value: ImageCopy[K]) => setImage((cur) => ({ ...cur, [key]: value }));

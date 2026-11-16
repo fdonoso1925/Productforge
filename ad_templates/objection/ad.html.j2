@@ -1,0 +1,22 @@
+<style>
+.h { font-size: {{ fs.headline }}px; margin-bottom: 34px; }
+/* Las burbujas van dentro de un contenedor con el ancho de la zona segura: sus márgenes las
+   desplazan hacia dentro sin salirse (un ancho fijo + margen se saldría por el borde). */
+.talk { display: block; }
+.doubt { position: relative; padding: 30px 34px; border-radius: 30px 30px 30px 8px; background: #F3F4F6; color: #374151; margin-right: 90px; }
+.answer { position: relative; padding: 30px 34px; border-radius: 30px 30px 8px 30px; background: {{ c.accent }}; color: {{ c.accent_fg }}; margin-top: 26px; margin-left: 90px; }
+.lbl { display: block; font-size: {{ fs.kicker }}px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 10px; opacity: 0.85; }
+.txt { display: block; font-size: {{ fs.item }}px; line-height: 1.2; font-weight: 700; }
+.doubt .txt::before { content: "“"; }
+.doubt .txt::after { content: "”"; }
+.cta { align-self: flex-start; margin-top: 44px; }
+</style>
+<div class="safe">
+  {% if copy.kicker %}<div class="kicker">{{ copy.kicker }}</div>{% endif %}
+  <div class="h">{{ copy.headline | hl }}</div>
+  <div class="talk">
+  {% if copy.bullets | length >= 1 %}<div class="doubt"><span class="lbl">{{ labels.doubt }}</span><span class="txt">{{ copy.bullets[0] }}</span></div>{% endif %}
+  {% if copy.bullets | length >= 2 %}<div class="answer"><span class="lbl">{{ labels.answer }}</span><span class="txt">{{ copy.bullets[1] }}</span></div>{% endif %}
+  </div>
+  {% if copy.cta_text %}<div class="cta">{{ copy.cta_text }}</div>{% endif %}
+</div>

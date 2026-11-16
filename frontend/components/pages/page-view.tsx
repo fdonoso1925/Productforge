@@ -1,14 +1,16 @@
 "use client";
 
 import { Copy, Download, ExternalLink, Monitor, Pencil, RefreshCw, Smartphone, Trash2 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
+import { DetailHero } from "@/components/library/detail-hero";
 import { ConfirmButton } from "@/components/product/confirm-button";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ErrorBox, Loading } from "@/components/wizard/step-nav";
-import { Link, useRouter } from "@/i18n/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { ApiError, api } from "@/lib/api";
 import { isCheckoutUrl, lovableUrl, type PageContent, type PageRow, previewDocument, type SimilarityReport } from "@/lib/pages";
 import { createClient } from "@/lib/supabase/client";
@@ -37,6 +39,9 @@ export function PageView({ pageId }: { pageId: string }) {
   const t = useTranslations("pages.view");
   const ts = useTranslations("pages.similarity");
   const tc = useTranslations("common");
+  const td = useTranslations("detail");
+  const tm = useTranslations("markets");
+  const locale = useLocale();
   const router = useRouter();
   const [page, setPage] = useState<PageRow | null>(null);
   const [working, setWorking] = useState(false);
@@ -129,19 +134,32 @@ export function PageView({ pageId }: { pageId: string }) {
     }, t("saved"));
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 px-5 py-4 md:py-10">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[26px] font-bold">{page.title}</h1>
-          <p className="text-sm text-muted-foreground">
-            {page.reference ? t("modeled") : t("original")}
-            {page.reference?.source_url ? ` · ${new URL(page.reference.source_url).host}` : ""}
-          </p>
-        </div>
-        <Link href="/pages" className="text-sm text-muted-foreground hover:underline">
-          {t("back")}
-        </Link>
-      </header>
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-5 py-4 md:px-10 md:py-10">
+      <DetailHero
+        backHref="/pages"
+        backLabel={td("backPages")}
+        cover={{ seed: page.id, title: page.title, label: tm(page.market) }}
+        chips={
+          <>
+            <Badge variant="secondary">{tm(page.market)}</Badge>
+            <Badge variant="outline">
+              {page.reference ? t("modeled") : t("original")}
+              {page.reference?.source_url ? ` · ${new URL(page.reference.source_url).host}` : ""}
+            </Badge>
+          </>
+        }
+        title={page.title}
+        description={page.brief.promise}
+        stats={[
+          { value: String(page.brief.deliverables.length), label: td("deliverables") },
+          { value: page.template_id, label: td("template") },
+          {
+            value: new Intl.DateTimeFormat(locale === "pt" ? "pt-BR" : "es", { dateStyle: "medium" }).format(new Date(page.updated_at)),
+            label: td("updated"),
+          },
+        ]}
+        includes={{ title: td("includesPage"), items: page.brief.deliverables.map((d) => d.title).slice(0, 8) }}
+      />
 
       {error && <ErrorBox message={error} />}
       {notice && (

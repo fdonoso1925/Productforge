@@ -1,3 +1,5 @@
+import asyncio
+import logging
 from typing import Annotated
 from uuid import UUID
 
@@ -9,12 +11,24 @@ from app.content import rules
 from app.content.schemas import Format, Market, PackageOutline, PackageRequest
 from app.db.supabase import NotFound
 from app.deps import ServicesDep
-from app.generators.cover import CoverSpec, image_exists, stored_spec
+from app.generators.base import RenderContext
+from app.generators.cover import (
+    CoverSpec,
+    art_for_piece,
+    image_exists,
+    image_path,
+    stored_spec,
+    veil_for,
+)
+from app.generators.cover_image import data_uri
+from app.generators.epub import cover_png
+from app.generators.mockups import MOCKUP_KINDS, render_mockup
 from app.pipeline.generate import package_request
 from app.pipeline.remodel import apply_formats, plan_remodel
-from app.security import ai_rate_limit
-from app.templates_engine.model import list_templates
+from app.security import ai_rate_limit, work_rate_limit
+from app.templates_engine.model import list_templates, load_template
 
+logger = logging.getLogger("productforge.products")
 router = APIRouter(prefix="/products")
 User = Annotated[CurrentUser, Depends(get_current_user)]
 
@@ -257,6 +271,62 @@ async def duplicate_to_market(
     )
     plan = {"generate": 1, "rerender": 0}
     return RemodelResponse(product_id=child["id"], job_id=job["id"], plan=plan)
+
+
+class MockupsResponse(BaseModel):
+    urls: dict[str, str]  # tipo de mockup → URL firmada del PNG transparente
+
+
+async def main_cover_png(services, product: dict, user_id: UUID) -> bytes:
+    """La portada del producto principal tal como sale en el paquete (arte o imagen propia)."""
+    template = await asyncio.to_thread(
+        load_template, services.settings.templates_dir, product["template_id"]
+    )
+    spec = stored_spec(product)
+    outline = product.get("outline") or {}
+    main = outline.get("main") or {}
+    title = main.get("title") or product.get("title") or outline.get("product_name") or "Producto"
+    promise = main.get("promise") or ""
+    fields: dict = {}
+    if spec.image_id is not None:
+        try:
+            raw = await services.storage.download(image_path(user_id, spec.image_id))
+            fields = {
+                "cover_image": data_uri(raw),
+                "cover_veil": await asyncio.to_thread(veil_for, raw, template),
+            }
+        except Exception:
+            logger.warning("mockups: no se pudo cargar la imagen de portada; se usa el arte")
+    if not fields:
+        _, art = art_for_piece(spec, product, template, "main", 0)
+        fields = {"cover_art": art}
+    ctx = RenderContext(
+        market=product["market"],
+        role="main",
+        slug="mockup",
+        product_name=outline.get("product_name") or title,
+        promise=promise,
+        **fields,
+    )
+    cover = {"title": title, "subtitle": promise[:140]}
+    return await asyncio.to_thread(cover_png, template, ctx, cover, 900)
+
+
+@router.post("/{product_id}/mockups", dependencies=[Depends(work_rate_limit)])
+async def make_mockups(product_id: UUID, user: User, services: ServicesDep) -> MockupsResponse:
+    """Mockups de la portada (libro, tablet, celular y pack) como PNG transparentes para usar en
+    anuncios, redes o la página de ventas. Sin IA: se dibujan con la portada real del producto."""
+    product = await owned_product(services, product_id, user)
+    if not product.get("outline"):
+        raise unprocessable("el producto aún no tiene portada")
+    cover = await main_cover_png(services, product, user.id)
+    urls: dict[str, str] = {}
+    for kind in MOCKUP_KINDS:
+        png = await asyncio.to_thread(render_mockup, kind, cover)
+        path = f"{user.id}/{product_id}/mockups/{kind}.png"
+        await services.storage.upload(path, png, "image/png")
+        urls[kind] = await services.storage.signed_url(path, SIGNED_URL_SECONDS)
+    return MockupsResponse(urls=urls)
 
 
 files_router = APIRouter(prefix="/files")

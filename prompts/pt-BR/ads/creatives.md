@@ -4,7 +4,7 @@ Cada variação tem:
 - template_id: um de `allowed_templates` (varie de template entre as variações quando puder).
 - variant_note: em uma frase, o que esta variação testa em relação às outras.
 - image (texto que vai dentro da imagem):
-  - headline: no máximo $headline_words palavras. É o hook: lê-se em 2 segundos, sem sinais de mais.
+  - headline: no máximo $headline_words palavras. É o hook: lê-se em 2 segundos, sem sinais de mais. Marque entre asteriscos as 1 a 3 palavras que carregam a emoção (no máximo 3 trechos de até 3 palavras), por exemplo «Comida *natural* para o seu cão»: o modelo as coloca sobre um bloco de cor. Só o headline leva asteriscos; nenhum outro campo.
   - subheadline: no máximo $sub_words palavras (pode ficar vazio).
   - kicker: no máximo 4 palavras (etiqueta acima do título; pode ficar vazio).
   - bullets: entre 3 e 5 itens de no máximo 7 palavras, só se o template usar lista (veja abaixo); caso contrário, lista vazia.
@@ -31,6 +31,9 @@ Uso dos campos de `image` conforme o template (os não citados ficam vazios):
 - `notification`: kicker (título da notificação, genérico, sem marcas), headline (a mensagem) e subheadline (uma segunda notificação).
 - `before_after` e `comparison`: headline e exatamente 2 ou 4 bullets; a primeira metade é o antes ou o de sempre e a segunda metade é o depois ou com o método. Sem números nem resultados que não estejam no brief.
 - `offer_stack`: headline, 3 a 5 bullets com o que está incluso (só coisas do brief), price_text exatamente como está e cta_text. Só se houver preço.
+- `how` («como conseguir X sem Y»): headline com a promessa e a objeção que elimina, kicker opcional e 3 ou 4 bullets que são passos curtos e em ordem (o que a pessoa faz de verdade com o produto). Funciona quando a objeção é a dificuldade ou o tempo.
+- `myth` (mito vs. verdade): headline que apresenta a crença, kicker opcional e exatamente 2 bullets: o primeiro é o mito (uma crença comum que trava a compra, dita de forma prudente: «muita gente acha…») e o segundo a verdade que o desmente com o que o produto ensina. Sem estudos nem números.
+- `objection` (objeção respondida): headline que nomeia a objeção n.º 1 do avatar e exatamente 2 bullets: o primeiro é a dúvida típica, como pergunta curta, e o segundo a resposta concreta baseada no brief. Não é um depoimento: não invente quem disse.
 - `testimonial`: proof_id obrigatório; note = citação TEXTUAL (ou um trecho textual) dessa prova; subheadline = o autor da prova exatamente como está (ou vazio); headline = uma frase curta que apresenta a citação.
 
 Iteração: se `iterate_from` existir, é um criativo que já foi testado (com suas métricas, se houver). Mantenha o ângulo e o avatar e proponha hooks NOVOS que testem outro enfoque (outra dor concreta, outro formato de gancho, outro prazo real); não reutilize as frases dele nem mude só algumas palavras. Se teve bom CTR, preserve o que funcionou (clareza, especificidade) e varie o resto.

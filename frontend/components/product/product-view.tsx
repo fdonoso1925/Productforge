@@ -1,7 +1,7 @@
 "use client";
 
 import { Download, FileArchive, Languages, Palette, RefreshCw } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { ErrorBox, Loading } from "@/components/wizard/step-nav";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,9 @@ import { PageOffer } from "./page-offer";
 import { CommercialCard } from "./commercial-card";
 import { ConfirmButton } from "./confirm-button";
 import { DriveStatus } from "./drive-status";
+import { DetailHero } from "@/components/library/detail-hero";
 import { DuplicatePanel, otherMarket } from "./duplicate-panel";
+import { MockupsPanel } from "./mockups-panel";
 import { RemodelPanel } from "./remodel-panel";
 import { VersionsCard } from "./versions-card";
 
@@ -38,6 +40,10 @@ export function ProductView({
   const ta = useTranslations("product.actions");
   const tc = useTranslations("common");
   const tm = useTranslations("markets");
+  const td = useTranslations("detail");
+  const tf = useTranslations("formats");
+  const th = useTranslations("history.status");
+  const locale = useLocale();
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [panel, setPanel] = useState<"remodel" | "duplicate" | null>(null);
@@ -135,8 +141,55 @@ export function ProductView({
     }
   };
 
+  // Cabecera de detalle: portada, qué incluye y las acciones principales (todo lo demás sigue debajo).
+  const pieces = product.outline ? [product.outline.main, ...product.outline.order_bumps, ...product.outline.bonuses] : [];
+  const formats = [...new Set(items.map((i) => tf(`${i.format}.name`)))];
+  const heroTitle = product.title ?? product.niche;
+  const hero = (
+    <DetailHero
+      backHref="/history"
+      backLabel={td("backHistory")}
+      cover={{ seed: product.id, title: heroTitle, label: tf(`${product.main_format}.name`) }}
+      chips={
+        <>
+          <Badge variant="secondary">{tm(product.market)}</Badge>
+          <Badge variant={product.status === "error" ? "destructive" : product.status === "ready" ? "default" : "outline"}>
+            {product.status === "ready" ? td("ready") : th(product.status)}
+          </Badge>
+          <span className="text-xs text-muted-foreground">{product.template_id} · {product.niche}</span>
+        </>
+      }
+      title={heroTitle}
+      description={product.commercial?.short_description ?? product.outline?.main.promise}
+      stats={[
+        { value: String(items.length || pieces.length), label: td("pieces") },
+        ...(formats.length ? [{ value: formats.slice(0, 3).join(" + "), label: td("formats") }] : []),
+        {
+          value: new Intl.DateTimeFormat(locale === "pt" ? "pt-BR" : "es", { dateStyle: "medium" }).format(new Date(product.updated_at)),
+          label: td("updated"),
+        },
+      ]}
+      includes={{ title: td("includes"), items: (pieces.length ? pieces.map((p) => p.title) : items.map((i) => i.title)).slice(0, 8) }}
+      actions={
+        settled ? (
+          <>
+            {zip && <DownloadButton file={zip} label={t("downloadZip")} primary />}
+            <Button variant={panel === "remodel" ? "default" : "outline"} size="lg" onClick={() => setPanel(panel === "remodel" ? null : "remodel")}>
+              <Palette aria-hidden />
+              {ta("remodel")}
+            </Button>
+            <Button variant={panel === "duplicate" ? "default" : "outline"} size="lg" onClick={() => setPanel(panel === "duplicate" ? null : "duplicate")}>
+              <Languages aria-hidden />
+              {ta("duplicate", { market: tm(otherMarket(product.market)) })}
+            </Button>
+          </>
+        ) : undefined
+      }
+    />
+  );
+
   return (
-    <Shell title={product.title ?? product.niche} meta={<ProductMeta product={product} />}>
+    <Shell hero={hero}>
       {running && job && <ProgressPanel job={job} items={items} />}
       {!running && job?.status === "error" && <ErrorBox message={t("failed", { error: job.error ?? "?" })} />}
       {!running && product.status === "error" && job?.status === "done" && (
@@ -150,24 +203,11 @@ export function ProductView({
 
       {settled && (
         <>
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-primary/5 p-4">
-            <span className="font-medium">{t("ready")}</span>
-            {zip && <DownloadButton file={zip} label={t("downloadZip")} primary />}
-          </div>
           <DriveStatus productId={product.id} refreshKey={`${product.status}|${product.updated_at ?? ""}`} />
           {product.status === "ready" && <PageOffer productId={product.id} emphasis={offerPage} />}
           {product.status === "ready" && <AdsOffer productId={product.id} emphasis={offerAds} />}
+          {product.outline && <MockupsPanel productId={product.id} />}
 
-          <div className="flex flex-wrap gap-3">
-            <Button variant={panel === "remodel" ? "default" : "outline"} onClick={() => setPanel(panel === "remodel" ? null : "remodel")}>
-              <Palette aria-hidden />
-              {ta("remodel")}
-            </Button>
-            <Button variant={panel === "duplicate" ? "default" : "outline"} onClick={() => setPanel(panel === "duplicate" ? null : "duplicate")}>
-              <Languages aria-hidden />
-              {ta("duplicate", { market: tm(otherMarket(product.market)) })}
-            </Button>
-          </div>
           {panel === "remodel" && <RemodelPanel product={product} items={items} onClose={() => setPanel(null)} />}
           {panel === "duplicate" && <DuplicatePanel product={product} onClose={() => setPanel(null)} />}
 
@@ -242,28 +282,10 @@ function ResumePanel({
   );
 }
 
-function ProductMeta({ product }: { product: ProductRow }) {
-  const tm = useTranslations("markets");
-  const th = useTranslations("history.status");
+function Shell({ hero, children }: { hero?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-      <Badge variant="secondary">{tm(product.market)}</Badge>
-      <span>{product.template_id}</span>
-      <span>· {product.niche}</span>
-      {product.status !== "ready" && <Badge variant={product.status === "error" ? "destructive" : "secondary"}>{th(product.status)}</Badge>}
-    </div>
-  );
-}
-
-function Shell({ title, meta, children }: { title?: string; meta?: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <main className="mx-auto flex w-full min-w-0 max-w-4xl flex-1 flex-col gap-6 px-5 py-4 md:py-10">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex min-w-0 flex-col gap-2">
-          <h1 className="text-[26px] font-bold">{title}</h1>
-          {meta}
-        </div>
-      </div>
+    <main className="mx-auto flex w-full min-w-0 max-w-6xl flex-1 flex-col gap-6 px-5 py-4 md:px-10 md:py-10">
+      {hero}
       {children}
     </main>
   );

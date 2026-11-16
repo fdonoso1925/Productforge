@@ -1,0 +1,24 @@
+<style>
+.h { font-size: {{ fs.headline }}px; margin-bottom: 34px; }
+.card { display: flex; align-items: flex-start; padding: 30px 32px; border-radius: 28px; margin-top: 22px; }
+.card.myth { background: #F3F4F6; color: #374151; }
+.card.truth { background: {{ c.accent }}; color: {{ c.accent_fg }}; }
+.ic { flex: none; width: 72px; height: 72px; border-radius: 36px; margin-right: 28px; position: relative; }
+.myth .ic { background: {{ danger }}; }
+.truth .ic { background: {{ success }}; }
+.ic.cross i, .ic.cross b { position: absolute; left: 32px; top: 14px; width: 8px; height: 44px; background: #FFFFFF; border-radius: 4px; }
+.ic.cross i { transform: rotate(45deg); }
+.ic.cross b { transform: rotate(-45deg); }
+.ic.check i { position: absolute; left: 26px; top: 10px; width: 14px; height: 32px; border: solid #FFFFFF; border-width: 0 8px 8px 0; transform: rotate(45deg); }
+.lbl { display: block; font-size: {{ fs.kicker }}px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 8px; }
+.txt { display: block; font-size: {{ fs.item }}px; line-height: 1.2; font-weight: 700; }
+.myth .txt { color: #4B5563; }
+.cta { align-self: flex-start; margin-top: 42px; }
+</style>
+<div class="safe">
+  {% if copy.kicker %}<div class="kicker">{{ copy.kicker }}</div>{% endif %}
+  <div class="h">{{ copy.headline | hl }}</div>
+  {% if copy.bullets | length >= 1 %}<div class="card myth"><span class="ic cross"><i></i><b></b></span><span><span class="lbl">{{ labels.myth }}</span><span class="txt">{{ copy.bullets[0] }}</span></span></div>{% endif %}
+  {% if copy.bullets | length >= 2 %}<div class="card truth"><span class="ic check"><i></i></span><span><span class="lbl">{{ labels.truth }}</span><span class="txt">{{ copy.bullets[1] }}</span></span></div>{% endif %}
+  {% if copy.cta_text %}<div class="cta">{{ copy.cta_text }}</div>{% endif %}
+</div>

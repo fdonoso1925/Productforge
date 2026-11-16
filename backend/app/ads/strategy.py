@@ -29,6 +29,8 @@ from app.ads.schemas import (
 )
 from app.content.engines import ContentRejected, ContentService
 from app.content.schemas import Market
+from app.video import rules as video_rules
+from app.video.schemas import VideoScript
 
 PLAN_CONCURRENCY = 3
 # Un anuncio con observaciones de políticas no se entrega: se corrige y se vuelve a revisar hasta
@@ -484,6 +486,49 @@ class AdStrategyService:
             }
         )
         return adapted, result.avatars
+
+    # ── video de motion graphics ──
+
+    async def video_script(
+        self,
+        *,
+        user_id: UUID,
+        brief: AdBrief,
+        avatar: Avatar,
+        angle_id: str,
+        proofs: list[AdProof],
+        hook_from: str = "",
+    ) -> VideoScript:
+        """Guion de un video de 5 escenas para un ángulo y un avatar. Solo se acepta si cumple las
+        reglas del guion y queda en verde en el semáforo de políticas (lo que no, vuelve a la IA
+        como feedback). `hook_from` es el titular de un creativo que ya funcionó, si lo hay."""
+        angle = self.available(brief, proofs).get(angle_id)
+        if angle is None:
+            raise ValueError(f"ángulo no disponible: {angle_id}")
+
+        def check(script: VideoScript) -> list[str]:
+            errors = video_rules.check_script(script, brief)
+            verdict = video_rules.script_policy(script, brief, proofs)
+            errors += [f"Política ({n.rule}): {n.text}" for n in verdict.notes]
+            return errors
+
+        data: dict = {
+            "brief": brief_data(brief),
+            "avatar": avatar.model_dump(),
+            "angle": {"id": angle_id, **angle},
+            "proofs": proofs_data(proofs),
+        }
+        if hook_from.strip():
+            data["winning_hook"] = hook_from
+        return await self._call(
+            user_id=user_id,
+            brief=brief,
+            task=self.content.prompts.render(brief.market, "ads/video"),
+            data=data,
+            schema=VideoScript,
+            check=check,
+            max_tokens=4_000,
+        )
 
     # ── orquestación de un lote ──
 

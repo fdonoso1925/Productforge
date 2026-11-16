@@ -13,11 +13,13 @@ from app.api import (
     ads,
     ads_meta,
     ads_results,
+    ads_video,
     catalog,
     content,
     cover,
     drive,
     hotmart,
+    integrations,
     pages,
     products,
 )
@@ -88,7 +90,9 @@ def create_app() -> FastAPI:
     app.include_router(ads.router)
     app.include_router(ads_results.router)
     app.include_router(ads_meta.router)
+    app.include_router(ads_video.router)
     app.include_router(hotmart.router)
+    app.include_router(integrations.router)
     app.include_router(pages.router)
 
     @app.exception_handler(ContentRejected)

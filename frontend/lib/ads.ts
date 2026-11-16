@@ -114,6 +114,41 @@ export type BatchRow = {
   created_at: string;
 };
 
+/** Guion de un video de motion graphics (5 escenas). */
+export type VideoScript = {
+  hook_tag: string;
+  hook_lines: string[];
+  hook_highlight: number;
+  problem_title: string;
+  problems: string[];
+  solution_title: string;
+  solution_big: string;
+  solution_caption: string;
+  benefits_title: string;
+  benefits: { title: string; detail: string }[];
+  cta_button: string;
+  cta_sub: string;
+};
+
+export type VideoRatio = "9x16" | "4x5";
+
+export type VideoRow = {
+  id: string;
+  batch_id: string;
+  angle: string;
+  avatar: string;
+  ratio: VideoRatio;
+  script: VideoScript | null;
+  policy_status: PolicyStatus | null;
+  status: "planned" | "rendering" | "ready" | "error";
+  error: string | null;
+  filename: string;
+  storage_path: string | null;
+  duration: number | null;
+  meta: { ad_id?: string; video_id?: string; error?: string } | null;
+  created_at: string;
+};
+
 export type AdJobRow = {
   id: string;
   kind: "ad_plan" | "ad_render" | "ad_drive" | "ad_iterate";
@@ -196,9 +231,37 @@ export const LIMITS = {
 /** Plantillas cuyos bullets se muestran como lista y que, por tanto, los necesitan. */
 export const LIST_TEMPLATES = ["checklist", "offer_stack"] as const;
 export const PAIRED_TEMPLATES = ["before_after", "comparison"] as const;
+/** Plantillas por ángulo: cuántos ítems exactos piden (espejo de `EXACT_BULLETS` en rules.py). */
+export const EXACT_BULLETS: Record<string, readonly number[]> = { myth: [2], objection: [2], how: [3, 4] };
+/** Plantillas que muestran los ítems (listas, comparaciones y las de ángulo). */
+export const BULLET_TEMPLATES = [
+  "checklist",
+  "product_mockup",
+  "before_after",
+  "comparison",
+  "offer_stack",
+  "how",
+  "myth",
+  "objection",
+] as const;
+const MARK = /\*([^*\n]+)\*/g;
+
+/** El texto sin los asteriscos con que se marcan las palabras destacadas del titular. */
+export function stripMarks(text: string): string {
+  return text.replaceAll("*", "");
+}
+
+/** ¿Está mal el marcado `*así*` del titular? (espejo de `mark_errors` en marks.py). */
+export function markProblems(text: string): boolean {
+  if (!text.includes("*")) return false;
+  if ((text.match(/\*/g)?.length ?? 0) % 2 === 1 || text.includes("**")) return true;
+  const spans = [...text.matchAll(MARK)].map((m) => m[1]);
+  return spans.length > 3 || spans.some((s) => s.trim().split(/\s+/).length > 3);
+}
 
 export function wordCount(text: string): number {
-  return text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
+  const plain = stripMarks(text).trim();
+  return plain === "" ? 0 : plain.split(/\s+/).length;
 }
 
 export type Issue = { key: string; values?: Record<string, number | string> };
@@ -230,6 +293,23 @@ export function copyIssues(draft: CreativeDraft): Issue[] {
   if ((PAIRED_TEMPLATES as readonly string[]).includes(draft.template_id) && bullets !== 2 && bullets !== 4) {
     out.push({ key: "bulletsPaired", values: { n: bullets } });
   }
+  const exact = EXACT_BULLETS[draft.template_id];
+  if (exact && !exact.includes(bullets)) {
+    out.push({ key: `bulletsExact.${draft.template_id}`, values: { n: bullets } });
+  }
+  if (markProblems(image.headline)) out.push({ key: "marksInvalid" });
+  const others = [
+    image.subheadline,
+    image.kicker,
+    image.cta_text,
+    image.note,
+    ...image.bullets,
+    ad.primary_short,
+    ad.primary_long,
+    ad.headline,
+    ad.description,
+  ];
+  if (others.some((text) => text.includes("*"))) out.push({ key: "marksOnlyHeadline" });
   if (draft.template_id === "note" && image.note.trim() === "") out.push({ key: "noteRequired" });
   // Todos los anuncios llevan foto de fondo: sin escena ni 2–3 palabras clave no hay qué buscar.
   if (draft.scene.trim() === "") out.push({ key: "sceneRequired" });

@@ -3,7 +3,7 @@
 Reglas que este módulo hace cumplir por construcción:
 - **Todo nace en PAUSA.** Campaña, conjunto y anuncio se crean con `status=PAUSED` fijo; no existe
   un parámetro para cambiarlo y nada de la app pide activar. Activar (y por tanto gastar) lo hace
-  el usuario en Ads Manager.
+  el usuario en Ads Manager. Vale igual para los anuncios de imagen y los de video.
 - El token viaja en la cabecera `Authorization`, nunca en la URL ni en los logs.
 - Los errores de Meta se resumen en `MetaError` (código y mensaje de Meta, sin el token).
 """
@@ -27,6 +27,9 @@ RATE_LIMIT_CODES = {4, 17, 32, 613, 80000, 80003, 80004}
 ZERO_DECIMAL = {"CLP", "ISK", "JPY", "KRW", "PYG", "UGX", "VND", "XAF", "XOF"}
 
 OBJECTIVES = {"traffic": "OUTCOME_TRAFFIC", "sales": "OUTCOME_SALES"}
+# Un video recién subido tarda en procesarse: se consulta cada 5 s, hasta unos 4 minutos.
+VIDEO_POLL_SECONDS = 5.0
+VIDEO_POLLS = 48
 
 
 class MetaError(Exception):
@@ -78,6 +81,7 @@ class MetaClient:
         self._base = f"{GRAPH}/{version}"
         self._http = http
         self._currency: str | None = None
+        self.video_poll_seconds = VIDEO_POLL_SECONDS
 
     def configured(self) -> bool:
         return bool(self._token and self.account and self.page_id)
@@ -244,6 +248,62 @@ class MetaClient:
                 "message": message,
                 "name": headline,
                 "description": description,
+                "call_to_action": {"type": cta, "value": {"link": link}},
+            },
+        }
+        if self.instagram_user_id:
+            spec["instagram_user_id"] = self.instagram_user_id
+        result = await self._request(
+            "POST", f"{self.account}/adcreatives", params={"name": name, "object_story_spec": spec}
+        )
+        return str(result["id"])
+
+    async def upload_video(self, filename: str, data: bytes) -> str:
+        """Sube un MP4 a la biblioteca de videos de la cuenta y devuelve su id."""
+        result = await self._request(
+            "POST",
+            f"{self.account}/advideos",
+            params={"name": filename},
+            files={"source": (filename, data, "video/mp4")},
+        )
+        if not result.get("id"):
+            raise MetaError("Meta no devolvió el id del video")
+        return str(result["id"])
+
+    async def wait_video_ready(self, video_id: str) -> None:
+        """Meta procesa el video antes de poder usarlo en un anuncio: se consulta hasta que esté
+        listo (o falle), con un tope de unos minutos."""
+        for _ in range(VIDEO_POLLS):
+            data = await self._request("GET", video_id, params={"fields": "status"})
+            state = ((data.get("status") or {}).get("video_status") or "").lower()
+            if state == "ready":
+                return
+            if state == "error":
+                raise MetaError("Meta no pudo procesar el video")
+            await asyncio.sleep(self.video_poll_seconds)
+        raise MetaError("Meta tardó demasiado en procesar el video")
+
+    async def create_video_creative(
+        self,
+        *,
+        name: str,
+        video_id: str,
+        thumbnail_hash: str,
+        link: str,
+        message: str,
+        headline: str,
+        description: str,
+        cta: str,
+    ) -> str:
+        """Creativo de video: el video, su miniatura (el gancho ya completo) y el texto."""
+        spec: dict[str, Any] = {
+            "page_id": self.page_id,
+            "video_data": {
+                "video_id": video_id,
+                "image_hash": thumbnail_hash,
+                "message": message,
+                "title": headline,
+                "link_description": description,
                 "call_to_action": {"type": cta, "value": {"link": link}},
             },
         }

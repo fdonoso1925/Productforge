@@ -1,0 +1,8 @@
+{
+  "id": "objection",
+  "name": "Objeción respondida",
+  "description": "La duda típica antes de comprar y su respuesta concreta. No es un testimonio.",
+  "uses_image": false,
+  "uses_mockup": false,
+  "scheme": "light"
+}

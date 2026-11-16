@@ -17,7 +17,7 @@ ul.l li { display: flex; align-items: center; margin-top: 18px; font-size: {{ fs
 .cta { align-self: flex-start; margin-top: 40px; }
 </style>
 <div class="safe">
-  <div class="h">{{ copy.headline }}</div>
+  <div class="h">{{ copy.headline | hl }}</div>
   <div class="panel b">
     <div class="lab">{{ labels.before }}</div>
     <ul class="l">{% for item in copy.bullets[:half] %}<li><span class="mk no"><i></i><b></b></span><span>{{ item }}</span></li>{% endfor %}</ul>

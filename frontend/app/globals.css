@@ -9,7 +9,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-sora);
   --color-lavender: var(--lavender);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -84,42 +84,43 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-/* La app siempre usa el tema oscuro (clase `dark` en <html>). Tokens del diseño «Creator App»:
-   fondo #0b0b0d, superficies #18181b/#1f1f23/#26262a, bordes #2a2a2e, acento lima #e4ff5c. */
+/* La app siempre usa el tema oscuro (clase `dark` en <html>). Tokens del diseño «Biblioteca nocturna»:
+   cielo azul noche (#0b1026 → #141842 → #1a1f4b), superficies de vidrio translúcidas, acento dorado
+   #f5c76b (la luna) y lavanda #a7a3ff. Títulos en Sora, texto en Inter. */
 .dark {
   color-scheme: dark; /* controles nativos, barras de scroll y autocompletado en oscuro */
-  --background: #0b0b0d;
-  --foreground: #f2f0ea;
-  --card: #18181b;
-  --card-foreground: #f2f0ea;
-  --popover: #1f1f23;
-  --popover-foreground: #f2f0ea;
-  --primary: #e4ff5c;
-  --primary-foreground: #0b0b0d;
-  --secondary: #26262a;
-  --secondary-foreground: #f2f0ea;
-  --muted: #1f1f23;
-  --muted-foreground: #8f8d85;
-  --accent: #26262a;
-  --accent-foreground: #f2f0ea;
-  --lavender: #cfd9ff;
+  --background: #0b1026;
+  --foreground: #f2f4ff;
+  --card: rgb(255 255 255 / 0.06);
+  --card-foreground: #f2f4ff;
+  --popover: #141842;
+  --popover-foreground: #f2f4ff;
+  --primary: #f5c76b;
+  --primary-foreground: #0b1026;
+  --secondary: rgb(255 255 255 / 0.08);
+  --secondary-foreground: #f2f4ff;
+  --muted: rgb(255 255 255 / 0.05);
+  --muted-foreground: #9aa3c7;
+  --accent: rgb(167 163 255 / 0.16);
+  --accent-foreground: #c9c6ff;
+  --lavender: #a7a3ff;
   --destructive: #ff8a7a;
-  --border: #2a2a2e;
-  --input: #3a3a3f;
-  --ring: #e4ff5c;
-  --chart-1: #e4ff5c;
-  --chart-2: #cfd9ff;
-  --chart-3: #8f8d85;
-  --chart-4: #3a3a3f;
-  --chart-5: #26262a;
-  --sidebar: #131316;
-  --sidebar-foreground: #f2f0ea;
-  --sidebar-primary: #e4ff5c;
-  --sidebar-primary-foreground: #0b0b0d;
-  --sidebar-accent: #26262a;
-  --sidebar-accent-foreground: #f2f0ea;
-  --sidebar-border: #2a2a2e;
-  --sidebar-ring: #e4ff5c;
+  --border: rgb(255 255 255 / 0.1);
+  --input: rgb(255 255 255 / 0.2);
+  --ring: #f5c76b;
+  --chart-1: #f5c76b;
+  --chart-2: #a7a3ff;
+  --chart-3: #9aa3c7;
+  --chart-4: #5b55c9;
+  --chart-5: #2b2f7a;
+  --sidebar: rgb(11 16 38 / 0.72);
+  --sidebar-foreground: #f2f4ff;
+  --sidebar-primary: #f5c76b;
+  --sidebar-primary-foreground: #0b1026;
+  --sidebar-accent: rgb(167 163 255 / 0.16);
+  --sidebar-accent-foreground: #f2f4ff;
+  --sidebar-border: rgb(255 255 255 / 0.1);
+  --sidebar-ring: #f5c76b;
 }
 
 @layer base {
@@ -127,7 +128,29 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
+    /* Cielo nocturno fijo: no se mueve al hacer scroll. */
+    background: linear-gradient(180deg, #0b1026 0%, #141842 60%, #1a1f4b 100%) fixed;
+  }
+  /* Estrellas y resplandor de luna detrás de todo el contenido. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(1px 1px at 20px 30px, rgb(255 255 255 / 0.85), transparent),
+      radial-gradient(1px 1px at 120px 90px, rgb(255 255 255 / 0.5), transparent),
+      radial-gradient(1.5px 1.5px at 200px 150px, rgb(255 255 255 / 0.7), transparent),
+      radial-gradient(1px 1px at 80px 60px, rgb(255 255 255 / 0.4), transparent),
+      radial-gradient(1px 1px at 160px 200px, rgb(255 255 255 / 0.6), transparent),
+      radial-gradient(circle at 100% 0%, rgb(167 163 255 / 0.3) 0%, rgb(245 199 107 / 0.09) 22%, transparent 40%);
+    background-size: 240px 220px, 310px 270px, 370px 330px, 190px 250px, 420px 380px, 100% 100%;
+  }
+  body > * {
+    position: relative;
+    z-index: 1;
   }
   /* La lista desplegable de un <select> nativo no hereda el fondo transparente del control: sin
      esto sale blanca con texto claro y no se lee. */
@@ -139,11 +162,24 @@
   html {
     @apply font-sans;
   }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-heading), var(--font-sans), sans-serif;
+  }
   h1 {
-    letter-spacing: -0.5px;
+    letter-spacing: -0.02em;
   }
   :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
+}
+
+/* Superficie de vidrio del diseño: tarjetas, paneles y menús sobre el cielo nocturno. */
+@utility glass {
+  background: var(--card);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 10px 30px rgb(3 5 20 / 0.35);
 }

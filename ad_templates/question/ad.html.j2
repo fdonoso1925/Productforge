@@ -9,7 +9,7 @@
 <div class="ring r2"></div>
 <div class="safe">
   {% if copy.kicker %}<div class="kicker">{{ copy.kicker }}</div>{% endif %}
-  <div class="h">{{ copy.headline }}</div>
+  <div class="h">{{ copy.headline | hl }}</div>
   {% if copy.subheadline %}<div class="sub">{{ copy.subheadline }}</div>{% endif %}
   {% if copy.cta_text %}<div class="cta">{{ copy.cta_text }}</div>{% endif %}
 </div>

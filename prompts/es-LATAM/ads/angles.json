@@ -14,7 +14,7 @@
     "when": "Cuando el producto tiene un método con nombre o un proceso fácil de explicar.",
     "hook": "El método + el tiempo o el esfuerzo mínimo que exige.",
     "examples": ["El método de 3 cuentas para ordenar tu quincena en 15 minutos", "Un plan de pago en 7 días, paso a paso"],
-    "templates": ["product_mockup", "checklist", "headline_bold"],
+    "templates": ["how", "product_mockup", "checklist", "headline_bold"],
     "needs": null
   },
   "transformacion": {
@@ -41,7 +41,7 @@
     "when": "Cuando hay una objeción dominante (tiempo, dinero, complejidad, «ya probé todo»).",
     "hook": "«Aunque [objeción], [resultado posible]».",
     "examples": ["Aunque tengas poco tiempo, 15 minutos al día alcanzan", "Sin planillas complicadas: una hoja y 3 pasos"],
-    "templates": ["headline_bold", "note", "checklist"],
+    "templates": ["objection", "headline_bold", "note", "checklist"],
     "needs": null
   },
   "curiosidad": {
@@ -59,7 +59,7 @@
     "when": "Cuando hay una creencia equivocada muy extendida en el nicho.",
     "hook": "«Mito: … / Realidad: …».",
     "examples": ["Mito: hay que ganar más para salir de deudas. Realidad: primero ordenar lo que entra", "Mito: ahorrar es para quienes ganan bien"],
-    "templates": ["comparison", "headline_bold", "checklist"],
+    "templates": ["myth", "comparison", "headline_bold", "checklist"],
     "needs": null
   },
   "error": {
@@ -68,7 +68,7 @@
     "when": "Cuando el público suele equivocarse en el mismo punto.",
     "hook": "«El error que frena [resultado]» (sin cifras inventadas).",
     "examples": ["El error que hace que el presupuesto no dure el mes", "3 errores al ordenar tus pedidos por chat"],
-    "templates": ["checklist", "headline_bold", "note"],
+    "templates": ["checklist", "headline_bold", "note", "myth"],
     "needs": null
   },
   "lista": {

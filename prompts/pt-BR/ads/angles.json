@@ -14,7 +14,7 @@
     "when": "Quando o produto tem um método com nome ou um processo fácil de explicar.",
     "hook": "O método + o tempo ou o esforço mínimo que ele exige.",
     "examples": ["O método das 3 contas para organizar seu mês em 15 minutos", "Um plano de pagamento em 7 dias, passo a passo"],
-    "templates": ["product_mockup", "checklist", "headline_bold"],
+    "templates": ["how", "product_mockup", "checklist", "headline_bold"],
     "needs": null
   },
   "transformacion": {
@@ -41,7 +41,7 @@
     "when": "Quando há uma objeção dominante (tempo, dinheiro, complexidade, «já tentei de tudo»).",
     "hook": "«Mesmo que [objeção], [resultado possível]».",
     "examples": ["Mesmo com pouco tempo, 15 minutos por dia bastam", "Sem planilha complicada: uma folha e 3 passos"],
-    "templates": ["headline_bold", "note", "checklist"],
+    "templates": ["objection", "headline_bold", "note", "checklist"],
     "needs": null
   },
   "curiosidad": {
@@ -59,7 +59,7 @@
     "when": "Quando há uma crença errada muito difundida no nicho.",
     "hook": "«Mito: … / Verdade: …».",
     "examples": ["Mito: é preciso ganhar mais para sair das dívidas. Verdade: primeiro organizar o que entra", "Mito: guardar dinheiro é para quem ganha bem"],
-    "templates": ["comparison", "headline_bold", "checklist"],
+    "templates": ["myth", "comparison", "headline_bold", "checklist"],
     "needs": null
   },
   "error": {
@@ -68,7 +68,7 @@
     "when": "Quando o público costuma errar sempre no mesmo ponto.",
     "hook": "«O erro que trava [resultado]» (sem números inventados).",
     "examples": ["O erro que faz o orçamento não durar o mês", "3 erros ao organizar seus pedidos pelo chat"],
-    "templates": ["checklist", "headline_bold", "note"],
+    "templates": ["checklist", "headline_bold", "note", "myth"],
     "needs": null
   },
   "lista": {

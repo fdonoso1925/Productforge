@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "@/i18n/navigation";
 import { dateRange, EMPTY_FILTERS, type HistoryFilters, hasFilters, sanitizeSearch } from "@/lib/filters";
+import { Cover } from "@/components/library/cover";
 import { FORMAT_ICONS } from "@/lib/formats";
 import { createClient } from "@/lib/supabase/client";
 import { FORMATS, type HistoryRow } from "@/lib/types";
@@ -151,11 +152,11 @@ export function HistoryView() {
             {t("results", { count: ready.count })}
           </p>
           {ready.rows.length === 0 ? (
-            <div className="flex flex-col items-start gap-3 rounded-[20px] border border-dashed p-6 text-sm text-muted-foreground">
+            <div className="glass flex flex-col items-start gap-3 rounded-[20px] border-dashed p-6 text-sm text-muted-foreground">
               {t("empty")}
               <Link
                 href="/new"
-                className="rounded-full bg-primary px-4 py-2 font-bold text-primary-foreground hover:bg-primary/85"
+                className="rounded-full bg-primary px-4 py-2 font-semibold text-primary-foreground hover:bg-[#ffd98f]"
               >
                 {t("emptyNew")}
               </Link>
@@ -191,8 +192,10 @@ function ProductItem({ row }: { row: HistoryRow }) {
     <li>
       <Link
         href={`/products/${row.id}`}
-        className="flex min-w-0 flex-col gap-2 rounded-[18px] bg-card p-4 transition-colors hover:bg-secondary sm:flex-row sm:items-center sm:justify-between"
+        className="glass flex min-w-0 items-center gap-4 rounded-[18px] p-3 transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:shadow-[0_0_28px_rgb(245_199_107/0.14)]"
       >
+        <Cover seed={row.id} title={row.title ?? row.niche} size="sm" className="w-14 shrink-0 rounded-[10px] p-0 [&>span]:hidden" />
+        <span className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <span className="flex min-w-0 flex-col gap-1">
           <span className="truncate text-[15px] font-semibold">{row.title ?? row.niche}</span>
           <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -216,6 +219,7 @@ function ProductItem({ row }: { row: HistoryRow }) {
           <Badge variant={row.status === "ready" ? "default" : row.status === "error" ? "destructive" : "secondary"}>
             {t(`status.${row.status}`)}
           </Badge>
+        </span>
         </span>
       </Link>
     </li>
@@ -244,7 +248,7 @@ function Select({
 }) {
   return (
     <select
-      className="h-11 w-full min-w-0 rounded-[14px] border border-border bg-background px-3 text-sm font-semibold"
+      className="h-11 w-full min-w-0 rounded-[14px] border border-border bg-card px-3 text-sm font-medium"
       value={value}
       onChange={(e) => onChange(e.target.value)}
     >

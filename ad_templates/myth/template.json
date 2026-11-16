@@ -1,0 +1,8 @@
+{
+  "id": "myth",
+  "name": "Mito vs. verdad",
+  "description": "Una creencia que frena la compra (mito) y la verdad que la desmiente, en dos tarjetas.",
+  "uses_image": false,
+  "uses_mockup": false,
+  "scheme": "light"
+}

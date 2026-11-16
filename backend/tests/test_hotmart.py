@@ -3,7 +3,7 @@
 import asyncio
 import base64
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -13,7 +13,8 @@ import pytest
 from app.config import Settings
 from app.hotmart import client as hm
 from app.hotmart.client import HotmartClient, HotmartError
-from app.hotmart.sync import sale_row
+from app.hotmart.fx import FxRates
+from app.hotmart.sync import HotmartRepo, real_net, sale_row
 from app.security import RedactingFormatter, hotmart_problems
 from tests.test_api_ads import AdsWorld
 from tests.test_pipeline import USER
@@ -218,9 +219,11 @@ class MemoryHotmart:
 
 
 class FakeHotmart:
-    def __init__(self, items=None, error=None) -> None:
+    def __init__(self, items=None, error=None, commissions=None, commissions_error=None) -> None:
         self.items = items if items is not None else [item("HP1"), item("HP2", price=20.0)]
         self.error = error
+        self.commissions = commissions or []
+        self.commissions_error = commissions_error
         self.windows: list[tuple[datetime, datetime]] = []
 
     def configured(self) -> bool:
@@ -231,6 +234,22 @@ class FakeHotmart:
         if self.error:
             raise self.error
         return self.items
+
+    async def sales_commissions(self, since, until):
+        if self.commissions_error:
+            raise self.commissions_error
+        return self.commissions
+
+
+def commission(transaction="HP1", value=17.64, rate=0.169174, source="PRODUCER", currency="USD"):
+    return {
+        "transaction": transaction,
+        "product": {"id": 7},
+        "exchange_rate_currency_payout": rate,
+        "commissions": [
+            {"source": source, "commission": {"value": value, "currency_code": currency}}
+        ],
+    }
 
 
 def hotmart_world(fake: FakeHotmart | None = None, configured=True):
@@ -279,6 +298,179 @@ def test_sync_validates_the_period_and_reports_hotmart_failures() -> None:
     assert w2.client.get("/hotmart/status").json()["last_error"] == "Hotmart respondió HTTP 500"
     # y el candado se libera: se puede reintentar
     assert w2.client.post("/hotmart/sync").status_code == 502
+
+
+def test_real_net_is_the_users_own_commission_in_usd_with_hotmarts_rate() -> None:
+    assert real_net(commission(), "PRODUCER") == (17.64, 0.169174)
+    # un afiliado cobra su parte, no la del productor
+    both = commission(source="PRODUCER")
+    both["commissions"].append(
+        {"source": "AFFILIATE", "commission": {"value": 5.0, "currency_code": "USD"}}
+    )
+    assert real_net(both, "AFFILIATE")[0] == 5.0
+    assert real_net(both, "PRODUCER")[0] == 17.64
+
+
+def test_real_net_is_unknown_rather_than_guessed() -> None:
+    assert real_net(commission(), None) is None  # sin rol
+    assert real_net(commission(), "AFFILIATE") is None  # ninguna comisión de ese rol
+    assert real_net(commission(currency="BRL"), "PRODUCER") is None  # no es USD
+    two = commission()
+    two["commissions"].append(two["commissions"][0])
+    assert real_net(two, "PRODUCER") is None  # dos del mismo rol: no se sabe cuál es el usuario
+    assert real_net(commission(rate=0), "PRODUCER") == (17.64, None)  # neto sin tipo de cambio
+
+
+def test_sync_stores_the_real_net_only_for_sales_that_have_a_commission() -> None:
+    w = hotmart_world(FakeHotmart(commissions=[commission("HP1", 17.64)]))
+    assert w.client.post("/hotmart/sync").json() == {"sales": 2}
+    first, second = w.repo.sales[(USER, "HP1")], w.repo.sales[(USER, "HP2")]
+    assert first["net_usd"] == 17.64 and first["payout_rate"] == 0.169174
+    assert "net_usd" not in second  # sin comisión: no se inventa ni se pisa un dato anterior
+
+
+def test_a_failing_commissions_read_does_not_break_the_sync() -> None:
+    err = HotmartError("Hotmart respondió HTTP 500", status=500)
+    w = hotmart_world(FakeHotmart(commissions_error=err))
+    assert w.client.post("/hotmart/sync").json() == {"sales": 2}
+    assert all("net_usd" not in r for r in w.repo.sales.values())
+    assert w.client.get("/hotmart/status").json()["last_error"] is None
+
+
+def test_the_repo_batches_sales_with_and_without_net_apart() -> None:
+    calls: list[list[dict]] = []
+
+    class Db:
+        async def upsert(self, table, rows, on_conflict=None):
+            calls.append(rows)
+
+    rows = [
+        {"user_id": "u", "transaction": "A", "net_usd": 1.0},
+        {"user_id": "u", "transaction": "B"},
+        {"user_id": "u", "transaction": "C", "net_usd": 2.0},
+    ]
+    assert run(HotmartRepo(Db()).upsert_sales(rows)) == 3
+    assert sorted(len(c) for c in calls) == [1, 2]
+    assert all(len({frozenset(r) for r in c}) == 1 for c in calls)  # claves iguales por lote
+
+
+def test_commissions_are_read_without_status_filter_and_in_windows() -> None:
+    seen: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "api-sec-vlc.hotmart.com":
+            return httpx.Response(200, json={"access_token": "T", "expires_in": 3600})
+        assert request.url.path.endswith("/sales/commissions") and request.method == "GET"
+        seen.append(dict(request.url.params))
+        return httpx.Response(200, json={"items": [commission()], "page_info": {}})
+
+    out = run(
+        make_client(handler).sales_commissions(
+            datetime(2026, 7, 1, tzinfo=UTC), datetime(2026, 8, 20, tzinfo=UTC)
+        )
+    )
+    assert len(out) == 2 and len(seen) == 2  # 50 días = 30 + 20
+    assert all("transaction_status" not in p for p in seen)
+
+
+def test_sync_reads_a_calendar_range_in_whole_days_end_included() -> None:
+    w = hotmart_world()
+    body = {"start": "2026-01-10", "end": "2026-03-20"}
+    assert w.client.post("/hotmart/sync", json=body).json() == {"sales": 2}
+    since, until = w.fake.windows[0]
+    assert since == datetime(2026, 1, 10, tzinfo=UTC)
+    assert until == datetime(2026, 3, 21, tzinfo=UTC)  # el día final entra completo
+    # «última lectura» es el momento actual, no el fin del rango pedido
+    assert w.repo.sync[USER]["synced_at"] > "2026-03-21"
+
+
+def test_sync_rejects_impossible_ranges() -> None:
+    w = hotmart_world()
+
+    def code(start: str, end: str | None = None) -> int:
+        return w.client.post("/hotmart/sync", json={"start": start, "end": end}).status_code
+
+    assert code("2026-03-20", "2026-01-10") == 422  # fin antes del inicio
+    assert code("2999-01-01", "2999-02-01") == 422  # futuro
+    assert code("2024-01-01", "2026-01-01") == 422  # más de un año
+    assert code("nope") == 422
+    assert w.fake.windows == []  # nada llegó a Hotmart
+
+
+def test_every_status_is_requested_so_refunds_and_cancellations_are_not_lost() -> None:
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "api-sec-vlc.hotmart.com":
+            return httpx.Response(200, json={"access_token": "T", "expires_in": 3600})
+        seen.append(request.url.params["transaction_status"])
+        return httpx.Response(200, json={"items": [], "page_info": {}})
+
+    run(
+        make_client(handler).sales_history(
+            datetime(2026, 9, 1, tzinfo=UTC), datetime(2026, 9, 10, tzinfo=UTC)
+        )
+    )
+    statuses = set(seen[0].split(","))
+    assert {"COMPLETE", "REFUNDED", "CANCELLED", "CHARGEBACK", "EXPIRED"} <= statuses
+
+
+def fx_handler(calls: list[str], *, fail_days=()):
+    def handler(request: httpx.Request) -> httpx.Response:
+        url = str(request.url)
+        calls.append(url)
+        if any(day in url for day in fail_days) or "pages.dev" in url and fail_days:
+            return httpx.Response(404)
+        rate = 5.5 if "latest" in url else 5.0
+        return httpx.Response(
+            200, json={"date": "x", "usd": {"brl": rate, "cop": rate * 700, "eur": 0.9, "bad": 0}}
+        )
+
+    return handler
+
+
+def test_fx_rates_come_per_day_cached_and_skip_usd() -> None:
+    calls: list[str] = []
+    fx = FxRates(httpx.AsyncClient(transport=httpx.MockTransport(fx_handler(calls))))
+    days = [date(2026, 1, 10), date(2026, 1, 10), date(2026, 1, 12)]
+
+    by_day, latest = run(fx.rates(days, ["brl", "COP", "USD"]))
+    assert set(by_day) == {"2026-01-10", "2026-01-12"}
+    assert by_day["2026-01-10"] == {"BRL": 5.0, "COP": 3500.0}  # sin USD ni monedas no pedidas
+    assert latest == {"BRL": 5.5, "COP": 3850.0}
+    n = len(calls)
+    assert n == 3  # un archivo por día distinto + el último
+
+    run(fx.rates(days, ["BRL"]))
+    assert len(calls) == n  # nada se vuelve a pedir
+    assert run(fx.rates(days, ["USD"])) == ({}, {})  # solo dólares: ni siquiera sale a la red
+
+
+def test_a_day_without_data_is_left_out_and_retried_next_time() -> None:
+    calls: list[str] = []
+    fx = FxRates(
+        httpx.AsyncClient(
+            transport=httpx.MockTransport(fx_handler(calls, fail_days=("2026-02-01",)))
+        )
+    )
+    by_day, latest = run(fx.rates([date(2026, 2, 1), date(2026, 1, 1)], ["BRL"]))
+    assert set(by_day) == {"2026-01-01"} and latest == {"BRL": 5.5}
+    before = len(calls)
+    run(fx.rates([date(2026, 2, 1)], ["BRL"]))
+    assert len(calls) > before  # el día que falló se reintenta
+
+
+def test_the_rates_endpoint_validates_input_and_returns_usd_tables() -> None:
+    w = hotmart_world()
+    calls: list[str] = []
+    w.services.fx = FxRates(httpx.AsyncClient(transport=httpx.MockTransport(fx_handler(calls))))
+    body = {"days": ["2026-01-10"], "currencies": ["BRL"]}
+    out = w.client.post("/hotmart/rates", json=body).json()
+    assert out == {"by_day": {"2026-01-10": {"BRL": 5.0}}, "latest": {"BRL": 5.5}}
+    assert w.client.post("/hotmart/rates", json={"currencies": ["BRLX"]}).status_code == 422
+    assert w.client.post("/hotmart/rates", json={"days": ["nope"]}).status_code == 422
+    w.client.headers.pop("Authorization")
+    assert w.client.post("/hotmart/rates", json=body).status_code in (401, 403)
 
 
 def test_the_hotmart_endpoints_require_a_session() -> None:
