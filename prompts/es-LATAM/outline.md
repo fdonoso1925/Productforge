@@ -7,6 +7,8 @@ El paquete tiene:
 
 Formatos disponibles: $formats.
 
+Formatos que el usuario pidió incluir sí o sí (además del principal): $extra_formats. Cada uno debe aparecer en una pieza propia —como order bump, o como bonus si es un formato liviano— con un contenido que de verdad ayude con el problema. Si dice «—», elige tú los formatos.
+
 Hojas imprimibles: si el nicho se presta (actividades o tareas para niños, educación, ejercicio o salud, finanzas con calendarios y presupuestos, cocina y recetas, organización, estudio, hábitos), incluye UNA pieza en formato `printable` —como order bump o como bonus— con las hojas imprimibles que de verdad usaría esa persona. Si el nicho no lo pide, no lo fuerces.
 
 Foto de portada (`cover_photo`, opcional por pieza): si el tema se presta a una imagen concreta y reconocible (cocina y recetas, mascotas, bebés y crianza, ejercicio, plantas y jardín, viajes, manualidades, hogar), pide una foto para la tapa del libro de la portada: `scene` en inglés (lugar, objetos o actividad, sin texto, sin logos ni marcas) y 2 o 3 `keywords` en inglés, sustantivos concretos que den buenos resultados en un banco de fotos. Que muestre el tema de esa pieza, no algo genérico. En nichos sensibles (salud, dinero, deudas, maternidad) sin personas reconocibles: usa objetos, lugares o detalles. Si el tema es abstracto (productividad, finanzas, mentalidad) o una imagen no aporta, deja `cover_photo` en null: la portada se ve bien solo con su diseño.

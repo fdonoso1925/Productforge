@@ -101,6 +101,8 @@ def child_row(parent: Row, **overrides: Any) -> Row:
     }
     if parent.get("reference"):  # la columna solo se toca cuando hay referencia
         row["reference"] = parent["reference"]
+    if parent.get("extra_formats"):  # ídem: solo si el usuario pidió formatos extra
+        row["extra_formats"] = parent["extra_formats"]
     row.update(overrides)
     return row
 
@@ -136,6 +138,8 @@ class ProductRepo:
         }
         if request.reference:  # la columna solo se toca cuando hay referencia
             values["reference"] = request.reference.model_dump(mode="json")
+        if request.extra_formats:
+            values["extra_formats"] = [f.value for f in request.extra_formats]
         [row] = await self._db.insert("products", values)
         return UUID(row["id"])
 

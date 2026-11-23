@@ -68,6 +68,7 @@ TASK_VALUES = {
         "small_max_pages": 15,
         "bonus_formats": "mind_map",
         "formats": "pdf_guide",
+        "extra_formats": "—",
     },
     "item": {"target_pages": 8, "format_guide": "guia"},
     "commercial": {"currency": "BRL"},

@@ -137,9 +137,26 @@ ol.steps li::before { content: counter(step); position: absolute; left: 0; top: 
 .cover-ed { text-align: center; }
 .ed-glow { position: absolute; left: 0; top: 0; width: 210mm; height: 297mm; z-index: 0; }
 .ed-figure { position: absolute; left: 0; top: 96mm; width: 210mm; height: 158mm; overflow: hidden; z-index: 1; height: 166mm; }
-.ed-figure img { width: 210mm; height: 166mm; object-fit: cover; }
+.ed-figure img { width: 100%; height: 100%; object-fit: cover; }
 .ed-ring { position: absolute; left: 60mm; top: 38mm; width: 90mm; height: 90mm; border-radius: 45mm; border: 0.6mm solid; opacity: 0.5; }
-.ed-fade { position: absolute; left: -1mm; top: -1mm; width: 212mm; height: 168mm; }
+.ed-fade { position: absolute; left: -1mm; top: -1mm; right: -1mm; bottom: -1mm; }
+/* Noche: marco dorado fino */
+.ed-frame { position: absolute; left: 9mm; top: 9mm; right: 9mm; bottom: 9mm; border: 0.5mm solid; z-index: 3; }
+/* Minimal: todo a la izquierda, foto enmarcada sin fundido, bloque de acento si no hay foto */
+.ed-minimal { text-align: left; }
+.ed-minimal .ed-head { left: 22mm; right: 22mm; top: 26mm; }
+.ed-minimal .ed-figure { left: 22mm; width: 166mm; top: 128mm; height: 112mm; }
+.ed-minimal .ed-block { position: absolute; left: 0; top: 0; width: 166mm; height: 112mm; opacity: 0.08; }
+.ed-minimal .ed-block-bar { position: absolute; left: 0; top: 0; width: 4mm; height: 112mm; }
+.ed-minimal .ed-glow { display: none; }
+.ed-minimal .ed-foot { left: 22mm; right: 22mm; bottom: 20mm; }
+.ed-rule { width: 22mm; height: 1.4mm; margin: 7mm 0 0; }
+.ed-sub-plain { font-family: var(--body); font-size: 16pt; line-height: 1.3; margin-top: 6mm; max-width: 150mm; }
+.ed-tag-plain { font-family: var(--heading); font-weight: 700; font-size: 15pt; line-height: 1.3; }
+.ed-bar { display: inline-block; width: 10mm; height: 1mm; margin-right: 4mm; vertical-align: middle; }
+/* Foto completa: la imagen cubre la tapa; sin foto, papel oscuro con emblema */
+.ed-photo.ed-has-img .ed-figure { top: 0; height: 297mm; }
+.ed-photo .ed-head { top: 24mm; }
 .ed-head { position: absolute; left: 16mm; right: 16mm; top: 22mm; z-index: 2; }
 .ed-kicker { font-size: 9pt; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; margin-bottom: 4mm; }
 .ed-title { font-family: var(--heading); font-weight: {{ t.fonts.heading.weights[-1] }}; text-transform: uppercase;

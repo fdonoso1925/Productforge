@@ -19,7 +19,9 @@ from app.generators.base import RenderContext
 from app.generators.cover import (
     art_for_piece,
     editorial_colors,
+    editorial_variant,
     image_path,
+    is_editorial,
     stored_spec,
     veil_for,
 )
@@ -36,14 +38,14 @@ logger = logging.getLogger("productforge.cover")
 def book_spine(templates_dir: Path, product: dict) -> Spine | None:
     """Con la portada editorial, el libro del mockup muestra su lomo con el título (el más corto
     entre el nombre del paquete y el de la pieza principal, para que quepa)."""
-    if stored_spec(product).design != "editorial":
-        return None
     template = load_template(templates_dir, product["template_id"])
+    if not is_editorial(template, stored_spec(product)):
+        return None
     outline = product.get("outline") or {}
     names = [
         n for n in ((outline.get("main") or {}).get("title"), outline.get("product_name")) if n
     ]
-    colors = editorial_colors(template.palette)
+    colors = editorial_colors(template.palette, editorial_variant(template))
     return Spine(
         title=min(names, key=len) if names else (product.get("title") or ""),
         paper=colors["spine"],

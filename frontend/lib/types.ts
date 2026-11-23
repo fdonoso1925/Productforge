@@ -69,6 +69,9 @@ export type TemplateInfo = {
   palette: Record<string, string>;
   heading_font: string;
   body_font: string;
+  /** Plantilla de «Libro editorial» (tapa de libro impreso) y su diseño. */
+  editorial?: boolean;
+  book?: "classic" | "night" | "minimal" | "photo" | null;
 };
 
 /** Estilos de arte generativo de la portada (los mismos del backend: app/generators/cover_art.py). */

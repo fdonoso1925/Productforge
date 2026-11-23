@@ -82,6 +82,15 @@ def check_package_rules(outline: PackageOutline, request: PackageRequest) -> lis
 
     if len({item.format for item in outline.items()}) < 3:
         errors.append("El paquete debe usar al menos 3 formatos distintos.")
+
+    included = {item.format for item in [*outline.order_bumps, *outline.bonuses]}
+    for fmt in request.extra_formats:
+        if fmt not in included:
+            where = "como order_bump o bonus" if fmt in BONUS_FORMATS else "como order_bump"
+            errors.append(
+                f"El usuario pidió incluir el formato '{fmt.value}': agrégalo {where} "
+                "(en una pieza que de verdad aporte al problema)."
+            )
     return errors
 
 

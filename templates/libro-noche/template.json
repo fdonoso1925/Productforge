@@ -1,0 +1,8 @@
+{
+  "id": "libro-noche",
+  "name": "Libro editorial · Noche",
+  "description": "Tapa oscura con marco y detalles dorados: elegante, para temas de mentalidad, finanzas o espiritualidad.",
+  "palette": {"primary": "#151B2E", "secondary": "#2B3352", "accent": "#C9A24A", "background": "#FFFDF8", "surface": "#F3EFE6", "text": "#151B2E", "muted": "#6B6F80", "on_primary": "#FFFDF8", "tip": "#2B3352", "warning": "#9A7420", "exercise": "#2F5233"},
+  "fonts": {"heading": {"family": "Cormorant Garamond", "weights": [700]}, "body": {"family": "Inter", "weights": [400, 700]}},
+  "style": {"cover": "editorial", "book": "night", "callout": "left-bar", "radius": "2px", "heading_case": "none", "paper": "plain", "decoration": "rule"}
+}

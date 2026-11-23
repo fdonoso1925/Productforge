@@ -98,6 +98,7 @@ export type OutlineRequest = {
   problem: Problem;
   market: Market;
   main_format: string;
+  extra_formats?: Format[];
   template_id: string;
   tone?: string | null;
   audience_override?: string | null;

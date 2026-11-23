@@ -145,10 +145,25 @@
       "regenerate": "Propor outros 5"
     },
     "format": {
-      "heading": "Formato do produto principal"
+      "heading": "Formatos do pacote",
+      "hint": "O primeiro que você escolhe é o produto principal. Toque em outros formatos para que o pacote também os inclua com certeza (como order bump ou bônus); se não escolher mais, a IA monta o resto.",
+      "main": "Principal",
+      "included": "Incluído",
+      "makeMain": "Tornar principal",
+      "summary": "Principal: {main}. O pacote também incluirá: {extras}."
     },
     "template": {
-      "heading": "Modelo visual"
+      "heading": "Modelo visual",
+      "groups": {
+        "base": {
+          "title": "Modelos",
+          "hint": "Cores, tipografias e estilo para todo o pacote."
+        },
+        "editorial": {
+          "title": "Livro editorial",
+          "hint": "A capa do guia parece um livro impresso (com a foto do tema e a lombada com o título nos mockups). Escolha o design."
+        }
+      }
     },
     "outline": {
       "heading": "Revise a estrutura do pacote",
@@ -234,7 +249,7 @@
       "templateHint": "Título sobre a cor do modelo e um livro pequeno.",
       "editorial": "Livro editorial",
       "editorialHint": "Como um livro impresso: papel claro, título grande, foto do tema no centro e lombada com o título no mockup.",
-      "artUnused": "No design editorial a capa leva a foto do tema (ou a sua imagem) no centro; se o tema não tiver foto, um emblema discreto. A arte não é usada."
+      "artUnused": "Este modelo é de livro editorial: a capa leva a foto do tema (ou a sua imagem) no centro; se o tema não tiver foto, um emblema discreto. A arte não é usada."
     }
   },
   "product": {

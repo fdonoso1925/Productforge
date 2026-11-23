@@ -18,6 +18,8 @@ export type WizardState = {
   problems: Problem[] | null;
   problem: Problem | null;
   format: Format;
+  // Otros formatos que el paquete debe incluir sí o sí (como order bump o bonus).
+  extraFormats: Format[];
   templateId: string;
   // Página de ventas de referencia (opcional): inspira los problemas y todo el paquete.
   reference: SalesReference | null;
@@ -28,7 +30,7 @@ export type WizardState = {
 };
 
 export function inputsKey(s: WizardState): string {
-  return JSON.stringify([s.market, s.niche, s.problem, s.format, s.templateId, s.reference]);
+  return JSON.stringify([s.market, s.niche, s.problem, s.format, s.extraFormats, s.templateId, s.reference]);
 }
 
 export function Wizard({ niches, defaultMarket }: { niches: Niche[]; defaultMarket: Market }) {
@@ -41,6 +43,7 @@ export function Wizard({ niches, defaultMarket }: { niches: Niche[]; defaultMark
     problems: null,
     problem: null,
     format: "pdf_guide",
+    extraFormats: [],
     templateId: "minimal-clean",
     reference: null,
     cover: { art: "auto", image_id: null, design: "template" },

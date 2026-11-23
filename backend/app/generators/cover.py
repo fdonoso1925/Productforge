@@ -85,26 +85,54 @@ def _contrast(a: str, b: str) -> float:
     return contrast(luminance(hex_rgb(a)), luminance(hex_rgb(b)))
 
 
-def editorial_colors(palette: Palette) -> dict[str, str]:
+DARK_PAPER = "#0E1018"
+LIGHT_INK = "#F7F2EA"
+
+
+def _towards(color: str, target: str, over: str, minimum: float) -> str:
+    """Acerca `color` a `target` hasta llegar al contraste `minimum` sobre `over`."""
+    for _ in range(14):
+        if _contrast(color, over) >= minimum:
+            break
+        color = _mix(color, target, 0.15)
+    return color
+
+
+def editorial_colors(palette: Palette, variant: str = "classic") -> dict[str, str]:
     """Colores de la tapa editorial a partir de la paleta de la plantilla, siempre legibles:
-    tinta (título) con contraste ≥ 7 sobre el papel y dorado (subtítulo, rombos, filetes) ≥ 3."""
-    paper = _mix(PAPER, palette.primary, 0.04)
-    ink = max((palette.primary, palette.text, palette.secondary), key=lambda c: _contrast(c, paper))
-    for _ in range(12):
-        if _contrast(ink, paper) >= 7:
-            break
-        ink = _mix(ink, INK_FALLBACK, 0.35)
-    gold = palette.accent
-    for _ in range(12):
-        if _contrast(gold, paper) >= 3:
-            break
-        gold = _mix(gold, "#000000", 0.15)
+    tinta (título) con contraste ≥ 7 sobre el papel y dorado (subtítulo, rombos, filetes) ≥ 3
+    (≥ 4,5 en los diseños oscuros, donde el dorado también lleva texto).
+    `variant`: classic (papel crema), night y photo (papel oscuro), minimal (papel blanco)."""
+    dark = variant in ("night", "photo")
+    if dark:
+        paper = _mix(DARK_PAPER, palette.primary, 0.35)
+        if _contrast(LIGHT_INK, paper) < 7:
+            paper = _mix(paper, "#000000", 0.5)
+        ink = LIGHT_INK
+        gold = _towards(palette.accent, "#FFFFFF", paper, 4.5)
+    else:
+        paper = "#FFFFFF" if variant == "minimal" else _mix(PAPER, palette.primary, 0.04)
+        ink = max(
+            (palette.primary, palette.text, palette.secondary), key=lambda c: _contrast(c, paper)
+        )
+        ink = _towards(ink, INK_FALLBACK, paper, 7)
+        gold = _towards(palette.accent, "#000000", paper, 3)
     r, g, b = hex_rgb(paper)
     return {
         "paper": paper,
         "fade": f"rgba({r},{g},{b},0)",
+        "shade": f"rgba({r},{g},{b},0.55)",
         "ink": ink,
         "gold": gold,
         "glow": _mix(paper, palette.accent, 0.22),
-        "spine": _mix(paper, "#000000", 0.07),
+        "spine": _mix(paper, "#FFFFFF" if dark else "#000000", 0.07),
     }
+
+
+def is_editorial(template: Template, spec: "CoverSpec") -> bool:
+    """¿La tapa es un libro editorial? (plantilla de libro o la opción vieja del producto)."""
+    return template.style.cover == "editorial" or spec.design == "editorial"
+
+
+def editorial_variant(template: Template) -> str:
+    return template.style.book if template.style.cover == "editorial" else "classic"

@@ -45,6 +45,7 @@ export function StepOutline({ state, update, nav }: StepProps) {
         problem: state.problem,
         market: state.market,
         main_format: state.format,
+        ...(state.extraFormats.length ? { extra_formats: state.extraFormats } : {}),
         template_id: state.templateId,
         cover_art: state.cover.art,
         cover_design: state.cover.design,
@@ -60,7 +61,7 @@ export function StepOutline({ state, update, nav }: StepProps) {
         },
         (e) => setError(toError(e)),
       );
-  }, [current, key, attempt, state.niche, state.problem, state.market, state.format, state.templateId, state.cover, state.reference, update]);
+  }, [current, key, attempt, state.niche, state.problem, state.market, state.format, state.extraFormats, state.templateId, state.cover, state.reference, update]);
 
   const build = () => {
     setError(null);

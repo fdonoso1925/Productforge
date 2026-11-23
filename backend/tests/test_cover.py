@@ -137,7 +137,8 @@ def test_every_template_renders_a_readable_cover_with_art(template) -> None:
     art = render_art(style, "seed", template.palette, template.style.cover)
     cover = {"title": GUIDE.title, "subtitle": GUIDE.subtitle, "promise": GUIDE.promise}
     pdf = render_pdf(template, "guide", cover_ctx(cover_art=art), GUIDE, cover)
-    assert GUIDE.title in first_page_text(pdf)  # el título sigue ahí, como texto real
+    # el título sigue ahí, como texto real (las tapas de libro lo ponen en mayúsculas)
+    assert GUIDE.title.upper() in " ".join(first_page_text(pdf).upper().split())
 
 
 def test_art_changes_the_pdf_and_without_it_nothing_changes() -> None:

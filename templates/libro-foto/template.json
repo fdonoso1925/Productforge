@@ -1,0 +1,8 @@
+{
+  "id": "libro-foto",
+  "name": "Libro editorial · Foto completa",
+  "description": "La foto del tema cubre toda la tapa, con el título encima: impacto visual para nichos con imagen concreta.",
+  "palette": {"primary": "#14161C", "secondary": "#3B2F2A", "accent": "#F2B33D", "background": "#FFFDF8", "surface": "#F5F1EA", "text": "#14161C", "muted": "#6B6660", "on_primary": "#FFFDF8", "tip": "#3B2F2A", "warning": "#B07A10", "exercise": "#2F5233"},
+  "fonts": {"heading": {"family": "Oswald", "weights": [700]}, "body": {"family": "Inter", "weights": [400, 700]}},
+  "style": {"cover": "editorial", "book": "photo", "callout": "boxed", "radius": "4px", "heading_case": "uppercase", "paper": "plain", "decoration": "rule"}
+}

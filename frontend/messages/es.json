@@ -145,10 +145,25 @@
       "regenerate": "Proponer otros 5"
     },
     "format": {
-      "heading": "Formato del producto principal"
+      "heading": "Formatos del paquete",
+      "hint": "El primero que eliges es el producto principal. Toca otros formatos para que el paquete también los incluya sí o sí (como order bump o bonus); si no eliges más, la IA arma el resto.",
+      "main": "Principal",
+      "included": "Incluido",
+      "makeMain": "Hacer principal",
+      "summary": "Principal: {main}. El paquete incluirá además: {extras}."
     },
     "template": {
-      "heading": "Plantilla visual"
+      "heading": "Plantilla visual",
+      "groups": {
+        "base": {
+          "title": "Plantillas",
+          "hint": "Colores, tipografías y estilo para todo el paquete."
+        },
+        "editorial": {
+          "title": "Libro editorial",
+          "hint": "La tapa de la guía se ve como un libro impreso (con la foto del tema y el lomo con el título en los mockups). Elige el diseño."
+        }
+      }
     },
     "outline": {
       "heading": "Revisa la estructura del paquete",
@@ -234,7 +249,7 @@
       "templateHint": "Título sobre el color de la plantilla y un libro pequeño.",
       "editorial": "Libro editorial",
       "editorialHint": "Como un libro impreso: papel claro, título grande, foto del tema al centro y lomo con el título en el mockup.",
-      "artUnused": "En el diseño editorial la tapa lleva la foto del tema (o tu imagen) al centro; si el tema no tiene foto, un emblema sobrio. El arte no se usa."
+      "artUnused": "Esta plantilla es de libro editorial: la tapa lleva la foto del tema (o tu imagen) al centro; si el tema no tiene foto, un emblema sobrio. El arte no se usa."
     }
   },
   "product": {

@@ -1,0 +1,8 @@
+{
+  "id": "libro-clasico",
+  "name": "Libro editorial · Clásico",
+  "description": "Tapa de libro impreso: papel crema, título grande, foto del tema al centro y lomo con el título.",
+  "palette": {"primary": "#1C2333", "secondary": "#7A4B1E", "accent": "#B8862F", "background": "#FFFDF8", "surface": "#F6F0E6", "text": "#1C2333", "muted": "#6B6459", "on_primary": "#FFFDF8", "tip": "#7A4B1E", "warning": "#B8862F", "exercise": "#2F5233"},
+  "fonts": {"heading": {"family": "Oswald", "weights": [700]}, "body": {"family": "Lora", "weights": [400, 700]}},
+  "style": {"cover": "editorial", "book": "classic", "callout": "boxed", "radius": "0px", "heading_case": "uppercase", "paper": "plain", "decoration": "rule"}
+}

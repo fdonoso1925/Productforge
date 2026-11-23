@@ -40,44 +40,64 @@
   </div>
 </div>
 {%- endmacro %}
-{% if design == "editorial" %}
-{# Tapa editorial: un libro impreso de verdad. Papel claro, título grande en tinta oscura,
-   subtítulo dorado entre rombos, foto (imagen propia > foto del tema) o un emblema al centro que se
-   funde con el papel, y la promesa al pie entre filetes. Colores legibles: editorial_colors. #}
-{% set e = editorial_colors(p) %}
+{# Tapa «Libro editorial»: la piden las plantillas de libro (style.cover = editorial, con su
+   diseño en style.book) o, en productos anteriores, cover.design = editorial (diseño clásico).
+   - classic: papel claro, título grande, foto fundida al centro, frase al pie entre filetes.
+   - night: lo mismo en papel oscuro con marco dorado.
+   - minimal: papel blanco, todo alineado a la izquierda, foto enmarcada (sin fundido).
+   - photo: la foto ocupa toda la tapa, con degradado oscuro arriba y abajo para el texto.
+   Imagen propia > foto del tema > emblema. Colores legibles: editorial_colors(paleta, diseño). #}
+{% set book_template = t.style.cover == "editorial" %}
+{% if design == "editorial" or book_template %}
+{% set variant = t.style.book if book_template else "classic" %}
+{% set e = editorial_colors(p, variant) %}
 {% set img = bg or photo %}
 {% set n = cover.title|length %}
 {% set size = "xs" if n > 70 else "s" if n > 40 else "m" if n > 22 else "l" if n > 12 else "xl" %}
-<section class="cover cover-ed" style="background: {{ e.paper }}; color: {{ e.ink }};">
+{% set diamonds = variant != "minimal" %}
+<section class="cover cover-ed ed-{{ variant }}{% if img %} ed-has-img{% endif %}" style="background: {{ e.paper }}; color: {{ e.ink }};">
   {% if not img %}<div class="ed-glow" style="background: radial-gradient(ellipse 60% 45% at 50% 58%, {{ e.glow }} 0%, {{ e.fade }} 100%);"></div>{% endif %}
-  {# Sin foto, un emblema sobrio (el arte generativo, pensado para fondos de color, se ve
-     pesado sobre papel claro). #}
   <div class="ed-figure">
     {% if img %}<img src="{{ img }}" alt="">
-    {# Una sola viñeta radial que funde la foto con el papel (varias capas dejan costuras). #}
+    {# Una sola capa de fundido por diseño (varias capas dejan costuras al rasterizar). #}
+    {% if variant == "photo" %}
+    <div class="ed-fade" style="background: linear-gradient(to bottom, {{ e.paper }} 0%, {{ e.shade }} 30%, {{ e.fade }} 52%, {{ e.shade }} 74%, {{ e.paper }} 100%);"></div>
+    {% elif variant != "minimal" %}
     <div class="ed-fade" style="background: radial-gradient(ellipse 56% 50% at 50% 50%, {{ e.fade }} 50%, {{ e.paper }} 100%);"></div>
+    {% endif %}
+    {% elif variant == "minimal" %}<div class="ed-block" style="background: {{ e.gold }};"></div><div class="ed-block-bar" style="background: {{ e.gold }};"></div>
     {% else %}<div class="ed-ring" style="border-color: {{ e.gold }};"></div><div class="ed-dia ed-dia-big" style="background: {{ e.gold }};"></div>
     {% endif %}
   </div>
+  {% if variant == "night" %}<div class="ed-frame" style="border-color: {{ e.gold }};"></div>{% endif %}
   <div class="ed-head">
     {% if cover.product_name and cover.product_name != cover.title %}<div class="ed-kicker" style="color: {{ e.gold }};">{{ cover.product_name }}</div>{% endif %}
     <div class="ed-title ed-{{ size }}">{{ cover.title }}</div>
+    {% if variant == "minimal" %}<div class="ed-rule" style="background: {{ e.gold }};"></div>{% endif %}
     {% if cover.subtitle %}
+    {% if diamonds %}
     <table class="ed-sub" style="color: {{ e.gold }};"><tr>
       <td class="ed-sub-dia"><span class="ed-dia" style="background: {{ e.gold }};"></span></td>
       <td class="ed-sub-text">{{ cover.subtitle }}</td>
       <td class="ed-sub-dia"><span class="ed-dia" style="background: {{ e.gold }};"></span></td>
     </tr></table>
+    {% else %}
+    <div class="ed-sub-plain" style="color: {{ e.ink }};">{{ cover.subtitle }}</div>
+    {% endif %}
     {% endif %}
   </div>
   <div class="ed-foot">
-    <div class="ed-dia ed-dia-foot" style="background: {{ e.gold }};"></div>
+    {% if diamonds %}<div class="ed-dia ed-dia-foot" style="background: {{ e.gold }};"></div>{% endif %}
     {% if cover.promise %}
+    {% if diamonds %}
     <table class="ed-tag"><tr>
       <td class="ed-line-cell"><div class="ed-line" style="background: {{ e.gold }};"></div></td>
       <td class="ed-tag-text">{{ cover.promise }}</td>
       <td class="ed-line-cell"><div class="ed-line" style="background: {{ e.gold }};"></div></td>
     </tr></table>
+    {% else %}
+    <div class="ed-tag-plain"><span class="ed-bar" style="background: {{ e.gold }};"></span>{{ cover.promise }}</div>
+    {% endif %}
     {% endif %}
   </div>
 </section>

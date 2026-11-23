@@ -5,11 +5,13 @@ verifican en `app.content.rules`, no aquí: así el schema que ve la IA queda si
 el error se le devuelve como feedback concreto.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
-from app.content.schemas.common import Format, Market, Role
+from app.content.schemas.common import BONUS_FORMATS, Format, Market, Role
 from app.content.schemas.formats import PhotoSpec
 from app.content.schemas.reference import SalesReference
+
+MAX_ORDER_BUMPS_FOR_EXTRAS = 3
 
 
 class Problem(BaseModel):
@@ -37,6 +39,23 @@ class PackageRequest(BaseModel):
     audience_override: str | None = Field(default=None, max_length=300)
     # Resumen de una página de ventas que sirve de inspiración (nunca de texto a copiar).
     reference: SalesReference | None = None
+    # Otros formatos que el usuario quiere SÍ o SÍ en el paquete (como order bump o bonus).
+    extra_formats: list[Format] = Field(default_factory=list, max_length=5)
+
+    @field_validator("extra_formats")
+    @classmethod
+    def _extras_fit(cls, value: list[Format], info) -> list[Format]:
+        if len(set(value)) != len(value):
+            raise ValueError("los formatos extra no se pueden repetir")
+        main = info.data.get("main_format")
+        if main is not None and main in value:
+            raise ValueError("el formato principal no puede ir también como extra")
+        # Los formatos pesados solo caben como order bump (3 como máximo).
+        if sum(1 for f in value if f not in BONUS_FORMATS) > MAX_ORDER_BUMPS_FOR_EXTRAS:
+            raise ValueError(
+                "como máximo 3 formatos extra que no sean livianos (solo caben como order bump)"
+            )
+        return value
 
 
 class ItemOutline(BaseModel):

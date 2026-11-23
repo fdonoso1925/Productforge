@@ -21,6 +21,9 @@ class TemplateInfo(BaseModel):
     palette: Palette
     heading_font: str
     body_font: str
+    # Plantilla de «Libro editorial» (tapa de libro impreso, con su diseño: classic, night…).
+    editorial: bool = False
+    book: str | None = None
 
 
 @router.get("/templates")
@@ -33,6 +36,8 @@ def templates(settings: SettingsDep) -> list[TemplateInfo]:
             palette=t.palette,
             heading_font=t.fonts.heading.family,
             body_font=t.fonts.body.family,
+            editorial=t.style.cover == "editorial",
+            book=t.style.book if t.style.cover == "editorial" else None,
         )
         for t in list_templates(settings.templates_dir)
     ]

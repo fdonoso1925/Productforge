@@ -195,7 +195,12 @@ async def remodel(
 
     outline = apply_formats(PackageOutline.model_validate(parent["outline"]), rows, new_formats)
     request = PackageRequest.model_validate(
-        {**package_request(parent).model_dump(), "main_format": outline.main.format}
+        # Al remodelar, el usuario puede cambiar formatos a propósito: los extra no lo atan.
+        {
+            **package_request(parent).model_dump(),
+            "main_format": outline.main.format,
+            "extra_formats": [],
+        }
     )
     if errors := rules.check_package_rules(outline, request):
         raise unprocessable(*errors)

@@ -1,0 +1,8 @@
+{
+  "id": "libro-minimal",
+  "name": "Libro editorial · Minimal",
+  "description": "Tapa blanca y limpia, texto a la izquierda y foto enmarcada: moderna y profesional.",
+  "palette": {"primary": "#111111", "secondary": "#3A3A3A", "accent": "#D7263D", "background": "#FFFFFF", "surface": "#F4F4F4", "text": "#111111", "muted": "#6B6B6B", "on_primary": "#FFFFFF", "tip": "#3A3A3A", "warning": "#D7263D", "exercise": "#1F6E43"},
+  "fonts": {"heading": {"family": "Montserrat", "weights": [800]}, "body": {"family": "Inter", "weights": [400, 700]}},
+  "style": {"cover": "editorial", "book": "minimal", "callout": "left-bar", "radius": "0px", "heading_case": "none", "paper": "plain", "decoration": "block"}
+}

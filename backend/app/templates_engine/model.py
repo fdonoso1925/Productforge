@@ -45,12 +45,14 @@ class Fonts(BaseModel):
 
 
 class Style(BaseModel):
-    cover: Literal["centered", "split", "full-bleed", "band", "notebook"]
+    cover: Literal["centered", "split", "full-bleed", "band", "notebook", "editorial"]
     callout: Literal["boxed", "left-bar", "pill", "sticky"]
     radius: str = Field(pattern=r"^\d+px$")
     heading_case: Literal["none", "uppercase"]
     paper: Literal["plain", "lined", "dark"]
     decoration: Literal["none", "rule", "block", "blob", "dots", "diagonal"]
+    # Diseño de la tapa de libro (solo con cover = editorial): clásico, noche, minimal o foto.
+    book: Literal["classic", "night", "minimal", "photo"] = "classic"
 
 
 class OfficeTheme(BaseModel):
@@ -101,10 +103,10 @@ class Template(BaseModel):
 
         env.globals["visual_svg"] = visual_svg
 
-        def editorial_colors(palette: Palette) -> dict[str, str]:
+        def editorial_colors(palette: Palette, variant: str = "classic") -> dict[str, str]:
             from app.generators.cover import editorial_colors as colors
 
-            return colors(palette)
+            return colors(palette, variant)
 
         env.globals["editorial_colors"] = editorial_colors
         return env

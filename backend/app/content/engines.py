@@ -121,6 +121,7 @@ class ContentService:
             small_max_pages=rules.SMALL_MAX_PAGES,
             bonus_formats=", ".join(sorted(f.value for f in BONUS_FORMATS)),
             formats=", ".join(f.value for f in Format),
+            extra_formats=", ".join(f"`{f.value}`" for f in request.extra_formats) or "—",
         )
         return await self._call(
             user_id=user_id,

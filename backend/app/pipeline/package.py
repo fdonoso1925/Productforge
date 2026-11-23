@@ -95,6 +95,7 @@ def package_request(product: dict) -> PackageRequest:
         tone=product.get("tone"),
         audience_override=product.get("audience_override"),
         reference=product.get("reference") or None,
+        extra_formats=product.get("extra_formats") or [],
     )
 
 
