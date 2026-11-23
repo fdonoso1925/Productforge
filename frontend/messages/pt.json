@@ -949,7 +949,18 @@
         "rendering": "Montando…",
         "ready": "Pronto",
         "error": "Erro"
-      }
+      },
+      "look": "Estilo",
+      "looks": {
+        "motion": "Motion graphics",
+        "kinetic": "Lemo · Tipografia cinética",
+        "swiss": "Lemo · Suíço",
+        "neon": "Lemo · Neon noturno",
+        "paper": "Lemo · Papel recortado"
+      },
+      "lemoOff": "Os estilos do Lemo aparecem quando o renderizador do Lemo-Opuscar está instalado no servidor.",
+      "lemoHint": "Mesmo roteiro e mesmas regras, outra estética. O Lemo grava cada quadro com um navegador: leva uns 30 segundos.",
+      "restyle": "Compor em {look}"
     }
   },
   "pages": {

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ErrorBox } from "@/components/wizard/step-nav";
-import type { BatchRow, VideoRatio, VideoRow } from "@/lib/ads";
+import { LEMO_STYLES, lookFromKey, lookKey, type BatchRow, type VideoEngines, type VideoRatio, type VideoRow } from "@/lib/ads";
 import { ApiError, api } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import { PolicyBadge } from "./policy-badge";
@@ -31,6 +31,19 @@ export function VideosPanel({ batch }: { batch: BatchRow }) {
   const pairs = useMemo(() => batch.picks.map((p) => ({ angle: p.angle_id, avatar: p.avatar })), [batch.picks]);
   const [pair, setPair] = useState(0);
   const [ratio, setRatio] = useState<VideoRatio>("9x16");
+  // Estilo: motion graphics (el motor propio) o Lemo-Opuscar con uno de sus estilos, si está instalado.
+  const [engines, setEngines] = useState<VideoEngines | null>(null);
+  const [look, setLook] = useState("motion");
+  useEffect(() => {
+    let alive = true;
+    api.adsVideoEngines().then(
+      (e) => alive && setEngines(e),
+      () => alive && setEngines(null),
+    );
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const load = useCallback(async () => {
     const { data, error: failure } = await createClient()
@@ -96,7 +109,7 @@ export function VideosPanel({ batch }: { batch: BatchRow }) {
   const create = () => {
     const chosen = pairs[pair];
     if (!chosen) return;
-    void act(() => api.adsVideoCreate(batch.id, { ...chosen, ratio }));
+    void act(() => api.adsVideoCreate(batch.id, { ...chosen, ratio, ...lookFromKey(look) }));
   };
 
   return (
@@ -110,7 +123,7 @@ export function VideosPanel({ batch }: { batch: BatchRow }) {
       </div>
 
       {pairs.length > 0 && (
-        <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+        <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto_auto] sm:items-end">
           <div className="flex flex-col gap-1">
             <Label htmlFor="video-pair">{t("angle")}</Label>
             <select id="video-pair" value={pair} onChange={(e) => setPair(Number(e.target.value))} className={SELECT}>
@@ -131,6 +144,18 @@ export function VideosPanel({ batch }: { batch: BatchRow }) {
               ))}
             </select>
           </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="video-look">{t("look")}</Label>
+            <select id="video-look" value={look} onChange={(e) => setLook(e.target.value)} className={SELECT}>
+              <option value="motion">{t("looks.motion")}</option>
+              {engines?.lemo &&
+                LEMO_STYLES.map((s) => (
+                  <option key={s} value={`lemo:${s}`}>
+                    {t(`looks.${s}`)}
+                  </option>
+                ))}
+            </select>
+          </div>
           <ConfirmButton
             label={t("create")}
             confirmLabel={t("confirmCreate")}
@@ -142,6 +167,8 @@ export function VideosPanel({ batch }: { batch: BatchRow }) {
         </div>
       )}
 
+      {engines && !engines.lemo && <p className="text-xs text-muted-foreground">{t("lemoOff")}</p>}
+      {engines?.lemo && look !== "motion" && <p className="text-xs text-muted-foreground">{t("lemoHint")}</p>}
       {error && <ErrorBox message={error} />}
       {working && (
         <p className="flex items-center gap-2 text-sm text-muted-foreground" aria-live="polite">
@@ -159,6 +186,7 @@ export function VideosPanel({ batch }: { batch: BatchRow }) {
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="secondary">{tan(video.angle)}</Badge>
                   <Badge variant="outline">{t(`ratios.${video.ratio}`)}</Badge>
+                  <Badge variant="outline">{t(`looks.${video.engine === "lemo" ? (video.style ?? "kinetic") : "motion"}`)}</Badge>
                   <PolicyBadge status={video.policy_status} />
                   {video.meta?.ad_id && <Badge>{t("inMeta")}</Badge>}
                 </div>
@@ -206,6 +234,16 @@ export function VideosPanel({ batch }: { batch: BatchRow }) {
                       {t("rerender")}
                     </Button>
                   )}
+                  {video.script &&
+                    video.status !== "rendering" &&
+                    video.status !== "planned" &&
+                    lookKey({ engine: video.engine ?? "motion", style: video.style ?? null }) !== look &&
+                    (look === "motion" || engines?.lemo) && (
+                      <Button size="sm" variant="outline" disabled={busy} onClick={() => void act(() => api.adsVideoRender(video.id, lookFromKey(look)))}>
+                        <Clapperboard aria-hidden />
+                        {t("restyle", { look: t(`looks.${look === "motion" ? "motion" : look.split(":")[1]}`) })}
+                      </Button>
+                    )}
                   {!video.meta?.ad_id && video.status !== "rendering" && (
                     <Button
                       size="sm"

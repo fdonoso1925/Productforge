@@ -131,6 +131,23 @@ export type VideoScript = {
 };
 
 export type VideoRatio = "9x16" | "4x5";
+/** Motor del video: el propio de motion graphics o Lemo-Opuscar con uno de sus estilos (mismo
+ * enum que el backend, `app/video/lemo.py`). */
+export type VideoEngine = "motion" | "lemo";
+export const LEMO_STYLES = ["kinetic", "swiss", "neon", "paper"] as const;
+export type LemoStyle = (typeof LEMO_STYLES)[number];
+export type VideoLook = { engine: VideoEngine; style: LemoStyle | null };
+export type VideoEngines = { motion: boolean; lemo: boolean; lemo_styles: string[]; lemo_problems: string[] };
+
+/** "motion" | "lemo:neon" ⇄ {engine, style}: así cabe en un único <select>. */
+export function lookKey(look: Pick<VideoLook, "engine" | "style">): string {
+  return look.engine === "lemo" ? `lemo:${look.style ?? "kinetic"}` : "motion";
+}
+export function lookFromKey(key: string): VideoLook {
+  const [engine, style] = key.split(":");
+  if (engine === "lemo" && (LEMO_STYLES as readonly string[]).includes(style)) return { engine: "lemo", style: style as LemoStyle };
+  return { engine: "motion", style: null };
+}
 
 export type VideoRow = {
   id: string;
@@ -138,6 +155,9 @@ export type VideoRow = {
   angle: string;
   avatar: string;
   ratio: VideoRatio;
+  /** Ausentes en videos anteriores a la opción Lemo: se leen como motion graphics. */
+  engine?: VideoEngine;
+  style?: LemoStyle | null;
   script: VideoScript | null;
   policy_status: PolicyStatus | null;
   status: "planned" | "rendering" | "ready" | "error";

@@ -14,7 +14,7 @@ from pathlib import Path
 import imageio_ffmpeg
 from PIL import Image
 
-from app.generators.mockups import cached_mockup
+from app.generators.mockups import Spine, cached_mockup
 from app.templates_engine.model import Template
 from app.video.audio import wav_bytes
 from app.video.engine import (
@@ -52,13 +52,14 @@ def _scenes(
     templates_dir: Path,
     ratio: VideoRatio,
     cover_png: bytes | None,
+    spine: Spine | None = None,
 ):
     pal = palette_from(template)
     fonts = fonts_from(template, templates_dir)
     book = bundle = None
     if cover_png:
-        book = Image.open(io.BytesIO(cached_mockup("book", cover_png))).convert("RGBA")
-        bundle = Image.open(io.BytesIO(cached_mockup("bundle", cover_png))).convert("RGBA")
+        book = Image.open(io.BytesIO(cached_mockup("book", cover_png, spine))).convert("RGBA")
+        bundle = Image.open(io.BytesIO(cached_mockup("bundle", cover_png, spine))).convert("RGBA")
     lay, scenes = build_scenes(
         script,
         product_name=product_name,
@@ -80,10 +81,13 @@ def preview_frames(
     ratio: VideoRatio = "9x16",
     cover_png: bytes | None = None,
     seed: str = "preview",
+    spine: Spine | None = None,
 ) -> list[Image.Image]:
     """Un cuadro por escena con todo ya en pantalla (t = dur − 0,4): para revisar a ojo que no
     haya textos cortados, glifos faltantes ni sombras recortadas antes del render completo."""
-    pal, lay, scenes = _scenes(script, product_name, template, templates_dir, ratio, cover_png)
+    pal, lay, scenes = _scenes(
+        script, product_name, template, templates_dir, ratio, cover_png, spine
+    )
     base, shapes = background(lay, pal, seed)
     out, offset = [], 0.0
     for scene in scenes:
@@ -102,8 +106,11 @@ def render_video(
     ratio: VideoRatio = "9x16",
     cover_png: bytes | None = None,
     seed: str = "video",
+    spine: Spine | None = None,
 ) -> VideoResult:
-    pal, lay, scenes = _scenes(script, product_name, template, templates_dir, ratio, cover_png)
+    pal, lay, scenes = _scenes(
+        script, product_name, template, templates_dir, ratio, cover_png, spine
+    )
     events = timeline(scenes)
     ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
     thumb: Image.Image | None = None

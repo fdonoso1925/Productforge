@@ -91,3 +91,39 @@ def test_the_book_mockup_shows_the_spine() -> None:
     assert with_spine.width > plain.width
     assert render_mockup("bundle", raw.getvalue(), spine)  # el pack también lo dibuja
     assert render_mockup("tablet", raw.getvalue(), spine)  # el resto lo ignora
+
+
+# ───────────────────── anuncios y videos usan la portada real del producto ─────────────────────
+
+
+class FakeProducts:
+    def __init__(self, row: dict) -> None:
+        self.row = row
+
+    async def get(self, product_id, user_id=None) -> dict:
+        return self.row
+
+
+def test_ads_and_videos_use_the_real_product_cover_with_its_spine() -> None:
+    import asyncio
+    from types import SimpleNamespace
+    from uuid import uuid4
+
+    from app.ads.jobs import batch_cover
+    from app.templates_engine.model import load_template
+
+    template = load_template(SETTINGS.templates_dir, "editorial-premium")
+    row = {**product("editorial"), "market": "es-LATAM", "niche": "x"}
+    row["outline"]["main"]["promise"] = "Una promesa"
+    deps = SimpleNamespace(
+        products=FakeProducts(row), templates_dir=SETTINGS.templates_dir, storage=None,
+        images=None,
+    )  # fmt: skip
+    batch = {"product_id": str(uuid4()), "user_id": str(uuid4()), "market": "es-LATAM",
+             "brief": {}, "template_id": "editorial-premium"}  # fmt: skip
+    cover = asyncio.run(batch_cover(deps, batch, template))
+    assert cover.png.startswith(b"\x89PNG") and cover.spine is not None
+    assert cover.spine.title == "Desobedece"
+    # La tapa de la plantilla no lleva lomo.
+    deps.products = FakeProducts({**row, "cover": {"art": "auto", "design": "template"}})
+    assert asyncio.run(batch_cover(deps, batch, template)).spine is None

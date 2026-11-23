@@ -62,6 +62,13 @@ class Settings(BaseSettings):
     gemini_image_price_usd: float = 0.034
     gemini_daily_usd_cap: float = 0.0
 
+    # Videos con el motor de Lemo-Opuscar (opcional): carpeta de la librería ya instalada
+    # (`setup.sh deps`: Node 20+, playwright-core y Chromium sin ventana) y ffmpeg 7+. Vacío o
+    # incompleto = la opción no aparece y se usa el motor propio de motion graphics.
+    lemo_opuscar_home: str = ""
+    lemo_ffmpeg: str = ""  # ruta de ffmpeg 7+; vacío = el del PATH
+    lemo_node: str = "node"
+
     # Meta Marketing API (subir anuncios en PAUSA y leer métricas). Token de un usuario del sistema
     # con `ads_management`; solo en el backend. Sin token o sin cuenta publicitaria queda apagado.
     meta_access_token: str = ""

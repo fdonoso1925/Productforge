@@ -413,10 +413,10 @@ def render_mockup(kind: str, cover_png: bytes, spine: Spine | None = None) -> by
 
 
 @lru_cache(maxsize=12)
-def cached_mockup(kind: str, cover_png: bytes) -> bytes:
+def cached_mockup(kind: str, cover_png: bytes, spine: Spine | None = None) -> bytes:
     """Lo mismo que `render_mockup`, recordando los últimos: un lote de anuncios pide el mismo
     mockup (mismo tipo y misma portada) decenas de veces."""
-    return render_mockup(kind, cover_png)
+    return render_mockup(kind, cover_png, spine)
 
 
 def mockup_info(png: bytes) -> tuple[int, int, bool]:

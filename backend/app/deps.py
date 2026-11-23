@@ -98,6 +98,8 @@ class Services:
             meta=self.meta,
             credentials=self.credentials,
             videos=self.ad_videos,
+            settings=self.settings,
+            products=self.products,
         )
 
     def pipeline(self) -> PipelineDeps:

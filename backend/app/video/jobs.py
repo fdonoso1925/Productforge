@@ -10,13 +10,14 @@ import logging
 from uuid import UUID
 
 from app.ads import rules as ad_rules
-from app.ads.jobs import AdDeps, batch_avatars, batch_brief, make_mockup, proofs_from_rows
+from app.ads.jobs import AdDeps, batch_avatars, batch_brief, batch_cover, proofs_from_rows
 from app.ads.marks import strip_marks
 from app.ads.naming import video_path
 from app.ads.schemas import AdBrief, AdCopy, Avatar
 from app.templates_engine.model import load_template
+from app.video import lemo
 from app.video import rules as video_rules
-from app.video.render import render_video
+from app.video.render import VideoRenderError, render_video
 from app.video.schemas import VideoScript
 
 logger = logging.getLogger("productforge.video")
@@ -88,18 +89,36 @@ async def run_ad_video(job: dict, deps: AdDeps) -> None:
             )
         await deps.jobs.update(job["id"], progress={"stage": "render"})
         template = await asyncio.to_thread(load_template, deps.templates_dir, batch["template_id"])
-        cover = await asyncio.to_thread(make_mockup, template, batch, brief)
+        cover = await batch_cover(deps, batch, template)
         async with _render_lock:
-            result = await asyncio.to_thread(
-                render_video,
-                script,
-                product_name=brief.product_name,
-                template=template,
-                templates_dir=deps.templates_dir,
-                ratio=video["ratio"],
-                cover_png=cover,
-                seed=str(video["id"]),
-            )
+            if video.get("engine") == "lemo":
+                setup, problems = lemo.resolve_setup(deps.settings)
+                if setup is None:
+                    raise VideoRenderError("Lemo no está disponible: " + "; ".join(problems))
+                result = await asyncio.to_thread(
+                    lemo.render_lemo,
+                    script,
+                    setup=setup,
+                    style=video.get("style") or "kinetic",
+                    product_name=brief.product_name,
+                    template=template,
+                    templates_dir=deps.templates_dir,
+                    ratio=video["ratio"],
+                    cover_png=cover.png,
+                    spine=cover.spine,
+                )
+            else:
+                result = await asyncio.to_thread(
+                    render_video,
+                    script,
+                    product_name=brief.product_name,
+                    template=template,
+                    templates_dir=deps.templates_dir,
+                    ratio=video["ratio"],
+                    cover_png=cover.png,
+                    seed=str(video["id"]),
+                    spine=cover.spine,
+                )
         path = video_path(batch["user_id"], batch["id"], video["filename"])
         thumb = path.removesuffix(".mp4") + ".png"
         await deps.storage.upload(path, result.mp4, MP4)

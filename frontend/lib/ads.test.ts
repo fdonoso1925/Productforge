@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   type AnglePick,
   copyIssues,
+  lookFromKey,
+  lookKey,
   type CreativeDraft,
   type CreativeRow,
   creativeCount,
@@ -315,5 +317,15 @@ describe("dashboard de campañas", () => {
       { day: "2026-10-01", spend: 15, revenue: 30 },
       { day: "2026-10-02", spend: 40, revenue: 120 },
     ]);
+  });
+});
+
+describe("estilo del video (motor + estilo de Lemo)", () => {
+  it("va y vuelve del valor del selector", () => {
+    expect(lookKey({ engine: "motion", style: null })).toBe("motion");
+    expect(lookKey({ engine: "lemo", style: "neon" })).toBe("lemo:neon");
+    expect(lookFromKey("lemo:paper")).toEqual({ engine: "lemo", style: "paper" });
+    expect(lookFromKey("motion")).toEqual({ engine: "motion", style: null });
+    expect(lookFromKey("lemo:grafiti")).toEqual({ engine: "motion", style: null });
   });
 });

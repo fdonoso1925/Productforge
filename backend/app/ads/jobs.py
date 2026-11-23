@@ -21,7 +21,8 @@ from app.ads.repo import AdBatchRepo, AdCreativeRepo, AdProofRepo
 from app.ads.schemas import AdBrief, AdProof, Avatar, CreativeDraft, ImageCopy
 from app.ads.strategy import AdStrategyService, PlanStats
 from app.db.supabase import JobRepo
-from app.generators.mockups import cached_mockup
+from app.generators.mockups import Spine, cached_mockup
+from app.pipeline.product_cover import book_spine, product_cover_png
 from app.storage.base import StorageProvider
 from app.templates_engine.model import Template, load_template
 
@@ -49,6 +50,8 @@ class AdDeps:
     meta: Any = None  # MetaClient del entorno; None = sin Meta
     credentials: Any = None  # CredentialStore: lo guardado en Ajustes manda sobre `meta`
     videos: Any = None  # AdVideoRepo: videos de motion graphics del lote
+    products: Any = None  # ProductRepo: la portada real del producto del lote
+    settings: Any = None  # Settings: el motor de Lemo (opcional) lee de aquí su instalación
 
 
 def failure_status(creative: dict) -> str:
@@ -192,7 +195,39 @@ def draft_of(creative: dict) -> CreativeDraft:
 
 
 def make_mockup(template: Template, batch: dict, brief: AdBrief) -> bytes:
+    """Portada simple con la plantilla: solo para lotes sin producto (brief manual)."""
     return product_mockup(template, batch["market"], brief.product_name, brief.promise[:120])
+
+
+@dataclass(frozen=True)
+class BatchCover:
+    png: bytes
+    spine: Spine | None = None  # lomo del libro (tapa «Libro editorial»)
+
+
+async def batch_cover(deps: AdDeps, batch: dict, template: Template) -> BatchCover:
+    """La portada que muestran los anuncios y los videos del lote: la REAL del producto, con el
+    diseño que eligió el usuario (tapa editorial, foto del tema, imagen propia o arte) y el lomo
+    si la tapa es editorial. Un lote sin producto, o si algo falla, usa la portada simple."""
+    product_id = batch.get("product_id")
+    if product_id and deps.products is not None:
+        try:
+            user_id = UUID(batch["user_id"])
+            product = await deps.products.get(UUID(product_id), user_id)
+            if product.get("outline"):
+                png = await product_cover_png(
+                    product,
+                    user_id,
+                    templates_dir=deps.templates_dir,
+                    storage=deps.storage,
+                    images=deps.images,
+                )
+                spine = await asyncio.to_thread(book_spine, deps.templates_dir, product)
+                return BatchCover(png=png, spine=spine)
+        except Exception:
+            logger.warning("no se pudo armar la portada del producto; se usa la simple")
+    png = await asyncio.to_thread(make_mockup, template, batch, batch_brief(batch))
+    return BatchCover(png=png)
 
 
 # Qué mockup de la portada acompaña a cada ángulo: el pack (libro + tablet + celular) para
@@ -220,6 +255,7 @@ def compose_png(
     mockup: bytes | None,
     bg_jpeg: bytes | None = None,
     hires: bool = False,
+    spine: Spine | None = None,
 ) -> bytes:
     """PNG del creativo. Es CPU (WeasyPrint + pdfium): se llama desde un hilo.
 
@@ -228,7 +264,7 @@ def compose_png(
     draft = draft_of(creative)
     image: ImageCopy = draft.image
     if mockup and renderer.templates[creative["template_id"]].uses_mockup:
-        mockup = cached_mockup(mockup_kind(creative), mockup)
+        mockup = cached_mockup(mockup_kind(creative), mockup, spine)
     return renderer.render(
         template_id=creative["template_id"],
         copy=image,
@@ -286,7 +322,7 @@ async def render_creative(
     creative: dict,
     *,
     template: Template,
-    mockup: bytes | None,
+    mockup: BatchCover | None,
 ) -> str:
     """Compone, sube y marca el creativo como renderizado. Devuelve la ruta en Storage.
 
@@ -312,8 +348,9 @@ async def render_creative(
         template=template,
         brief=brief,
         market=batch["market"],
-        mockup=mockup,
+        mockup=mockup.png if mockup else None,
         bg_jpeg=routed.jpeg if routed else None,
+        spine=mockup.spine if mockup else None,
     )
     path = creative_path(deps.renderer, creative, batch["user_id"], batch["id"])
     await deps.storage.upload(path, png, PNG)
@@ -341,11 +378,7 @@ async def run_ad_render(job: dict, deps: AdDeps) -> None:
     everything = await deps.creatives.list_for_batch(batch["id"])
     todo = [c for c in everything if c["status"] in states and (not wanted or c["id"] in wanted)]
     template = await asyncio.to_thread(load_template, deps.templates_dir, batch["template_id"])
-    mockup = (
-        await asyncio.to_thread(make_mockup, template, batch, batch_brief(batch))
-        if needs_mockup(deps, todo)
-        else None
-    )
+    mockup = await batch_cover(deps, batch, template) if needs_mockup(deps, todo) else None
     await deps.batches.update(batch["id"], status="rendering")
     semaphore = asyncio.Semaphore(RENDER_CONCURRENCY)
     done = failed = 0

@@ -1,0 +1,233 @@
+<!doctype html>
+<!-- Película de anuncio para el renderizador de Lemo-Opuscar (contrato de página: window.READY,
+     window.DUR, window.render(t)). Página propia de ProductForge: 4 estilos dibujados en canvas
+     con el guion de data.json. Todo texto del guion se dibuja con fillText (nunca como HTML). -->
+<html>
+<head>
+<meta charset="utf-8">
+<style>html,body{margin:0;padding:0;background:#000;overflow:hidden}canvas{display:block}</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+"use strict";
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+let D = null, IMG = null, S = null;
+window.DUR = 17.5;
+
+// ───────────── utilidades ─────────────
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const prog = (t, s, len) => clamp((t - s) / len);
+const outCubic = k => 1 - Math.pow(1 - k, 3);
+const outExpo = k => (k >= 1 ? 1 : 1 - Math.pow(2, -10 * k));
+const outBack = k => { const c = 1.9; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+const hex = (h, a = 1) => { const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; };
+const mix = (a, b, k) => { const x = parseInt(a.slice(1), 16), y = parseInt(b.slice(1), 16);
+  const c = s => Math.round(((x >> s) & 255) + (((y >> s) & 255) - ((x >> s) & 255)) * k);
+  return "#" + [16, 8, 0].map(s => c(s).toString(16).padStart(2, "0")).join(""); };
+const lum = h => { const n = parseInt(h.slice(1), 16); const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  return 0.2126 * f(n >> 16) + 0.7152 * f((n >> 8) & 255) + 0.0722 * f(n & 255); };
+const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+const readable = (fg, bg) => (contrast(fg, bg) >= 4.5 ? fg : contrast("#FFFFFF", bg) > contrast("#111111", bg) ? "#FFFFFF" : "#111111");
+const rnd = i => { const x = Math.sin(i * 12.9898 + 78.233) * 43758.5453; return x - Math.floor(x); };
+
+function font(kind, size) { return `${kind === "regular" ? 400 : 800} ${Math.round(size)}px ${kind === "heading" ? "PFHeading" : kind === "bold" ? "PFBold" : "PFRegular"}, sans-serif`; }
+function wrap(text, f, maxW) {
+  ctx.font = f; const words = String(text).split(/\s+/).filter(Boolean), lines = []; let cur = "";
+  for (const w of words) { const next = cur ? cur + " " + w : w; if (ctx.measureText(next).width <= maxW || !cur) cur = next; else { lines.push(cur); cur = w; } }
+  if (cur) lines.push(cur); return lines;
+}
+// El tamaño más grande con el que el texto entra en maxW y maxLines.
+function fit(text, kind, maxW, big, small, maxLines) {
+  for (let s = big; s >= small; s -= 2) { const ls = wrap(text, font(kind, s), maxW);
+    if (ls.length <= maxLines && ls.every(l => (ctx.font = font(kind, s), ctx.measureText(l).width <= maxW))) return { size: s, lines: ls }; }
+  const ls = wrap(text, font(kind, small), maxW); return { size: small, lines: ls.slice(0, maxLines) };
+}
+function lines(ls, kind, size, x, y, color, align = "left", lh = 1.08) {
+  ctx.font = font(kind, size); ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = "top";
+  ls.forEach((l, i) => ctx.fillText(l, x, y + i * size * lh)); return ls.length * size * lh;
+}
+function rrect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function up(s) { return S.upper ? String(s).toLocaleUpperCase() : String(s); }
+
+// ───────────── estilos ─────────────
+// Cada estilo: fondo por escena, colores de texto, cómo entra un elemento y cómo se ve una tarjeta.
+function makeStyle(D) {
+  const C = D.colors;
+  const base = {
+    upper: false, glow: null,
+    enter(k, i) { const e = outCubic(k); return { dx: 0, dy: (1 - e) * 60, s: 1, r: 0, a: clamp(k * 1.6) }; },
+    card(x, y, w, h, fill) { ctx.fillStyle = fill; rrect(x, y, w, h, 26); ctx.fill(); },
+  };
+  if (D.style === "kinetic") {
+    // Tipografía cinética: cortes duros entre fondos planos de la marca y palabras que golpean.
+    const fills = [C.accent, C.text, C.accent, C.bg, C.text];
+    return { ...base, upper: true,
+      bg(i) { return fills[i]; },
+      ink(i) { const b = fills[i]; return b === C.accent ? C.onAccent : b === C.text ? C.bg : C.text; },
+      hi(i) { const b = fills[i]; return b === C.accent ? readable(C.text, b) : readable(C.accent, b); },
+      enter(k) { const e = outExpo(k); return { dx: 0, dy: 0, s: 1 + (1 - e) * 0.9, r: (1 - e) * -0.08, a: clamp(k * 3) }; },
+      card(x, y, w, h, fill) { ctx.fillStyle = fill; ctx.fillRect(x, y, w, h); },
+      decor(i, t, T) { // barras diagonales que barren en cada corte
+        ctx.save(); ctx.globalAlpha = 0.14; ctx.fillStyle = this.ink(i);
+        for (let j = 0; j < 4; j++) { const x = ((t * 900 + j * 420) % (D.w + 900)) - 450; ctx.beginPath();
+          ctx.moveTo(x, 0); ctx.lineTo(x + 70, 0); ctx.lineTo(x - 330, D.h); ctx.lineTo(x - 400, D.h); ctx.fill(); }
+        ctx.restore(); },
+    };
+  }
+  if (D.style === "swiss") {
+    // Estilo suizo: papel claro, retícula fina, bloques de color, números grandes y texto a la izquierda.
+    const paper = "#F3F0E9", ink = "#141414", red = contrast(C.accent, paper) >= 3 ? C.accent : mix(C.accent, "#000000", 0.35);
+    return { ...base,
+      bg() { return paper; }, ink() { return ink; }, hi() { return readable(red, paper); },
+      enter(k) { const e = outCubic(k); return { dx: (1 - e) * -120, dy: 0, s: 1, r: 0, a: clamp(k * 2.2) }; },
+      card(x, y, w, h) { ctx.fillStyle = "#FFFFFF"; ctx.fillRect(x, y, w, h); ctx.fillStyle = red; ctx.fillRect(x, y, 14, h); },
+      cardInk() { return ink; },
+      decor(i, t) {
+        ctx.save(); ctx.strokeStyle = "rgba(20,20,20,0.08)"; ctx.lineWidth = 2;
+        for (let x = 70; x < D.w; x += (D.w - 140) / 6) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, D.h); ctx.stroke(); }
+        const k = outCubic(prog(t, 0, 0.6)); ctx.fillStyle = red;
+        const r = D.w * 0.36; ctx.beginPath(); ctx.arc(D.w - 40 + (1 - k) * r, D.h - D.safe.bottom + 90, r * k, 0, Math.PI * 2); ctx.fill();
+        ctx.font = font("heading", 220); ctx.fillStyle = "rgba(20,20,20,0.07)"; ctx.textAlign = "right"; ctx.textBaseline = "top";
+        ctx.fillText(String(i + 1).padStart(2, "0"), D.w - 60, D.safe.top - 190); ctx.restore(); },
+    };
+  }
+  if (D.style === "neon") {
+    // Neón nocturno: fondo oscuro, piso de retícula en perspectiva y textos que se encienden.
+    const night = "#0B0A16", glowA = C.accent, glowB = mix(C.accent, "#FF3DBB", 0.55);
+    return { ...base, glow: glowA,
+      bg() { return night; }, ink() { return "#FFFFFF"; }, hi() { return readable(mix(glowA, "#FFFFFF", 0.35), night); },
+      enter(k, i) { const flick = k < 1 && rnd(Math.floor(k * 14) + i * 7) < 0.35 ? 0.25 : 1; return { dx: 0, dy: 0, s: 1, r: 0, a: clamp(k * 2) * flick }; },
+      card(x, y, w, h) { ctx.save(); ctx.strokeStyle = glowB; ctx.lineWidth = 4; ctx.shadowColor = glowB; ctx.shadowBlur = 24;
+        rrect(x, y, w, h, 22); ctx.stroke(); ctx.restore(); ctx.fillStyle = "rgba(255,255,255,0.04)"; rrect(x, y, w, h, 22); ctx.fill(); },
+      cardInk() { return "#FFFFFF"; },
+      decor(i, t, T) {
+        ctx.save(); const hz = D.h * 0.72; const g = ctx.createLinearGradient(0, hz - 300, 0, hz); g.addColorStop(0, hex(night, 0)); g.addColorStop(1, hex(glowB, 0.18));
+        ctx.fillStyle = g; ctx.fillRect(0, hz - 300, D.w, 300); ctx.strokeStyle = hex(glowA, 0.35); ctx.lineWidth = 2;
+        for (let j = -10; j <= 10; j++) { ctx.beginPath(); ctx.moveTo(D.w / 2 + j * 40, hz); ctx.lineTo(D.w / 2 + j * 260, D.h); ctx.stroke(); }
+        for (let j = 0; j < 9; j++) { const k = ((j + (T * 1.2) % 1) / 9); const y = hz + (D.h - hz) * k * k; ctx.globalAlpha = k; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(D.w, y); ctx.stroke(); }
+        ctx.restore(); },
+    };
+  }
+  // Papel recortado: capas de papel con sombra, tarjetas que caen y se asientan con un leve giro.
+  const paper = mix(C.bg, "#F4EBDD", 0.55), ink = readable(C.text, paper), cardFill = "#FFFDF8", cardInk = "#1F1B2E";
+  return { ...base,
+    bg() { return paper; }, ink() { return ink; }, hi() { return readable(C.accent, paper); },
+    enter(k, i) { const e = outBack(k); return { dx: 0, dy: (1 - e) * -90, s: 1, r: (1 - clamp(k * 1.3)) * (i % 2 ? 0.07 : -0.07), a: clamp(k * 2.5) }; },
+    card(x, y, w, h) { ctx.fillStyle = "rgba(60,40,20,0.22)"; rrect(x + 10, y + 14, w, h, 18); ctx.fill(); ctx.fillStyle = cardFill; rrect(x, y, w, h, 18); ctx.fill(); },
+    cardInk() { return cardInk; },
+    decor(i, t, T) { // recortes de papel en las esquinas, en los colores de la marca
+      const blobs = [[C.accent, -0.12, 0.06, 0.42], [C.primary, 1.05, 0.9, 0.5], [C.secondary, 0.95, 0.02, 0.28]];
+      blobs.forEach(([col, bx, by, br], j) => { const r = D.w * br, x = D.w * bx, y = D.h * by + Math.sin(T * 0.8 + j) * 10;
+        ctx.save(); ctx.fillStyle = "rgba(60,40,20,0.18)"; ctx.beginPath(); ctx.arc(x + 12, y + 16, r, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = hex(col, 0.85); ctx.beginPath(); for (let a = 0; a <= 24; a++) { const ang = (a / 24) * Math.PI * 2, rr = r * (0.94 + rnd(a + j * 31) * 0.08);
+          ctx[a ? "lineTo" : "moveTo"](x + Math.cos(ang) * rr, y + Math.sin(ang) * rr); } ctx.fill(); ctx.restore(); }); },
+  };
+}
+
+// ───────────── escenas ─────────────
+function at(name) { return D.cues[name]; }
+// Dibuja `draw` con la transformación de entrada del elemento i (k = progreso de su entrada).
+function el(k, i, cx, cy, draw) {
+  if (k <= 0) return; const e = S.enter(k, i); ctx.save(); ctx.globalAlpha *= e.a;
+  ctx.translate(cx + e.dx, cy + e.dy); ctx.rotate(e.r); ctx.scale(e.s, e.s); ctx.translate(-cx, -cy);
+  if (S.glow) { ctx.shadowColor = S.glow; ctx.shadowBlur = 28; } draw(); ctx.restore();
+}
+function book(k, x, y, w) {
+  if (!IMG || k <= 0) return; const h = w * IMG.height / IMG.width, e = outBack(clamp(k));
+  ctx.save(); ctx.globalAlpha *= clamp(k * 2); ctx.translate(x, y + (1 - e) * 140); ctx.drawImage(IMG, -w / 2, -h / 2, w, h); ctx.restore();
+}
+function scene(name, i, t, T) {
+  const s = D.script, sf = D.safe, L = sf.side, R = D.w - sf.side, W = R - L, top = sf.top, bot = D.h - sf.bottom;
+  const ink = S.ink(i), hi = S.hi(i), c = at(name), left = D.style === "swiss";
+  const ax = left ? L : D.w / 2, al = left ? "left" : "center";
+  if (name === "hook") {
+    let y = top + 30;
+    el(prog(t, c[0], 0.35), 0, ax, y + 30, () => lines([up(s.hook_tag)], "bold", 44, ax, y, hi, al));
+    y += 120;
+    // Todas las líneas deben caber en la zona segura: se achican juntas hasta que entren.
+    let fits = [];
+    for (let k = 1; k >= 0.4; k -= 0.05) {
+      fits = s.hook_lines.map((ln, j) => fit(up(ln), "heading", W, Math.round((j === s.hook_highlight ? 170 : 130) * k), Math.round(60 * Math.max(k, 0.7)), 2));
+      if (fits.reduce((a, f) => a + f.lines.length * f.size * 1.08 + 34, 0) <= bot - y) break;
+    }
+    s.hook_lines.forEach((ln, j) => { const big = j === s.hook_highlight, f = fits[j];
+      const yy = y; el(prog(t, c[1 + j], big ? 0.45 : 0.35), j + 1, ax, yy + f.size / 2, () => {
+        if (big) { const tw = Math.min(W + 40, Math.max(...f.lines.map(l => (ctx.font = font("heading", f.size), ctx.measureText(l).width))) + 60);
+          const bx = left ? L - 24 : D.w / 2 - tw / 2; ctx.save(); ctx.shadowBlur = 0; ctx.fillStyle = hex(hi, D.style === "neon" ? 0.12 : 0.16); ctx.fillRect(bx, yy - 10, tw, f.lines.length * f.size * 1.08 + 20); ctx.restore(); }
+        lines(f.lines, "heading", f.size, ax, yy, big ? hi : ink, al); });
+      y += f.lines.length * f.size * 1.08 + 34; });
+  } else if (name === "problem") {
+    let y = top + 20; const f = fit(up(s.problem_title), "heading", W, 96, 56, 3);
+    el(prog(t, c[0], 0.4), 0, ax, y + 40, () => lines(f.lines, "heading", f.size, ax, y, ink, al));
+    y += f.lines.length * f.size * 1.08 + 50; const h = Math.min(190, (bot - y - 40) / 3);
+    s.problems.forEach((p, j) => { const yy = y + j * (h + 22), fp = fit(p, "bold", W - 170, 54, 34, 2);
+      el(prog(t, c[1 + j], 0.4), j + 1, D.w / 2, yy + h / 2, () => { S.card(L, yy, W, h, hex(ink, 0.12));
+        const ci = S.cardInk ? S.cardInk() : ink; ctx.save(); ctx.shadowBlur = 0; ctx.strokeStyle = hi; ctx.lineWidth = 10; ctx.lineCap = "round";
+        const cx = L + 70, cy = yy + h / 2; ctx.beginPath(); ctx.moveTo(cx - 22, cy - 22); ctx.lineTo(cx + 22, cy + 22); ctx.moveTo(cx + 22, cy - 22); ctx.lineTo(cx - 22, cy + 22); ctx.stroke(); ctx.restore();
+        const th = fp.lines.length * fp.size * 1.1; lines(fp.lines, "bold", fp.size, L + 135, yy + (h - th) / 2, ci, "left", 1.1); }); });
+  } else if (name === "solution") {
+    let y = top + 20; const ft = fit(up(s.solution_title), "bold", W, 64, 40, 2);
+    el(prog(t, c[0], 0.4), 0, ax, y + 30, () => lines(ft.lines, "bold", ft.size, ax, y, ink, al));
+    y += ft.lines.length * ft.size * 1.1 + 30; const fb = fit(up(s.solution_big), "heading", W, 190, 90, 2);
+    el(prog(t, c[2], 0.45), 2, ax, y + fb.size / 2, () => lines(fb.lines, "heading", fb.size, ax, y, hi, al));
+    y += fb.lines.length * fb.size * 1.06 + 30; const fc = fit(s.solution_caption, "regular", W, 52, 36, 3);
+    el(prog(t, c[3], 0.4), 3, ax, y + 30, () => lines(fc.lines, "regular", fc.size, ax, y, ink, al, 1.2));
+    y += fc.lines.length * fc.size * 1.2 + 20; const room = bot - y;
+    if (room > 160) book(prog(t, c[1], 0.6), left ? R - 200 : D.w / 2, y + room / 2, Math.min(430, room * 0.8));
+  } else if (name === "benefits") {
+    let y = top + 20; const f = fit(up(s.benefits_title), "heading", W, 96, 56, 2);
+    el(prog(t, c[0], 0.4), 0, ax, y + 40, () => lines(f.lines, "heading", f.size, ax, y, ink, al));
+    y += f.lines.length * f.size * 1.08 + 46; const h = Math.min(210, (bot - y - 40) / 3);
+    s.benefits.forEach((b, j) => { const yy = y + j * (h + 22);
+      el(prog(t, c[1 + j], 0.4), j + 1, D.w / 2, yy + h / 2, () => { S.card(L, yy, W, h, hex(ink, 0.12));
+        const ci = S.cardInk ? S.cardInk() : ink; ctx.save(); ctx.shadowBlur = 0; ctx.fillStyle = hi; ctx.beginPath(); ctx.arc(L + 72, yy + h / 2, 40, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = readable(ink === hi ? "#FFFFFF" : ink, hi); ctx.lineWidth = 9; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.beginPath();
+        ctx.moveTo(L + 52, yy + h / 2 + 2); ctx.lineTo(L + 66, yy + h / 2 + 16); ctx.lineTo(L + 93, yy + h / 2 - 14); ctx.stroke(); ctx.restore();
+        const ftt = fit(b.title, "bold", W - 170, 54, 36, 1), fd = fit(b.detail, "regular", W - 170, 38, 28, 2);
+        const th = ftt.size * 1.1 + fd.lines.length * fd.size * 1.15 + 8, y0 = yy + (h - th) / 2;
+        lines(ftt.lines, "bold", ftt.size, L + 140, y0, ci); lines(fd.lines, "regular", fd.size, L + 140, y0 + ftt.size * 1.1 + 8, ci, "left", 1.15); }); });
+  } else {
+    let y = top + 20; const fn = fit(s.cta_sub ? D.product : D.product, "heading", W, 84, 48, 2);
+    el(prog(t, c[0], 0.4), 0, ax, y + 30, () => lines(fn.lines, "heading", fn.size, ax, y, ink, al));
+    y += fn.lines.length * fn.size * 1.08 + 30; const room = bot - y - 260;
+    if (room > 200) { book(prog(t, c[1], 0.6), left ? L + 230 : D.w / 2, y + room / 2, Math.min(460, room * 0.82)); y += room; }
+    const fb = fit(up(s.cta_button), "heading", W - 120, 76, 44, 1); ctx.font = font("heading", fb.size);
+    const bw = Math.min(W, ctx.measureText(fb.lines[0]).width + 130), bh = fb.size + 70, bx = left ? L : D.w / 2 - bw / 2, by = y + 20;
+    const pulse = 1 + Math.sin(Math.max(0, t - c[2] - 0.5) * 7) * 0.025 * clamp(t - c[2] - 0.5, 0, 1);
+    el(prog(t, c[2], 0.45), 2, bx + bw / 2, by + bh / 2, () => { ctx.save(); ctx.translate(bx + bw / 2, by + bh / 2); ctx.scale(pulse, pulse); ctx.translate(-bx - bw / 2, -by - bh / 2);
+      ctx.fillStyle = hi; rrect(bx, by, bw, bh, D.style === "kinetic" || D.style === "swiss" ? 8 : bh / 2); ctx.fill(); ctx.shadowBlur = 0;
+      lines(fb.lines, "heading", fb.size, bx + bw / 2, by + 35, readable(S.bg(i), hi), "center"); ctx.restore(); });
+    const fs = fit(s.cta_sub, "regular", W, 40, 30, 2);
+    el(prog(t, c[3], 0.4), 3, ax, by + bh + 60, () => lines(fs.lines, "regular", fs.size, left ? L : D.w / 2, by + bh + 40, ink, al, 1.2));
+  }
+}
+
+window.render = function (T) {
+  let off = 0, i = 0;
+  for (; i < D.scenes.length - 1 && T >= off + D.scenes[i].dur; i++) off += D.scenes[i].dur;
+  const sc = D.scenes[i], t = T - off;
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+  ctx.fillStyle = S.bg(i); ctx.fillRect(0, 0, D.w, D.h);
+  if (S.decor) S.decor(i, t, T);
+  // salida: fundido corto al final de cada escena (no en la última)
+  ctx.globalAlpha = i < D.scenes.length - 1 ? 1 - prog(t, sc.dur - 0.22, 0.22) : 1;
+  scene(sc.name, i, t, T);
+  ctx.globalAlpha = 1;
+};
+
+(async () => {
+  D = await (await fetch("data.json")).json();
+  cv.width = D.w; cv.height = D.h;
+  window.DUR = D.scenes.reduce((a, s) => a + s.dur, 0);
+  S = makeStyle(D);
+  const faces = [["PFHeading", "heading.ttf"], ["PFBold", "bold.ttf"], ["PFRegular", "regular.ttf"]].map(([n, f]) => new FontFace(n, `url(${f})`));
+  await Promise.all(faces.map(f => f.load().then(x => document.fonts.add(x)).catch(() => {})));
+  if (D.book) { IMG = new Image(); IMG.src = D.book; await IMG.decode().catch(() => { IMG = null; }); }
+  window.render(0);
+  window.READY = true;
+})();
+</script>
+</body>
+</html>

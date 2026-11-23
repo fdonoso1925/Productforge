@@ -409,7 +409,7 @@ async def edit_creative(creative_id: UUID, body: EditIn, user: User, services: S
         ad_jobs.load_template, services.settings.templates_dir, batch["template_id"]
     )
     mockup = (
-        await asyncio.to_thread(ad_jobs.make_mockup, template, batch, brief_)
+        await ad_jobs.batch_cover(deps, batch, template)
         if ad_jobs.needs_mockup(deps, redo)
         else None
     )
@@ -435,7 +435,7 @@ async def render_one(creative_id: UUID, user: User, services: ServicesDep) -> di
         ad_jobs.load_template, services.settings.templates_dir, batch["template_id"]
     )
     mockup = (
-        await asyncio.to_thread(ad_jobs.make_mockup, template, batch, brief_)
+        await ad_jobs.batch_cover(deps, batch, template)
         if ad_jobs.needs_mockup(deps, [creative])
         else None
     )

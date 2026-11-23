@@ -19,6 +19,8 @@ import type {
   Proof,
   Ratio,
   ResultInput,
+  VideoEngines,
+  VideoLook,
   VideoRatio,
   VideoRow,
   VideoScript,
@@ -229,14 +231,19 @@ export const api = {
   /** Video de motion graphics de un ángulo y avatar del lote (la IA escribe el guion una vez). */
   adsVideoCreate: (
     batchId: string,
-    body: { angle: string; avatar: string; ratio: VideoRatio; creative_id?: string },
+    body: { angle: string; avatar: string; ratio: VideoRatio; creative_id?: string } & Partial<VideoLook>,
   ) =>
     call<{ video_id: string; job_id: string }>(`/ads/batches/${batchId}/videos`, {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  adsVideoRender: (videoId: string) =>
-    call<{ video_id: string; job_id: string }>(`/ads/videos/${videoId}/render`, { method: "POST" }),
+  /** Vuelve a componer sin IA; con `look` cambia de motor o de estilo de Lemo. */
+  adsVideoRender: (videoId: string, look?: VideoLook) =>
+    call<{ video_id: string; job_id: string }>(`/ads/videos/${videoId}/render`, {
+      method: "POST",
+      ...(look ? { body: JSON.stringify(look) } : {}),
+    }),
+  adsVideoEngines: () => call<VideoEngines>("/ads/videos/engines"),
   adsVideoScript: (videoId: string, script: VideoScript) =>
     call<VideoRow>(`/ads/videos/${videoId}/script`, { method: "PUT", body: JSON.stringify(script) }),
   adsVideoUrl: (videoId: string) => call<{ url: string; thumb_url: string | null }>(`/ads/videos/${videoId}/url`),

@@ -5,11 +5,12 @@
 no usa IA. Los videos se suben a Meta junto con el lote (siempre en pausa).
 """
 
-from typing import Annotated
+import asyncio
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.ads import jobs as ad_jobs
 from app.ads.naming import video_filename
@@ -19,6 +20,7 @@ from app.auth import CurrentUser, get_current_user
 from app.db.supabase import NotFound
 from app.deps import ServicesDep
 from app.security import ai_rate_limit, work_rate_limit
+from app.video import lemo
 from app.video import rules as video_rules
 from app.video.schemas import VideoRatio, VideoScript
 
@@ -28,12 +30,43 @@ User = Annotated[CurrentUser, Depends(get_current_user)]
 MAX_VIDEOS_PER_BATCH = 12
 
 
-class VideoIn(BaseModel):
+class EngineChoice(BaseModel):
+    """Motor del video: el propio de motion graphics o Lemo-Opuscar con uno de sus estilos."""
+
+    engine: Literal["motion", "lemo"] = "motion"
+    style: lemo.LemoStyle | None = None
+
+    @model_validator(mode="after")
+    def _style_for_lemo(self) -> "EngineChoice":
+        if self.engine == "lemo" and self.style is None:
+            self.style = "kinetic"
+        if self.engine == "motion":
+            self.style = None
+        return self
+
+
+class VideoIn(EngineChoice):
     angle: str = Field(min_length=1, max_length=40)
     avatar: str = Field(min_length=1, max_length=120)
     ratio: VideoRatio = "9x16"
     # Un creativo del lote que ya funcionó: su titular inspira el gancho del video.
     creative_id: UUID | None = None
+
+
+class EnginesOut(BaseModel):
+    motion: bool = True
+    lemo: bool
+    lemo_styles: list[str]
+    lemo_problems: list[str]
+
+
+def require_engine(services, choice: EngineChoice) -> None:
+    if choice.engine == "lemo":
+        setup, problems = lemo.resolve_setup(services.settings)
+        if setup is None:
+            raise HTTPException(
+                status.HTTP_409_CONFLICT, "Lemo no está disponible: " + "; ".join(problems)
+            )
 
 
 class VideoJobOut(BaseModel):
@@ -52,6 +85,15 @@ def unprocessable(*errors: str) -> HTTPException:
     return HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, {"errors": list(errors)})
 
 
+@router.get("/videos/engines")
+async def video_engines(user: User, services: ServicesDep) -> EnginesOut:
+    """Qué motores de video se pueden usar ahora (Lemo solo si está instalado)."""
+    setup, problems = await asyncio.to_thread(lemo.resolve_setup, services.settings)
+    return EnginesOut(
+        lemo=setup is not None, lemo_styles=list(lemo.LEMO_STYLES), lemo_problems=problems
+    )
+
+
 @router.post(
     "/batches/{batch_id}/videos",
     status_code=status.HTTP_202_ACCEPTED,
@@ -61,6 +103,7 @@ async def create_video(
     batch_id: UUID, body: VideoIn, user: User, services: ServicesDep
 ) -> VideoJobOut:
     batch = await owned_batch(services, batch_id, user)
+    require_engine(services, body)
     brief = ad_jobs.batch_brief(batch)
     product_id = UUID(batch["product_id"]) if batch.get("product_id") else None
     proofs = await user_proofs(services, user, product_id)
@@ -91,6 +134,9 @@ async def create_video(
             "avatar": body.avatar,
             "ratio": body.ratio,
             "filename": name,
+            # Solo con Lemo: un video de motion graphics no toca las columnas nuevas (y sigue
+            # funcionando aunque la migración del motor aún no esté aplicada).
+            **({"engine": body.engine, "style": body.style} if body.engine == "lemo" else {}),
         }
     )
     payload = {"video_id": video["id"]}
@@ -131,13 +177,19 @@ async def edit_script(
     status_code=status.HTTP_202_ACCEPTED,
     dependencies=[Depends(work_rate_limit)],
 )
-async def rerender_video(video_id: UUID, user: User, services: ServicesDep) -> VideoJobOut:
-    """Vuelve a componer el video con el guion guardado (sin IA)."""
+async def rerender_video(
+    video_id: UUID, user: User, services: ServicesDep, body: EngineChoice | None = None
+) -> VideoJobOut:
+    """Vuelve a componer el video con el guion guardado (sin IA). Con `body` cambia de motor o de
+    estilo de Lemo: el mismo guion, otra estética, sin costo de IA."""
     video = await owned_video(services, video_id, user)
     if not video.get("script"):
         raise HTTPException(status.HTTP_409_CONFLICT, "el video todavía no tiene guion")
     if video["status"] == "rendering":
         raise HTTPException(status.HTTP_409_CONFLICT, "el video ya se está componiendo")
+    if body is not None:
+        require_engine(services, body)
+        await services.ad_videos.update(video["id"], engine=body.engine, style=body.style)
     job = await services.jobs.enqueue(
         user_id=user.id,
         kind="ad_video",
