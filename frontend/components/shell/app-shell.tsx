@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, History, Home, type LucideIcon, Megaphone, PackagePlus, Plus, Settings, ShoppingBag, X } from "lucide-react";
+import { BarChart3, FileText, History, Home, type LucideIcon, Megaphone, PackagePlus, Plus, Settings, ShoppingBag, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { LocaleSwitch } from "@/components/locale-switch";
@@ -47,6 +47,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     { href: "/settings", label: tc("settings"), icon: Settings, active: pathname.startsWith("/settings") },
     // Solo en la barra lateral (ahí Ajustes va al final): la barra inferior del móvil usa los cuatro primeros.
     { href: "/pages", label: t("pages"), icon: FileText, active: pathname.startsWith("/pages") },
+    { href: "/campaigns", label: t("campaigns"), icon: BarChart3, active: pathname.startsWith("/campaigns") },
     { href: "/hotmart", label: t("hotmart"), icon: ShoppingBag, active: pathname.startsWith("/hotmart") },
   ];
 

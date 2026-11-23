@@ -1183,7 +1183,8 @@
     "pages": "Páginas",
     "createPage": "Página de vendas",
     "createPageHint": "Uma página pensada para converter, a partir do seu pacote",
-    "createAdsHint": "Criativos para Meta Ads prontos para subir"
+    "createAdsHint": "Criativos para Meta Ads prontos para subir",
+    "campaigns": "Campanhas"
   },
   "detail": {
     "backHistory": "Voltar ao histórico",
@@ -1201,5 +1202,69 @@
     "deliverables": "Entregáveis",
     "template": "Modelo",
     "ready": "Pacote pronto"
+  },
+  "campaigns": {
+    "title": "Campanhas da Meta",
+    "hint": "Todas as campanhas da sua conta de anúncios com as métricas, lidas ao vivo da Meta (inclusive as que você criou no Gerenciador de Anúncios). Somente leitura: aqui nada é ativado nem alterado.",
+    "account": "Conta: {name} ({currency})",
+    "fetchedAt": "Lido: {date}",
+    "refresh": "Atualizar",
+    "notConnected": "A Meta não está conectada.",
+    "connectLink": "Conectar em Configurações",
+    "period": "Período",
+    "presets": {
+      "last_7d": "Últimos 7 dias",
+      "last_30d": "Últimos 30 dias",
+      "last_90d": "Últimos 90 dias",
+      "maximum": "Todo o histórico",
+      "custom": "Intervalo de datas"
+    },
+    "from": "De",
+    "to": "Até",
+    "apply": "Aplicar",
+    "note": "CTR, CPC, CPA e ROAS são calculados a partir dos totais. As compras e o valor são os registrados pelo seu pixel da Meta; podem não coincidir com a Hotmart.",
+    "empty": "Não há campanhas nesta conta.",
+    "campaign": "Campanha",
+    "status": "Status",
+    "budget": "Orçamento",
+    "perDay": " / dia",
+    "adsetBudget": "Nos conjuntos",
+    "fromApp": "Criada no app",
+    "ad": "Anúncio",
+    "daily": "Gasto e cliques por dia",
+    "noDays": "Sem atividade neste período.",
+    "openInAdsManager": "Abrir no Gerenciador de Anúncios",
+    "metrics": {
+      "spend": "Gasto",
+      "impressions": "Impressões",
+      "clicks": "Cliques no link",
+      "ctr": "CTR",
+      "cpc": "CPC",
+      "cpm": "CPM",
+      "reach": "Alcance",
+      "frequency": "Frequência",
+      "landingViews": "Visualizações da página",
+      "checkouts": "Finalizações iniciadas",
+      "purchases": "Compras",
+      "cpa": "Custo por compra",
+      "revenue": "Valor das compras",
+      "roas": "ROAS"
+    },
+    "statuses": {
+      "ACTIVE": "Ativa",
+      "PAUSED": "Pausada",
+      "DELETED": "Excluída",
+      "ARCHIVED": "Arquivada",
+      "IN_PROCESS": "Em processamento",
+      "WITH_ISSUES": "Com problemas"
+    },
+    "objectives": {
+      "OUTCOME_SALES": "Vendas",
+      "OUTCOME_TRAFFIC": "Tráfego",
+      "OUTCOME_ENGAGEMENT": "Engajamento",
+      "OUTCOME_LEADS": "Cadastros",
+      "OUTCOME_AWARENESS": "Reconhecimento",
+      "OUTCOME_APP_PROMOTION": "Promoção do app"
+    }
   }
 }

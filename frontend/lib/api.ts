@@ -23,6 +23,7 @@ import type {
   VideoRow,
   VideoScript,
 } from "@/lib/ads";
+import type { CampaignDetail, CampaignList } from "@/lib/campaigns";
 import type {
   PageBriefPreview,
   PageContent,
@@ -264,6 +265,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify(typeof range === "number" ? { days: range } : range),
     }),
+  /** Campañas de la cuenta de Meta con métricas del período (`query` = preset o since/until). */
+  metaCampaigns: (query: string, refresh = false) =>
+    call<CampaignList>(`/ads/meta/campaigns?${query}${refresh ? "&refresh=true" : ""}`),
+  metaCampaign: (campaignId: string, query: string, refresh = false) =>
+    call<CampaignDetail>(`/ads/meta/campaigns/${campaignId}?${query}${refresh ? "&refresh=true" : ""}`),
   /** Mockups de la portada (libro, tablet, celular, pack): URLs firmadas de PNG transparentes. */
   productMockups: (productId: string) =>
     call<{ urls: Record<string, string> }>(`/products/${productId}/mockups`, { method: "POST" }),

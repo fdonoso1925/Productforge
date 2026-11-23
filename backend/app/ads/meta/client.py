@@ -30,6 +30,11 @@ OBJECTIVES = {"traffic": "OUTCOME_TRAFFIC", "sales": "OUTCOME_SALES"}
 # Un video recién subido tarda en procesarse: se consulta cada 5 s, hasta unos 4 minutos.
 VIDEO_POLL_SECONDS = 5.0
 VIDEO_POLLS = 48
+# Lo que se lee para los reportes: totales (las métricas derivadas se calculan en la app).
+REPORT_FIELDS = (
+    "campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,spend,impressions,reach,"
+    "inline_link_clicks,actions,action_values,date_start,date_stop"
+)
 
 
 class MetaError(Exception):
@@ -356,6 +361,44 @@ class MetaClient:
                 "limit": "500",
             },
         )
+
+    # ───────────────────────── reportes (solo lectura) ─────────────────────────
+
+    async def campaigns(self) -> list[dict]:
+        """Todas las campañas de la cuenta (también las creadas a mano en Ads Manager)."""
+        return await self._paginate(
+            f"{self.account}/campaigns",
+            {
+                "fields": "id,name,status,effective_status,objective,daily_budget,"
+                "lifetime_budget,created_time,start_time,stop_time",
+                "limit": "200",
+            },
+        )
+
+    async def report(
+        self,
+        *,
+        level: str,
+        period: dict[str, Any],
+        daily: bool = False,
+        campaign_id: str | None = None,
+    ) -> list[dict]:
+        """Métricas de la cuenta por campaña, conjunto o anuncio. `period` es
+        `{"date_preset": …}` o `{"time_range": {"since", "until"}}`; `daily` las parte por día;
+        `campaign_id` se filtra DENTRO de la cuenta (no se puede leer una campaña ajena)."""
+        params: dict[str, Any] = {
+            "level": level,
+            "fields": REPORT_FIELDS,
+            "limit": "500",
+            **period,
+        }
+        if daily:
+            params["time_increment"] = "1"
+        if campaign_id:
+            params["filtering"] = [
+                {"field": "campaign.id", "operator": "EQUAL", "value": campaign_id}
+            ]
+        return await self._paginate(f"{self.account}/insights", params)
 
 
 def _error_of(response: httpx.Response) -> MetaError:

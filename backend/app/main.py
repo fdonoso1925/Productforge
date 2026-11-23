@@ -20,6 +20,7 @@ from app.api import (
     drive,
     hotmart,
     integrations,
+    meta_reports,
     pages,
     products,
 )
@@ -91,6 +92,7 @@ def create_app() -> FastAPI:
     app.include_router(ads_results.router)
     app.include_router(ads_meta.router)
     app.include_router(ads_video.router)
+    app.include_router(meta_reports.router)
     app.include_router(hotmart.router)
     app.include_router(integrations.router)
     app.include_router(pages.router)
