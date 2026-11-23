@@ -26,6 +26,11 @@ const itemSchema = z.object({
   table_of_contents: z.array(z.string().trim().min(1).max(500)).min(1).max(60),
   estimated_pages: z.number().int().min(1).max(60),
   related_items: z.array(z.string()),
+  // Foto del tema para la tapa (la propone la IA; no se edita aquí, pero no debe perderse al guardar).
+  cover_photo: z
+    .object({ scene: z.string(), keywords: z.array(z.string()), caption: z.string().optional() })
+    .nullable()
+    .optional(),
 });
 
 export const outlineSchema = z.object({

@@ -52,6 +52,19 @@ def check_package_rules(outline: PackageOutline, request: PackageRequest) -> lis
     for i, item in enumerate(outline.order_bumps):
         if item.role != "order_bump":
             errors.append(f"order_bumps[{i}].role debe ser 'order_bump'.")
+    for name, item in (
+        ("main", main),
+        *((f"order_bumps[{i}]", it) for i, it in enumerate(outline.order_bumps)),
+        *((f"bonuses[{i}]", it) for i, it in enumerate(outline.bonuses)),
+    ):
+        photo = item.cover_photo
+        if photo is not None and (
+            not photo.scene.strip() or not 2 <= len([k for k in photo.keywords if k.strip()]) <= 3
+        ):
+            errors.append(
+                f"{name}.cover_photo necesita una escena y 2 o 3 palabras clave en inglés "
+                "(o null si el tema no se presta a una foto)."
+            )
     for i, item in enumerate(outline.bonuses):
         if item.role != "bonus":
             errors.append(f"bonuses[{i}].role debe ser 'bonus'.")

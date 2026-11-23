@@ -47,6 +47,7 @@ export function StepOutline({ state, update, nav }: StepProps) {
         main_format: state.format,
         template_id: state.templateId,
         cover_art: state.cover.art,
+        cover_design: state.cover.design,
         ...(state.reference ? { reference: state.reference } : {}),
       })
       .then(

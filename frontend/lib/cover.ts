@@ -6,11 +6,15 @@ export const ART_CHOICES: ArtChoice[] = ["auto", "topo", "waves", "circles", "ba
 
 /** La portada de un producto; uno anterior a las portadas (`cover: {}`) se ve sin arte. */
 export function coverOf(product: Pick<ProductRow, "cover">): CoverSpec {
-  return { art: product.cover?.art ?? "none", image_id: product.cover?.image_id ?? null };
+  return {
+    art: product.cover?.art ?? "none",
+    image_id: product.cover?.image_id ?? null,
+    design: product.cover?.design ?? "template",
+  };
 }
 
 export function sameCover(a: CoverSpec, b: CoverSpec): boolean {
-  return a.art === b.art && a.image_id === b.image_id;
+  return a.art === b.art && a.image_id === b.image_id && a.design === b.design;
 }
 
 /** Valida el archivo antes de subirlo (el backend vuelve a validar todo). Devuelve la clave del error. */

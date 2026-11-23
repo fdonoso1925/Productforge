@@ -91,7 +91,7 @@ def test_upload_select_and_use_an_own_image() -> None:
     assert w.new_calls == 0
     child = w.deps.products.rows[response.json()["product_id"]]
     assert child["status"] == "ready"
-    assert child["cover"] == {"art": "none", "image_id": image_id}
+    assert child["cover"] == {"art": "none", "image_id": image_id, "design": "template"}
     assert main_pdf(w, child["id"]) != parent_pdf  # la portada cambió el PDF
     assert (w.deps.products.rows[pid].get("cover") or {}) == parent_cover  # original intacto
 
@@ -115,7 +115,7 @@ def test_remodel_with_art_is_free_and_each_version_keeps_the_family() -> None:
     second = c.post(f"/products/{waves_id}/remodel", json={"template_id": "dark-elegante"})
     assert second.status_code == 202
     child = w.deps.products.rows[second.json()["product_id"]]
-    assert child["cover"] == {"art": "waves", "image_id": None}
+    assert child["cover"] == {"art": "waves", "image_id": None, "design": "template"}
     assert child["root_product_id"] == pid
 
 
@@ -132,7 +132,11 @@ def test_cover_rules_for_unknown_images_and_generated_packages() -> None:
     assert c.put(f"/products/{pid}/cover", json=ghost).status_code == 422
     ok = c.put(f"/products/{pid}/cover", json={"art": "bauhaus", "image_id": None})
     assert ok.status_code == 200
-    assert w.deps.products.rows[pid]["cover"] == {"art": "bauhaus", "image_id": None}
+    assert w.deps.products.rows[pid]["cover"] == {
+        "art": "bauhaus",
+        "image_id": None,
+        "design": "template",
+    }
     assert c.put(f"/products/{pid}/cover", json={"art": "grafiti"}).status_code == 422
     assert c.put(f"/products/{pid}/cover", json={"art": "topo", "x": 1}).status_code == 422
 
@@ -205,7 +209,16 @@ def test_outline_stores_the_chosen_art_style_and_defaults_to_auto() -> None:
     client, llm, repo = outline_ctx()
     llm.responses.extend([make_outline(), make_outline()])
     assert client.post("/outline", json=outline_body()).status_code == 200
-    assert repo.created[-1]["cover"] == {"art": "auto", "image_id": None}
+    assert repo.created[-1]["cover"] == {"art": "auto", "image_id": None, "design": "template"}
     assert client.post("/outline", json=outline_body(cover_art="bauhaus")).status_code == 200
-    assert repo.created[-1]["cover"] == {"art": "bauhaus", "image_id": None}
+    assert repo.created[-1]["cover"] == {"art": "bauhaus", "image_id": None, "design": "template"}
     assert client.post("/outline", json=outline_body(cover_art="grafiti")).status_code == 422
+
+
+def test_outline_stores_the_optional_editorial_book_design() -> None:
+    client, llm, repo = outline_ctx()
+    llm.responses.append(make_outline())
+    body = outline_body(cover_design="editorial")
+    assert client.post("/outline", json=body).status_code == 200
+    assert repo.created[-1]["cover"]["design"] == "editorial"
+    assert client.post("/outline", json=outline_body(cover_design="3d")).status_code == 422

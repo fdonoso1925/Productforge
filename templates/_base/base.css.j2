@@ -101,15 +101,75 @@ ol.steps li::before { content: counter(step); position: absolute; left: 0; top: 
 .cover-title { font-family: var(--heading); font-weight: {{ t.fonts.heading.weights[0] }}; font-size: 34pt; line-height: 1.08; margin: 4mm 0; string-set: doc-title content();
   {% if t.style.heading_case == 'uppercase' %}text-transform: uppercase;{% endif %} }
 .cover-title.long { font-size: 24pt; }
-.mockup-book.long { font-size: 10pt; }
 .cover-subtitle { font-size: 13pt; margin-bottom: 6mm; }
 .cover-promise { font-size: 11pt; font-weight: 700; padding: 3mm 5mm; display: inline-block; border-radius: var(--radius); }
+/* Libro de la portada (capas, de atrás hacia adelante). */
 .mockup { position: absolute; width: 70mm; height: 96mm; }
-.mockup-back { position: absolute; left: 4mm; top: 4mm; width: 70mm; height: 96mm; background: #00000033; border-radius: 1.5mm; }
-.mockup-book { position: absolute; left: 0; top: 0; width: 70mm; height: 96mm; background: var(--primary);
-  border-radius: 1mm 2mm 2mm 1mm; border-left: 4mm solid var(--secondary); padding: 8mm 6mm; box-sizing: border-box;
-  color: var(--on-primary); font-family: var(--heading); font-weight: {{ t.fonts.heading.weights[0] }}; font-size: 13pt; line-height: 1.15; }
-.mockup-book small { display: block; margin-top: 4mm; font-family: var(--body); font-size: 7pt; opacity: 0.85; }
+/* Sombra en el piso: solo abajo y a la derecha del libro (la luz viene de arriba a la izquierda). */
+.mk-floor { position: absolute; left: 6mm; top: 74mm; width: 78mm; height: 34mm;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.40) 0%, rgba(0,0,0,0.18) 45%, rgba(0,0,0,0) 72%); }
+.mk-drop { position: absolute; left: 3.6mm; top: 4.2mm; width: 70mm; height: 96mm; border-radius: 1.4mm 2.6mm 2.6mm 1.4mm;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.22) 100%); }
+.mk-board { position: absolute; left: 2.6mm; top: 2.2mm; width: 70mm; height: 96mm; border-radius: 1mm 2.2mm 2.2mm 1mm; }
+.mk-board::after { content: ""; position: absolute; left: 0; top: 0; right: 0; bottom: 0; border-radius: inherit; background: rgba(0,0,0,0.38); }
+.mk-pages { position: absolute; left: 1.4mm; top: 1.1mm; width: 70mm; height: 95.6mm; border-radius: 0.6mm 1.6mm 1.6mm 0.6mm;
+  background: repeating-linear-gradient(to right, #F6F1E7 0, #F6F1E7 0.32mm, #DCD3C3 0.32mm, #DCD3C3 0.42mm); }
+.mk-cover { position: absolute; left: 0; top: 0; width: 70mm; height: 96mm; overflow: hidden; border-radius: 0.8mm 2mm 2mm 0.8mm;
+  font-family: var(--heading); font-weight: {{ t.fonts.heading.weights[0] }}; font-size: 13pt; line-height: 1.15; }
+.mk-shape { position: absolute; right: -20mm; top: -16mm; width: 56mm; height: 56mm; border-radius: 28mm; opacity: 0.28; }
+.mk-shape.small { right: auto; top: auto; left: 30mm; bottom: 10mm; width: 26mm; height: 26mm; border-radius: 13mm;
+  border: 0.5mm solid; background: transparent; opacity: 0.45; }
+.mk-text { position: absolute; left: 11mm; right: 7mm; top: 13mm; }
+.mk-rule { width: 12mm; height: 0.9mm; border-radius: 0.5mm; margin-bottom: 4mm; }
+.mk-title { position: relative; }
+.mk-cover.long { font-size: 10pt; }
+.mk-name { margin-top: 4mm; font-family: var(--body); font-weight: 400; font-size: 6.5pt; line-height: 1.3; opacity: 0.82; }
+/* Con foto del tema: la foto ocupa la parte de arriba de la tapa y el texto baja. */
+.mk-photo { position: absolute; left: 0; top: 0; width: 70mm; height: 46mm; overflow: hidden; }
+.mk-photo img { width: 70mm; height: 46mm; object-fit: cover; }
+.mk-photo-edge { position: absolute; left: 0; top: 46mm; width: 70mm; height: 0.8mm; }
+.mk-cover.with-photo .mk-text { top: 52mm; }
+.mk-cover.with-photo .mk-rule { display: none; }
+.mk-cover.with-photo { font-size: 11pt; }
+.mk-cover.with-photo.long { font-size: 8.5pt; }
+.mk-cover.with-photo .mk-name { margin-top: 2.5mm; }
+/* Tapa editorial (cover.design = editorial) */
+.cover-ed { text-align: center; }
+.ed-glow { position: absolute; left: 0; top: 0; width: 210mm; height: 297mm; z-index: 0; }
+.ed-figure { position: absolute; left: 0; top: 96mm; width: 210mm; height: 158mm; overflow: hidden; z-index: 1; height: 166mm; }
+.ed-figure img { width: 210mm; height: 166mm; object-fit: cover; }
+.ed-ring { position: absolute; left: 60mm; top: 38mm; width: 90mm; height: 90mm; border-radius: 45mm; border: 0.6mm solid; opacity: 0.5; }
+.ed-fade { position: absolute; left: -1mm; top: -1mm; width: 212mm; height: 168mm; }
+.ed-head { position: absolute; left: 16mm; right: 16mm; top: 22mm; z-index: 2; }
+.ed-kicker { font-size: 9pt; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; margin-bottom: 4mm; }
+.ed-title { font-family: var(--heading); font-weight: {{ t.fonts.heading.weights[-1] }}; text-transform: uppercase;
+  line-height: 0.98; letter-spacing: -0.005em; string-set: doc-title content(); }
+.ed-xl { font-size: 66pt; }
+.ed-l { font-size: 50pt; }
+.ed-m { font-size: 38pt; }
+.ed-s { font-size: 28pt; }
+.ed-xs { font-size: 21pt; }
+.ed-sub { margin: 7mm auto 0; border-collapse: collapse; }
+.ed-sub td { vertical-align: middle; padding: 0; }
+.ed-sub-dia { width: 12mm; }
+.ed-sub-text { font-family: var(--heading); font-weight: 700; font-size: 18pt; line-height: 1.2; padding: 0 2mm; max-width: 150mm; }
+.ed-dia { display: inline-block; width: 2.6mm; height: 2.6mm; transform: rotate(45deg); }
+.ed-dia-big { position: absolute; left: 100mm; top: 78mm; width: 10mm; height: 10mm; opacity: 0.8; }
+.ed-foot { position: absolute; left: 16mm; right: 16mm; bottom: 15mm; z-index: 2; }
+.ed-dia-foot { margin-bottom: 5mm; }
+.ed-tag { width: 100%; border-collapse: collapse; }
+.ed-tag td { vertical-align: middle; padding: 0; }
+.ed-line-cell { width: 16%; }
+.ed-line { height: 0.4mm; }
+.ed-tag-text { font-family: var(--heading); font-weight: 700; font-size: 16pt; line-height: 1.25; padding: 0 4mm; }
+
+.mk-foot { position: absolute; left: 11mm; bottom: 9mm; width: 22mm; height: 0.6mm; opacity: 0.7; }
+/* Luz suave en diagonal: la tapa no es un color plano. */
+.mk-light { position: absolute; left: 0; top: 0; width: 70mm; height: 96mm;
+  background: linear-gradient(118deg, rgba(255,255,255,0.20) 0%, rgba(255,255,255,0.06) 28%, rgba(255,255,255,0) 46%, rgba(0,0,0,0) 62%, rgba(0,0,0,0.16) 100%); }
+/* Lomo: sombra donde dobla la tapa y el brillo fino del pliegue. */
+.mk-spine { position: absolute; left: 0; top: 0; width: 8mm; height: 96mm;
+  background: linear-gradient(to right, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.18) 32%, rgba(255,255,255,0.22) 52%, rgba(255,255,255,0.04) 62%, rgba(0,0,0,0.10) 78%, rgba(0,0,0,0) 100%); }
 .deco { position: absolute; }
 
 /* Checklist / workbook */

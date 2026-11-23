@@ -56,6 +56,20 @@ describe("schemas", () => {
     expect(outlineSchema.safeParse(outline).success).toBe(true);
   });
 
+  it("conserva la foto de portada que propuso la IA al guardar ediciones", () => {
+    const photo = { scene: "homemade dog food bowl", keywords: ["dog food", "bowl"] };
+    const outline = {
+      product_name: "Paquete",
+      main: { ...item("main", "pdf_guide"), cover_photo: photo },
+      order_bumps: [item("order_bump", "sheet"), item("order_bump", "checklist"), item("order_bump", "swipe_file")],
+      bonuses: [{ ...item("bonus", "mind_map"), cover_photo: null }, item("bonus", "planner")],
+    };
+    const parsed = outlineSchema.safeParse(outline);
+    expect(parsed.success).toBe(true);
+    expect(parsed.data?.main.cover_photo).toEqual(photo);
+    expect(parsed.data?.bonuses[0].cover_photo).toBeNull();
+  });
+
   it("acepta entradas de índice largas como las que genera la IA", () => {
     const main = { ...item("main", "pdf_guide"), table_of_contents: ["x".repeat(250)] };
     const outline = {

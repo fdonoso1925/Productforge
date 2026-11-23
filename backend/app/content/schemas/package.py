@@ -8,6 +8,7 @@ el error se le devuelve como feedback concreto.
 from pydantic import BaseModel, Field
 
 from app.content.schemas.common import Format, Market, Role
+from app.content.schemas.formats import PhotoSpec
 from app.content.schemas.reference import SalesReference
 
 
@@ -52,6 +53,11 @@ class ItemOutline(BaseModel):
     estimated_pages: int = Field(ge=1, le=60)
     related_items: list[str] = Field(
         default_factory=list, description="Títulos de otras piezas del paquete que esta cita"
+    )
+    cover_photo: PhotoSpec | None = Field(
+        default=None,
+        description="Foto del tema para la tapa del libro de la portada, solo si el nicho se "
+        "presta a una imagen concreta (cocina, mascotas, bebés, ejercicio, plantas…); si no, null",
     )
 
 

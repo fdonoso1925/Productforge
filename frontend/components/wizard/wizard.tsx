@@ -43,7 +43,7 @@ export function Wizard({ niches, defaultMarket }: { niches: Niche[]; defaultMark
     format: "pdf_guide",
     templateId: "minimal-clean",
     reference: null,
-    cover: { art: "auto", image_id: null },
+    cover: { art: "auto", image_id: null, design: "template" },
     built: null,
   });
   const update = useCallback(

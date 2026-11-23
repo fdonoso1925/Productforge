@@ -227,7 +227,15 @@
     "uploading": "Enviando…",
     "errorType": "Use uma imagem JPG, PNG ou WebP.",
     "errorSize": "A imagem pesa mais de 5 MB.",
-    "errorUpload": "Não foi possível enviar a imagem. Tente de novo."
+    "errorUpload": "Não foi possível enviar a imagem. Tente de novo.",
+    "design": {
+      "label": "Design da capa",
+      "template": "Do modelo",
+      "templateHint": "Título sobre a cor do modelo e um livro pequeno.",
+      "editorial": "Livro editorial",
+      "editorialHint": "Como um livro impresso: papel claro, título grande, foto do tema no centro e lombada com o título no mockup.",
+      "artUnused": "No design editorial a capa leva a foto do tema (ou a sua imagem) no centro; se o tema não tiver foto, um emblema discreto. A arte não é usada."
+    }
   },
   "product": {
     "generating": "Gerando seu pacote",

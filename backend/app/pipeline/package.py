@@ -103,6 +103,33 @@ def content_hash(content: Any) -> str:
     return hashlib.sha256(payload.encode()).hexdigest()
 
 
+async def cover_photo_uri(router: Any, user_id: UUID, item: ItemOutline, niche: str) -> str:
+    """La foto del tema para la tapa del libro (data URI), si el outline la pidió y se consigue.
+
+    Usa el mismo buscador que las fotos de capítulo (caché por escena, tope diario, curada para
+    que de verdad muestre el tema). Sin proveedor, sin cuota o sin resultados: vacío, y la portada
+    sale con su diseño de siempre."""
+    spec = item.cover_photo
+    if spec is None or router is None or not router.active():
+        return ""
+    try:
+        image = await router.get(
+            user_id=user_id,
+            request=ImageRequest(
+                prompt=spec.scene,
+                keywords=tuple(k for k in spec.keywords if k.strip())[:3],
+                aspect="16:9",
+                sensitive=ad_rules.is_sensitive(niche),
+                curate=True,
+                context=f"cover of «{item.title}»: {item.promise}",
+            ),
+        )
+    except Exception:
+        logger.warning("no se pudo traer la foto de portada de «%s»", item.title)
+        return ""
+    return data_uri(image.jpeg) if image is not None else ""
+
+
 def build_zip(entries: list[tuple[str, bytes]]) -> bytes:
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as z:
@@ -171,12 +198,20 @@ class PackageBuilder:
         return self._cover_image
 
     async def cover_fields(self, row: dict) -> dict[str, Any]:
-        """Campos de `RenderContext` con la portada de esta pieza (imagen propia o arte)."""
+        """Campos de `RenderContext` con la portada de esta pieza (imagen propia o arte) y, si el
+        outline la pidió, la foto del tema para la tapa del libro."""
+        item = self.slot(row["role"], row["order"])
+        photo = await cover_photo_uri(
+            getattr(self.deps, "images", None), self.user_id, item, self.request.niche
+        )
+        extra: dict[str, Any] = {"cover_photo": photo} if photo else {}
+        if self.cover.design == "editorial":
+            extra["cover_design"] = "editorial"
         image = await self.cover_image()
         if image:
-            return {"cover_image": image[0], "cover_veil": image[1]}
+            return {"cover_image": image[0], "cover_veil": image[1], **extra}
         _, art = art_for_piece(self.cover, self.product, self.template, row["role"], row["order"])
-        return {"cover_art": art}
+        return {"cover_art": art, **extra}
 
     async def chapter_photos(self, content: Any) -> dict[str, str]:
         """Fotos de stock de los capítulos que las piden: {"ch3": data URI}. Una foto que no se

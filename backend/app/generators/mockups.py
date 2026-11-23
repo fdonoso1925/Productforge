@@ -10,10 +10,11 @@ No inventa nada: ni sellos de «best seller», ni estrellas, ni autor. Solo la p
 
 import io
 from collections.abc import Callable
+from dataclasses import dataclass
 from functools import lru_cache
 from typing import Literal
 
-from PIL import Image, ImageChops, ImageDraw, ImageFilter
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
 MockupKind = Literal["book", "tablet", "phone", "bundle"]
 MOCKUP_KINDS: tuple[str, ...] = ("book", "tablet", "phone", "bundle")
@@ -21,6 +22,61 @@ MOCKUP_KINDS: tuple[str, ...] = ("book", "tablet", "phone", "bundle")
 SS = 2  # supersampling: se dibuja a SS veces y se reduce
 BOOK_RATIO = 1.414  # alto / ancho de una portada A4
 PAD = 36  # aire alrededor del recorte final
+
+
+@dataclass(frozen=True)
+class Spine:
+    """Lomo visible del libro (portada editorial): el título en vertical, como un libro impreso."""
+
+    title: str
+    paper: str  # color del lomo
+    ink: str
+    gold: str
+    font: str  # ruta del .ttf de títulos de la plantilla
+
+
+def _rgb(value: str) -> tuple[int, int, int]:
+    return int(value[1:3], 16), int(value[3:5], 16), int(value[5:7], 16)
+
+
+def _spine_face(spine: Spine, size: tuple[int, int]) -> Image.Image:
+    """El lomo plano (luego se pone en perspectiva): título en vertical entre filetes dorados y
+    un rombo abajo, con sombra hacia los bordes para que se vea redondeado."""
+    w, h = size
+    face = Image.new("RGBA", size, _rgb(spine.paper) + (255,))
+    draw = ImageDraw.Draw(face)
+    gold, ink = _rgb(spine.gold) + (255,), _rgb(spine.ink) + (255,)
+    title = " ".join(spine.title.upper().split())
+    room = round(h * 0.62)
+    size_px = round(w * 0.5)
+    font = ImageFont.truetype(spine.font, size_px)
+    while size_px > w * 0.22 and font.getlength(title) > room:
+        size_px -= max(1, size_px // 20)
+        font = ImageFont.truetype(spine.font, size_px)
+    while len(title) > 3 and font.getlength(title) > room:
+        title = title[:-2].rstrip() + "…"
+    left, top, right, bottom = font.getbbox(title)
+    text = Image.new("RGBA", (right - left + 4, bottom - top + 4), (0, 0, 0, 0))
+    ImageDraw.Draw(text).text((2 - left, 2 - top), title, font=font, fill=ink)
+    text = text.rotate(-90, expand=True, resample=Image.Resampling.BICUBIC)
+    ty = round(h * 0.47 - text.height / 2)
+    face.alpha_composite(text, ((w - text.width) // 2, max(0, ty)))
+    cx, line = w // 2, max(1, w // 40)
+    gap = round(h * 0.035)
+    draw.rectangle((cx - line, round(h * 0.05), cx + line, max(0, ty - gap)), fill=gold)
+    end = min(h, ty + text.height + gap)
+    draw.rectangle((cx - line, end, cx + line, round(h * 0.83)), fill=gold)
+    d = round(w * 0.16)
+    cy = round(h * 0.9)
+    diamond = [(cx, cy - d), (cx + d, cy), (cx, cy + d), (cx - d, cy)]
+    draw.polygon(diamond, outline=gold, width=line * 2)
+    # Volumen: más oscuro en los bordes, claro al centro.
+    shade = Image.new("L", size, 0)
+    shade.paste(_gradient((w // 2, h), 90, 0), (0, 0))
+    shade.paste(_gradient((w - w // 2, h), 0, 110), (w // 2, 0))
+    dark = Image.new("RGBA", size, (0, 0, 0, 0))
+    dark.putalpha(shade)
+    return Image.alpha_composite(face, dark)
 
 
 # ───────────────────────────── utilidades ─────────────────────────────
@@ -139,24 +195,26 @@ def _down(image: Image.Image) -> Image.Image:
 # ───────────────────────────── libro ─────────────────────────────
 
 
-def _book(cover: Image.Image, width: int = 760) -> Image.Image:
-    """Libro de tapa dura girado unos grados: portada en perspectiva, lomo, hojas y sombra."""
+def _book(cover: Image.Image, width: int = 760, spine: Spine | None = None) -> Image.Image:
+    """Libro de tapa dura girado unos grados: portada en perspectiva, lomo, hojas y sombra.
+    Con `spine`, el libro se ve desde la izquierda: lomo con el título y sin el canto de hojas."""
     W = width * SS
     H = round(W * BOOK_RATIO) + 160 * SS
-    canvas_size = (W + 120 * SS, H)
     front_w = round(W * 0.78)
     front_h = round(front_w * BOOK_RATIO)
-    x0, y0 = 60 * SS, 40 * SS
+    spine_w = round(front_w * 0.12) if spine else 0  # ancho del lomo ya en perspectiva
+    canvas_size = (W + 120 * SS + spine_w, H)
+    x0, y0 = 60 * SS + spine_w, 40 * SS
     depth = round(front_w * 0.075)  # grosor de las hojas hacia la derecha
     drop = round(front_h * 0.028)  # cuánto «se aleja» el borde derecho (perspectiva)
 
     face = _cover_fit(cover, (front_w, front_h))
     # Lomo: el borde izquierdo oscurecido y un brillo fino donde dobla la tapa.
-    spine = _edge_color(cover)
+    edge = _edge_color(cover)
     band = Image.new("L", face.size, 0)
     band.paste(_gradient((round(front_w * 0.09), front_h), 150, 0), (0, 0))
     face = Image.alpha_composite(
-        face, Image.merge("RGBA", (*Image.new("RGB", face.size, _shade(spine, 0.35)).split(), band))
+        face, Image.merge("RGBA", (*Image.new("RGB", face.size, _shade(edge, 0.35)).split(), band))
     )
     hinge = Image.new("RGBA", face.size, (0, 0, 0, 0))
     ImageDraw.Draw(hinge).rectangle(
@@ -173,6 +231,12 @@ def _book(cover: Image.Image, width: int = 760) -> Image.Image:
     br = (x0 + front_w, y0 + front_h - drop)
     bl = (x0, y0 + front_h)
     body = Image.new("RGBA", canvas_size, (0, 0, 0, 0))
+    if spine:
+        flat = _spine_face(spine, (round(front_w * 0.15), front_h))
+        back = round(drop * 0.9)  # el borde de atrás del lomo, más lejos: un poco más corto
+        quad = [(x0 - spine_w, y0 + back), tl, bl, (x0 - spine_w, y0 + front_h - back)]
+        body = Image.alpha_composite(body, _warp(flat, quad, canvas_size))
+        depth = round(depth * 0.25)  # desde la izquierda casi no se ven las hojas
 
     # Hojas (cara derecha): parallelogram con líneas finas, detrás de la portada.
     pages = Image.new("RGBA", canvas_size, (0, 0, 0, 0))
@@ -193,7 +257,7 @@ def _book(cover: Image.Image, width: int = 760) -> Image.Image:
             (br[0] + depth, br[1] - drop * 0.35 + SS * 3),
             (bl[0] + depth * 0.2, bl[1] + SS * 3),
         ],
-        fill=_shade(spine, 0.5) + (255,),
+        fill=_shade(edge, 0.5) + (255,),
     )
     body = Image.alpha_composite(body, pages)
     body = Image.alpha_composite(body, _warp(face, [tl, tr, br, bl], canvas_size))
@@ -306,9 +370,9 @@ def _phone(cover: Image.Image) -> Image.Image:
 # ───────────────────────────── pack ─────────────────────────────
 
 
-def _bundle(cover: Image.Image) -> Image.Image:
+def _bundle(cover: Image.Image, spine: Spine | None = None) -> Image.Image:
     """Libro al frente con la tablet detrás a la derecha y el celular delante: el «pack digital»."""
-    book, tablet, phone = _book(cover, 700), _tablet(cover), _phone(cover)
+    book, tablet, phone = _book(cover, 700, spine), _tablet(cover), _phone(cover)
     tablet = tablet.resize(
         (round(tablet.width * 0.78), round(tablet.height * 0.78)), Image.Resampling.LANCZOS
     )
@@ -335,11 +399,17 @@ _BUILDERS: dict[str, Callable[[Image.Image], Image.Image]] = {
 }
 
 
-def render_mockup(kind: str, cover_png: bytes) -> bytes:
-    """PNG transparente del mockup `kind` con la portada dada. `ValueError` si el tipo no existe."""
+def render_mockup(kind: str, cover_png: bytes, spine: Spine | None = None) -> bytes:
+    """PNG transparente del mockup `kind` con la portada dada. `ValueError` si el tipo no existe.
+    `spine` (portada editorial) dibuja el lomo con el título en el libro y en el pack."""
     if kind not in _BUILDERS:
         raise ValueError(f"mockup desconocido: {kind}")
-    return _to_png(_BUILDERS[kind](_open(cover_png)))
+    cover = _open(cover_png)
+    if spine and kind == "book":
+        return _to_png(_book(cover, spine=spine))
+    if spine and kind == "bundle":
+        return _to_png(_bundle(cover, spine))
+    return _to_png(_BUILDERS[kind](cover))
 
 
 @lru_cache(maxsize=12)

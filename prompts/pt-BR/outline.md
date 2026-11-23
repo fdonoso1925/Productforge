@@ -9,6 +9,8 @@ Formatos disponíveis: $formats.
 
 Folhas imprimíveis: se o nicho combinar (atividades ou tarefas para crianças, educação, exercício ou saúde, finanças com calendários e orçamentos, culinária e receitas, organização, estudos, hábitos), inclua UMA peça no formato `printable` —como order bump ou como bônus— com as folhas imprimíveis que essa pessoa realmente usaria. Se o nicho não pedir, não force.
 
+Foto de capa (`cover_photo`, opcional por peça): se o tema combinar com uma imagem concreta e reconhecível (culinária e receitas, pets, bebês e maternidade, exercício, plantas e jardim, viagens, artesanato, casa), peça uma foto para a capa do livro na capa: `scene` em inglês (lugar, objetos ou atividade, sem texto, sem logos nem marcas) e 2 ou 3 `keywords` em inglês, substantivos concretos que deem bons resultados num banco de fotos. Que mostre o tema dessa peça, não algo genérico. Em nichos sensíveis (saúde, dinheiro, dívidas, maternidade) sem pessoas reconhecíveis: use objetos, lugares ou detalhes. Se o tema for abstrato (produtividade, finanças, mentalidade) ou uma imagem não acrescentar, deixe `cover_photo` como null: a capa fica bem só com o design.
+
 Se nos dados houver `sales_page_reference`, pense o pacote para esse público: o principal resolve a dor principal dele (`main_pain`) no prazo da promessa, os bônus podem eliminar as objeções (`objections`) e o nome e os títulos precisam ser originais, nunca os da página. Melhore o enfoque dela (`angle`) com algo mais específico.
 
 Para cada peça: título comercial (não genérico), promessa em uma frase com prazo, índice com as seções em ordem, páginas estimadas e, em `related_items`, os títulos das outras peças que ela cita.

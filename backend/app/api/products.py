@@ -8,13 +8,14 @@ from pydantic import BaseModel, Field
 
 from app.auth import CurrentUser, get_current_user
 from app.content import rules
-from app.content.schemas import Format, Market, PackageOutline, PackageRequest
+from app.content.schemas import Format, ItemOutline, Market, PackageOutline, PackageRequest
 from app.db.supabase import NotFound
 from app.deps import ServicesDep
 from app.generators.base import RenderContext
 from app.generators.cover import (
     CoverSpec,
     art_for_piece,
+    editorial_colors,
     image_exists,
     image_path,
     stored_spec,
@@ -22,11 +23,13 @@ from app.generators.cover import (
 )
 from app.generators.cover_image import data_uri
 from app.generators.epub import cover_png
-from app.generators.mockups import MOCKUP_KINDS, render_mockup
+from app.generators.mockups import MOCKUP_KINDS, Spine, render_mockup
 from app.pipeline.generate import package_request
+from app.pipeline.package import cover_photo_uri
 from app.pipeline.remodel import apply_formats, plan_remodel
 from app.security import ai_rate_limit, work_rate_limit
 from app.templates_engine.model import list_templates, load_template
+from app.video.style import fonts_from
 
 logger = logging.getLogger("productforge.products")
 router = APIRouter(prefix="/products")
@@ -277,6 +280,26 @@ class MockupsResponse(BaseModel):
     urls: dict[str, str]  # tipo de mockup → URL firmada del PNG transparente
 
 
+def book_spine(templates_dir, product: dict) -> Spine | None:
+    """Con la portada editorial, el libro del mockup muestra su lomo con el título (el más corto
+    entre el nombre del paquete y el de la pieza principal, para que quepa)."""
+    if stored_spec(product).design != "editorial":
+        return None
+    template = load_template(templates_dir, product["template_id"])
+    outline = product.get("outline") or {}
+    names = [
+        n for n in ((outline.get("main") or {}).get("title"), outline.get("product_name")) if n
+    ]
+    colors = editorial_colors(template.palette)
+    return Spine(
+        title=min(names, key=len) if names else (product.get("title") or ""),
+        paper=colors["spine"],
+        ink=colors["ink"],
+        gold=colors["gold"],
+        font=str(fonts_from(template, templates_dir).heading),
+    )
+
+
 async def main_cover_png(services, product: dict, user_id: UUID) -> bytes:
     """La portada del producto principal tal como sale en el paquete (arte o imagen propia)."""
     template = await asyncio.to_thread(
@@ -300,6 +323,18 @@ async def main_cover_png(services, product: dict, user_id: UUID) -> bytes:
     if not fields:
         _, art = art_for_piece(spec, product, template, "main", 0)
         fields = {"cover_art": art}
+    if main:
+        # La misma foto del tema que lleva la portada del paquete (si el outline la pidió).
+        photo = await cover_photo_uri(
+            getattr(services, "ad_images", None),
+            user_id,
+            ItemOutline.model_validate(main),
+            product.get("niche") or "",
+        )
+        if photo:
+            fields["cover_photo"] = photo
+    if spec.design == "editorial":
+        fields["cover_design"] = "editorial"
     ctx = RenderContext(
         market=product["market"],
         role="main",
@@ -320,9 +355,10 @@ async def make_mockups(product_id: UUID, user: User, services: ServicesDep) -> M
     if not product.get("outline"):
         raise unprocessable("el producto aún no tiene portada")
     cover = await main_cover_png(services, product, user.id)
+    spine = await asyncio.to_thread(book_spine, services.settings.templates_dir, product)
     urls: dict[str, str] = {}
     for kind in MOCKUP_KINDS:
-        png = await asyncio.to_thread(render_mockup, kind, cover)
+        png = await asyncio.to_thread(render_mockup, kind, cover, spine)
         path = f"{user.id}/{product_id}/mockups/{kind}.png"
         await services.storage.upload(path, png, "image/png")
         urls[kind] = await services.storage.signed_url(path, SIGNED_URL_SECONDS)

@@ -34,13 +34,23 @@ class RenderContext:
     cover_art: str = ""
     cover_image: str = ""
     cover_veil: float = 0.0
+    # Foto del tema para la tapa del libro de la portada (data URI JPEG). Vacío = solo diseño.
+    cover_photo: str = ""
+    # Diseño de la portada ("" o "template" = el de la plantilla; "editorial" = tapa de libro).
+    cover_design: str = ""
     # Fotos de capítulo ya descargadas: {"ch1": data URI JPEG}. Vacío = sin fotos.
     photos: dict[str, str] = field(default_factory=dict)
 
     @property
     def cover_extra(self) -> dict[str, object]:
         """Lo que la portada (templates/_base/cover.html.j2) lee además del texto."""
-        return {"art": self.cover_art, "bg": self.cover_image, "veil": self.cover_veil}
+        return {
+            "art": self.cover_art,
+            "bg": self.cover_image,
+            "veil": self.cover_veil,
+            "photo": self.cover_photo,
+            "design": self.cover_design,
+        }
 
     @property
     def labels(self) -> dict[str, str]:

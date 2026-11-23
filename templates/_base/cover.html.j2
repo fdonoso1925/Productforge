@@ -5,16 +5,83 @@
 {% set art = cover.get("art") %}
 {% set bg = cover.get("bg") %}
 {% set veil = cover.get("veil") or 0 %}
+{% set photo = cover.get("photo") %}
+{% set design = cover.get("design") or "template" %}
 {% set s = "full-bleed" if bg else t.style.cover %}
 {% set p = t.palette %}
 {# Títulos largos (comunes en la IA) bajan de tamaño para no desbordar la portada. #}
 {% set long = cover.title|length > 60 %}
+{# Libro de la portada: tapa diseñada (color de marca, un círculo y un filete de acento), lomo
+   con su pliegue, canto de las hojas y tapa trasera que asoman (grosor), luz suave y sombra en el
+   piso. Todo con capas de CSS que WeasyPrint sí dibuja (gradientes; sin box-shadow ni filtros). #}
 {% macro mockup(left, top) -%}
+{% set book_bg = p.secondary if s in ["full-bleed", "split"] else p.primary %}
 <div class="mockup" style="left: {{ left }}; top: {{ top }}; transform: rotate(-4deg);">
-  <div class="mockup-back"></div>
-  <div class="mockup-book{% if long %} long{% endif %}"{% if s in ["full-bleed", "split"] %} style="background: {{ p.secondary }}; border-left-color: {{ p.accent }}; color: {{ p.on_primary }};"{% endif %}>{{ cover.title }}{% if cover.product_name != cover.title %}<small>{{ cover.product_name }}</small>{% endif %}</div>
+  <div class="mk-floor"></div>
+  <div class="mk-board" style="background: {{ book_bg }};"></div>
+  <div class="mk-pages"></div>
+  <div class="mk-cover{% if long %} long{% endif %}{% if photo %} with-photo{% endif %}" style="background: {{ book_bg }}; color: {{ p.on_primary }};">
+    {% if photo %}
+    {# Foto del tema arriba (si el outline la pidió); el título va debajo, sobre el color. #}
+    <div class="mk-photo"><img src="{{ photo }}" alt=""></div>
+    <div class="mk-photo-edge" style="background: {{ p.accent }};"></div>
+    {% else %}
+    <div class="mk-shape" style="background: {{ p.accent }};"></div>
+    <div class="mk-shape small" style="border-color: {{ p.accent }};"></div>
+    {% endif %}
+    <div class="mk-text">
+      <div class="mk-rule" style="background: {{ p.accent }};"></div>
+      <div class="mk-title">{{ cover.title }}</div>
+      {% if cover.product_name != cover.title %}<div class="mk-name">{{ cover.product_name }}</div>{% endif %}
+    </div>
+    <div class="mk-foot" style="background: {{ p.accent }};"></div>
+    <div class="mk-light"></div>
+    <div class="mk-spine"></div>
+  </div>
 </div>
 {%- endmacro %}
+{% if design == "editorial" %}
+{# Tapa editorial: un libro impreso de verdad. Papel claro, título grande en tinta oscura,
+   subtítulo dorado entre rombos, foto (imagen propia > foto del tema) o un emblema al centro que se
+   funde con el papel, y la promesa al pie entre filetes. Colores legibles: editorial_colors. #}
+{% set e = editorial_colors(p) %}
+{% set img = bg or photo %}
+{% set n = cover.title|length %}
+{% set size = "xs" if n > 70 else "s" if n > 40 else "m" if n > 22 else "l" if n > 12 else "xl" %}
+<section class="cover cover-ed" style="background: {{ e.paper }}; color: {{ e.ink }};">
+  {% if not img %}<div class="ed-glow" style="background: radial-gradient(ellipse 60% 45% at 50% 58%, {{ e.glow }} 0%, {{ e.fade }} 100%);"></div>{% endif %}
+  {# Sin foto, un emblema sobrio (el arte generativo, pensado para fondos de color, se ve
+     pesado sobre papel claro). #}
+  <div class="ed-figure">
+    {% if img %}<img src="{{ img }}" alt="">
+    {# Una sola viñeta radial que funde la foto con el papel (varias capas dejan costuras). #}
+    <div class="ed-fade" style="background: radial-gradient(ellipse 56% 50% at 50% 50%, {{ e.fade }} 50%, {{ e.paper }} 100%);"></div>
+    {% else %}<div class="ed-ring" style="border-color: {{ e.gold }};"></div><div class="ed-dia ed-dia-big" style="background: {{ e.gold }};"></div>
+    {% endif %}
+  </div>
+  <div class="ed-head">
+    {% if cover.product_name and cover.product_name != cover.title %}<div class="ed-kicker" style="color: {{ e.gold }};">{{ cover.product_name }}</div>{% endif %}
+    <div class="ed-title ed-{{ size }}">{{ cover.title }}</div>
+    {% if cover.subtitle %}
+    <table class="ed-sub" style="color: {{ e.gold }};"><tr>
+      <td class="ed-sub-dia"><span class="ed-dia" style="background: {{ e.gold }};"></span></td>
+      <td class="ed-sub-text">{{ cover.subtitle }}</td>
+      <td class="ed-sub-dia"><span class="ed-dia" style="background: {{ e.gold }};"></span></td>
+    </tr></table>
+    {% endif %}
+  </div>
+  <div class="ed-foot">
+    <div class="ed-dia ed-dia-foot" style="background: {{ e.gold }};"></div>
+    {% if cover.promise %}
+    <table class="ed-tag"><tr>
+      <td class="ed-line-cell"><div class="ed-line" style="background: {{ e.gold }};"></div></td>
+      <td class="ed-tag-text">{{ cover.promise }}</td>
+      <td class="ed-line-cell"><div class="ed-line" style="background: {{ e.gold }};"></div></td>
+    </tr></table>
+    {% endif %}
+  </div>
+</section>
+{% else %}
 <section class="cover" style="background: {% if s == 'full-bleed' %}{{ p.primary }}{% elif s == 'centered' %}{{ p.surface }}{% else %}{{ p.background }}{% endif %};
   color: {% if s == 'full-bleed' %}{{ p.on_primary }}{% else %}{{ p.text }}{% endif %};">
   {% if bg %}
@@ -56,3 +123,4 @@
   </div>
   {% if s in ['centered', 'full-bleed', 'notebook'] %}{{ mockup('70mm', '150mm') }}{% elif s == 'band' %}{{ mockup('124mm', '168mm') }}{% endif %}
 </section>
+{% endif %}

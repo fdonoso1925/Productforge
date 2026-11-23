@@ -100,6 +100,13 @@ class Template(BaseModel):
             return Markup(render_visual(visual, self, market))  # type: ignore[arg-type]  # noqa: S704
 
         env.globals["visual_svg"] = visual_svg
+
+        def editorial_colors(palette: Palette) -> dict[str, str]:
+            from app.generators.cover import editorial_colors as colors
+
+            return colors(palette)
+
+        env.globals["editorial_colors"] = editorial_colors
         return env
 
     def render_html(self, kind: str, **context: object) -> str:

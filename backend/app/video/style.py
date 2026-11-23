@@ -49,14 +49,16 @@ def palette_from(template: Template) -> VideoPalette:
     bg = p.primary
     text = readable(p.on_primary, bg)
     accent = p.accent
-    if contrast(luminance(hex_rgb(accent)), luminance(hex_rgb(bg))) < 2.0:
-        accent = text  # el acento se confunde con el fondo: el destacado usa el color del texto
+    # El acento se usa en palabras grandes (la idea clave): debe leerse como texto grande (3:1).
+    if contrast(luminance(hex_rgb(accent)), luminance(hex_rgb(bg))) < 3.0:
+        accent = text  # se confunde con el fondo (p. ej. durazno sobre malva): usa el del texto
     return VideoPalette(
         bg=bg,
         text=text,
         accent=accent,
         on_accent=readable(bg, accent, INK),
-        sub=mix(text, bg, 0.28),
+        # Texto secundario más suave que el principal, pero siempre legible (4,5:1).
+        sub=readable(mix(text, bg, 0.28), bg, mix(text, bg, 0.15), text),
         deco=mix(bg, text, 0.07),
     )
 

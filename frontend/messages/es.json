@@ -227,7 +227,15 @@
     "uploading": "Subiendo…",
     "errorType": "Usa una imagen JPG, PNG o WebP.",
     "errorSize": "La imagen pesa más de 5 MB.",
-    "errorUpload": "No se pudo subir la imagen. Intenta de nuevo."
+    "errorUpload": "No se pudo subir la imagen. Intenta de nuevo.",
+    "design": {
+      "label": "Diseño de la tapa",
+      "template": "De la plantilla",
+      "templateHint": "Título sobre el color de la plantilla y un libro pequeño.",
+      "editorial": "Libro editorial",
+      "editorialHint": "Como un libro impreso: papel claro, título grande, foto del tema al centro y lomo con el título en el mockup.",
+      "artUnused": "En el diseño editorial la tapa lleva la foto del tema (o tu imagen) al centro; si el tema no tiene foto, un emblema sobrio. El arte no se usa."
+    }
   },
   "product": {
     "generating": "Generando tu paquete",

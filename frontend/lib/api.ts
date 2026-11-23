@@ -33,6 +33,7 @@ import type {
 } from "@/lib/pages";
 import type {
   ArtChoice,
+  CoverDesign,
   CoverSpec,
   DriveStatus,
   Format,
@@ -99,6 +100,7 @@ export type OutlineRequest = {
   tone?: string | null;
   audience_override?: string | null;
   cover_art?: ArtChoice;
+  cover_design?: CoverDesign;
   reference?: SalesReference;
 };
 

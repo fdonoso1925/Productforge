@@ -6,7 +6,30 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ApiError, api } from "@/lib/api";
 import { ART_CHOICES, checkCoverFile, COVER_IMAGE_TYPES } from "@/lib/cover";
-import type { ArtChoice, CoverSpec } from "@/lib/types";
+import { COVER_DESIGNS, type ArtChoice, type CoverDesign, type CoverSpec } from "@/lib/types";
+
+/** Miniatura dibujada con CSS de cada diseño de tapa (no depende del backend). */
+function DesignThumb({ design }: { design: CoverDesign }) {
+  if (design === "editorial") {
+    return (
+      <span className="flex size-full flex-col items-center gap-1 bg-[#F7F2EA] px-2 py-2.5">
+        <span className="h-2 w-4/5 rounded-sm bg-[#141B2D]" />
+        <span className="h-1 w-3/5 rounded-sm bg-[#B07A2A]" />
+        <span className="mt-1 w-full flex-1 rounded-[40%] bg-gradient-to-b from-[#c9b8a4] to-[#8d7a66] opacity-80" />
+        <span className="size-1.5 rotate-45 bg-[#B07A2A]" />
+        <span className="h-1 w-1/2 rounded-sm bg-[#141B2D]/70" />
+      </span>
+    );
+  }
+  return (
+    <span className="flex size-full flex-col gap-1 bg-primary/15 p-2">
+      <span className="h-1 w-1/3 rounded-sm bg-primary/60" />
+      <span className="h-2 w-4/5 rounded-sm bg-primary" />
+      <span className="h-1 w-2/3 rounded-sm bg-foreground/30" />
+      <span className="mt-auto ml-auto h-1/2 w-2/5 -rotate-3 rounded-sm bg-primary/70" />
+    </span>
+  );
+}
 
 /**
  * Elige la portada: un estilo de arte generativo (único por pieza, de la misma familia en todo el
@@ -67,6 +90,8 @@ export function CoverPicker({
   };
 
   const hintKey = value.art === "auto" ? "auto" : value.art === "none" ? "none" : "style";
+  const editorial = value.design === "editorial";
+  const artOff = hasImage || editorial;
 
   return (
     <section className="flex min-w-0 flex-col gap-4" aria-label={t("title")}>
@@ -75,10 +100,40 @@ export function CoverPicker({
         <p className="text-sm text-muted-foreground">{t("hint")}</p>
       </div>
 
+      <div className="flex flex-col gap-2">
+        <span className="text-sm font-medium">{t("design.label")}</span>
+        <div role="radiogroup" aria-label={t("design.label")} className="grid grid-cols-2 gap-3 sm:max-w-md">
+          {COVER_DESIGNS.map((design) => {
+            const selected = (value.design ?? "template") === design;
+            return (
+              <button
+                key={design}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                disabled={disabled}
+                onClick={() => onChange({ ...value, design })}
+                className={`flex min-w-0 gap-3 rounded-lg border p-2 text-left text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed ${
+                  selected ? "border-primary ring-2 ring-primary" : "hover:border-foreground/40"
+                }`}
+              >
+                <span className="aspect-[210/297] w-12 shrink-0 overflow-hidden rounded border">
+                  <DesignThumb design={design} />
+                </span>
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className="font-medium">{t(`design.${design}`)}</span>
+                  <span className="text-xs text-muted-foreground">{t(`design.${design}Hint`)}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div
         role="radiogroup"
         aria-label={t("styleLabel")}
-        className={`grid grid-cols-2 gap-3 sm:grid-cols-4 ${hasImage ? "opacity-50" : ""}`}
+        className={`grid grid-cols-2 gap-3 sm:grid-cols-4 ${artOff ? "opacity-50" : ""}`}
       >
         {ART_CHOICES.map((choice: ArtChoice) => {
           const selected = value.art === choice;
@@ -88,7 +143,7 @@ export function CoverPicker({
               type="button"
               role="radio"
               aria-checked={selected}
-              disabled={disabled || hasImage}
+              disabled={disabled || artOff}
               onClick={() => onChange({ ...value, art: choice })}
               className={`flex min-w-0 flex-col gap-1.5 rounded-lg border p-2 text-left text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed ${
                 selected ? "border-primary ring-2 ring-primary" : "hover:border-foreground/40"
@@ -107,7 +162,7 @@ export function CoverPicker({
           );
         })}
       </div>
-      <p className="text-xs text-muted-foreground">{hasImage ? t("imageReplaces") : t(`styleHint.${hintKey}`)}</p>
+      <p className="text-xs text-muted-foreground">{hasImage ? t("imageReplaces") : editorial ? t("design.artUnused") : t(`styleHint.${hintKey}`)}</p>
 
       <div className="flex flex-col gap-2 rounded-lg border border-dashed p-3">
         <div className="flex flex-wrap items-center gap-3">

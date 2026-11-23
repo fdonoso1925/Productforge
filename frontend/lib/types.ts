@@ -37,6 +37,8 @@ export type ItemOutline = {
   table_of_contents: string[];
   estimated_pages: number;
   related_items: string[];
+  /** Foto del tema para la tapa del libro de la portada (opcional, la propone la IA). */
+  cover_photo?: { scene: string; keywords: string[]; caption?: string } | null;
 };
 
 export type PackageOutline = {
@@ -73,7 +75,11 @@ export type TemplateInfo = {
 export const ART_STYLES = ["topo", "waves", "circles", "bauhaus", "facets"] as const;
 export type ArtStyle = (typeof ART_STYLES)[number];
 export type ArtChoice = "auto" | ArtStyle | "none";
-export type CoverSpec = { art: ArtChoice; image_id: string | null };
+/** Diseño de la tapa: el de la plantilla o «editorial» (libro impreso: papel claro, título grande,
+ * foto al centro y lomo con el título en el mockup). Mismo enum que el backend (CoverDesign). */
+export const COVER_DESIGNS = ["template", "editorial"] as const;
+export type CoverDesign = (typeof COVER_DESIGNS)[number];
+export type CoverSpec = { art: ArtChoice; image_id: string | null; design: CoverDesign };
 
 /** Resumen de una página de ventas que sirve de inspiración (espejo de SalesReference del backend). */
 export type SalesReference = {
