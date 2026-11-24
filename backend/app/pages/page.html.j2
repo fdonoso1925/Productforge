@@ -76,7 +76,20 @@ footer.legal { padding: 28px 0 40px; font-size: 13px; color: var(--muted); text-
 .sticky { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: var(--bg); border-top: 1px solid rgba(0,0,0,.12); padding: 10px 16px; display: flex; gap: 12px; align-items: center; justify-content: center; }
 .sticky .btn { padding: 13px 24px; font-size: 16px; box-shadow: none; flex: 1; max-width: 420px; }
 .sticky .p { font: 800 18px var(--heading); color: var(--primary); white-space: nowrap; }
+.hero-grid { display: grid; gap: 28px; align-items: center; }
+.hero-media img { display: block; width: 100%; height: auto; border-radius: calc(var(--radius) + 6px); }
+.hero-media img.photo { aspect-ratio: 16 / 10; object-fit: cover; box-shadow: 0 18px 40px rgba(0,0,0,.28); }
+.hero-media img.mock { filter: drop-shadow(0 18px 30px rgba(0,0,0,.35)); }
+.photo-band { margin: 26px 0 6px; }
+.photo-band img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: calc(var(--radius) + 4px); }
+.viz { margin: 28px 0 0; background: var(--bg); border-radius: calc(var(--radius) + 4px); padding: 18px; border: 1px solid rgba(0,0,0,.06); }
+.alt .viz { background: var(--bg); }
+.viz svg { display: block; width: 100%; height: auto; }
+.viz svg text { font-family: var(--body); }
+.viz h3 { margin: 0 0 12px; }
+.offer-mock { display: block; width: min(320px, 80%); height: auto; margin: 0 auto 10px; filter: drop-shadow(0 16px 26px rgba(0,0,0,.28)); }
 @media (min-width: 760px) {
+  .hero-grid.with-media { grid-template-columns: 1.15fr .85fr; }
   .cards.two { grid-template-columns: 1fr 1fr; }
   .cols { grid-template-columns: 1fr 1fr; }
   .proof.two { grid-template-columns: 1fr 1fr; }
@@ -85,14 +98,20 @@ footer.legal { padding: 28px 0 40px; font-size: 13px; color: var(--muted); text-
 </style>
 </head>
 <body>
+{% set hero_img = img.bundle or img.hero %}
 <header class="hero">
-  <div class="wrap">
+  <div class="wrap{% if hero_img %} wide{% endif %}">
+    <div class="hero-grid{% if hero_img %} with-media{% endif %}">
+    <div>
     {% if c.hero.eyebrow %}<span class="eyebrow">{{ c.hero.eyebrow }}</span>{% endif %}
     <h1>{{ c.hero.headline }}</h1>
     <p class="sub">{{ c.hero.subheadline }}</p>
     <ul class="ticks">{% for b in c.hero.bullets %}<li>{{ b }}</li>{% endfor %}</ul>
     <a class="btn" href="{{ cta }}">{{ c.hero.cta_text }}</a>
     {% if c.hero.microcopy %}<p class="micro">{{ c.hero.microcopy }}</p>{% endif %}
+    </div>
+    {% if hero_img %}<div class="hero-media"><img class="{{ 'mock' if img.bundle else 'photo' }}" src="{{ hero_img }}" alt="{{ c.hero.headline }}"></div>{% endif %}
+    </div>
   </div>
 </header>
 
@@ -101,6 +120,7 @@ footer.legal { padding: 28px 0 40px; font-size: 13px; color: var(--muted); text-
   <div class="wrap">
     <h2>{{ c.problem.title }}</h2>
     <p>{{ c.problem.intro }}</p>
+    {% if img.problem %}<figure class="photo-band"><img src="{{ img.problem }}" alt="" loading="lazy"></figure>{% endif %}
     <ul class="cross">{% for x in c.problem.pains %}<li>{{ x }}</li>{% endfor %}</ul>
     <p><strong>{{ c.problem.agitation }}</strong></p>
   </div>
@@ -111,7 +131,12 @@ footer.legal { padding: 28px 0 40px; font-size: 13px; color: var(--muted); text-
     <h2>{{ c.solution.title }}</h2>
     <p>{{ c.solution.intro }}</p>
     <div class="mechanism"><strong>{{ c.solution.mechanism_name }}</strong>{{ c.solution.mechanism }}</div>
+    {% if solution_svg %}<figure class="viz">{{ solution_svg }}</figure>{% endif %}
+    {% if journey_svg %}
+    <figure class="viz"><h3>{{ L.journey }}</h3>{{ journey_svg }}</figure>
+    {% else %}
     <ol class="steps">{% for s in c.journey %}<li><h3>{{ s.title }}</h3><p>{{ s.text }}</p></li>{% endfor %}</ol>
+    {% endif %}
   </div>
 </section>
 
@@ -162,6 +187,7 @@ footer.legal { padding: 28px 0 40px; font-size: 13px; color: var(--muted); text-
 <section id="oferta">
   <div class="wrap">
     <div class="offer">
+      {% if img.book or img.bundle %}<img class="offer-mock" src="{{ img.book or img.bundle }}" alt="{{ c.offer.title }}" loading="lazy">{% endif %}
       <h2>{{ c.offer.title }}</h2>
       <p>{{ c.offer.intro }}</p>
       {% if items %}<ul class="included">{% for d in items if d.kind != 'bump' %}<li>{{ d.title }}</li>{% endfor %}</ul>{% endif %}

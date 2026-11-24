@@ -1,5 +1,8 @@
-"""Página de ventas → un único archivo HTML autocontenido (CSS en línea, sin JavaScript, sin
-imágenes ni recursos externos: nada se descarga de ningún tercero y no lleva logos de nadie).
+"""Página de ventas → un único archivo HTML autocontenido (CSS en línea, sin JavaScript ni
+recursos externos: nada se descarga de ningún tercero y no lleva logos de nadie).
+
+Infografías como SVG en línea (`render_visual`, el mismo dibujante de los PDF: todo su texto se
+escapa) y fotos/mockups incrustados como data URI (`pages/media.py`).
 
 Todo el texto se escapa (Jinja con autoescape). Los colores vienen de la paleta validada de la
 plantilla visual del producto. El enlace de compra debe ser https o el botón queda en «#oferta».
@@ -9,7 +12,10 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from markupsafe import Markup
 
+from app.content.schemas.formats import Visual, VisualItem
+from app.generators.visuals import render_visual
 from app.pages.schemas import PageBrief, PageContent, PageProof
 from app.templates_engine.model import Template
 
@@ -26,6 +32,7 @@ LABELS = {
         "about": "Quién está detrás",
         "guarantee": "Garantía",
         "faq": "Preguntas frecuentes",
+        "journey": "Tu camino, paso a paso",
     },
     "pt-BR": {
         "lang": "pt-BR",
@@ -39,6 +46,7 @@ LABELS = {
         "about": "Quem está por trás",
         "guarantee": "Garantia",
         "faq": "Perguntas frequentes",
+        "journey": "Seu caminho, passo a passo",
     },
 }
 
@@ -88,13 +96,38 @@ def items_of(content: PageContent, brief: PageBrief) -> list[dict]:
     ]
 
 
+def _svg(visual: Visual | None, template: Template, market: str) -> Markup | None:
+    """SVG en línea de una infografía; None si no hay o no se puede dibujar."""
+    if visual is None:
+        return None
+    try:
+        svg = render_visual(visual, template, market)  # type: ignore[arg-type]
+    except Exception:
+        return None
+    return Markup(svg) if svg else None  # noqa: S704 - render_visual ya escapa todo el texto
+
+
+def journey_visual(content: PageContent, title: str) -> Visual | None:
+    """Las etapas del camino como infografía de proceso (la arma el código, no la IA)."""
+    steps = content.journey[:5]
+    if len(steps) < 3:
+        return None
+    return Visual(
+        kind="process",
+        title=title,
+        items=[VisualItem(label=s.title, detail=s.text) for s in steps],
+    )
+
+
 def render_page(
     content: PageContent,
     brief: PageBrief,
     proofs: list[PageProof],
     template: Template,
     checkout_url: str | None,
+    images: dict[str, str] | None = None,
 ) -> str:
+    """`images`: {hero, problem, bundle, book} → data URI (las que haya)."""
     labels = LABELS[brief.market]
     chosen = {p.id: p for p in proofs}
     picked = [chosen[i] for i in content.proof.proof_ids if i in chosen]
@@ -111,4 +144,7 @@ def render_page(
         items=items_of(content, brief),
         proofs=picked,
         cta=safe_link(checkout_url),
+        img={k: v for k, v in (images or {}).items() if v.startswith("data:image/")},
+        solution_svg=_svg(content.solution_visual, template, brief.market),
+        journey_svg=_svg(journey_visual(content, labels["journey"]), template, brief.market),
     )

@@ -2,8 +2,11 @@
 
 import logging
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 from uuid import UUID
 
+from app.pages.media import resolve_assets
 from app.pages.repo import SalesPageRepo
 from app.pages.schemas import PageBrief, PageProof, PageReference
 from app.pages.strategy import PageService
@@ -15,6 +18,11 @@ logger = logging.getLogger("productforge.pages")
 class PageDeps:
     service: PageService
     pages: SalesPageRepo
+    # Imágenes de la página (opcionales): fotos de stock y mockups del producto.
+    images: Any = None
+    storage: Any = None
+    products: Any = None
+    templates_dir: Path | None = None
 
 
 def proofs_of(page: dict) -> list[PageProof]:
@@ -33,10 +41,22 @@ async def run_page_generate(job: dict, deps: PageDeps) -> None:
         reference=reference,
         known=page.get("reference_fingerprint"),
     )
-    await deps.pages.update(
-        page["id"],
-        content=content.model_dump(),
-        similarity=report.model_dump(),
-        status="ready",
-        error=None,
+    assets = await resolve_assets(
+        page,
+        content,
+        brief,
+        user_id=user_id,
+        images=deps.images,
+        storage=deps.storage,
+        products=deps.products,
+        templates_dir=deps.templates_dir,
     )
+    values: dict = {
+        "content": content.model_dump(),
+        "similarity": report.model_dump(),
+        "status": "ready",
+        "error": None,
+    }
+    if assets:  # la columna solo se toca cuando hay imágenes
+        values["assets"] = assets
+    await deps.pages.update(page["id"], **values)

@@ -14,6 +14,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, Field, StringConstraints
 
 from app.content.schemas import Market
+from app.content.schemas.formats import PhotoSpec, Visual
 
 Short = Annotated[str, StringConstraints(strip_whitespace=True, max_length=250)]
 Medium = Annotated[str, StringConstraints(strip_whitespace=True, max_length=600)]
@@ -234,6 +235,22 @@ class PageContent(BaseModel):
     faq: list[Faq] = Field(description="5 a 8 preguntas que eliminan objeciones reales")
     final_cta: FinalCta
     disclaimer: str = Field(description="Aviso honesto: los resultados dependen de la aplicación")
+    # Imágenes e infografías (opcionales: las páginas anteriores siguen valiendo sin ellas).
+    hero_photo: PhotoSpec | None = Field(
+        default=None,
+        description="Foto de stock para el encabezado: el público ya viviendo el resultado "
+        "(escena y 2-3 palabras clave en inglés); null si no hace falta",
+    )
+    problem_photo: PhotoSpec | None = Field(
+        default=None,
+        description="Foto de stock que muestre la situación o el dolor del público (escena y "
+        "2-3 palabras clave en inglés); sin personas reconocibles en temas sensibles",
+    )
+    solution_visual: Visual | None = Field(
+        default=None,
+        description="Infografía del método: process, cycle, pyramid, funnel, matrix, comparison, "
+        "cards o checklist (NUNCA bars ni donut: la página no muestra cifras)",
+    )
 
 
 # ───────────────────────────── informe de parecido ─────────────────────────────

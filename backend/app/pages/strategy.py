@@ -42,6 +42,7 @@ def revalidate(
     """Reglas de honestidad y parecido con la página modelo, sin IA (generación y edición)."""
     blank = content.offer.model_copy(update={"price_text": "", "guarantee": "", "urgency": ""})
     errors = rules.check_content(content.model_copy(update={"offer": blank}), brief, proofs)
+    errors += rules.media_errors(content)
     report = similarity.check(
         content, known or [], brands, own_text=f"{brief.product_name} {brief.niche}"
     )
@@ -109,6 +110,7 @@ class PageService:
             nonlocal attempts
             attempts += 1
             errors, report = revalidate(result, brief, proofs, known, brands)
+            errors += rules.media_errors(result, required=True)
             if attempts <= SIMILARITY_ATTEMPTS:
                 errors += similarity_errors(report)
             return errors

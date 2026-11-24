@@ -9,6 +9,7 @@ from fastapi import HTTPException
 
 from app.api.content import get_page_fetcher
 from app.content.engines import ContentRejected, ContentService, EngineConfig
+from app.content.schemas.formats import PhotoSpec, Visual, VisualItem
 from app.pages import render, rules, similarity
 from app.pages.jobs import PageDeps
 from app.pages.render import render_page, safe_link
@@ -117,6 +118,16 @@ def content(**over) -> PageContent:
         ),
         disclaimer=(
             "Los resultados dependen de que apliques lo aprendido. No garantizamos resultados."
+        ),
+        problem_photo=PhotoSpec(scene="messy desk with papers", keywords=["messy desk", "papers"]),
+        solution_visual=Visual(
+            kind="process",
+            title="El método en tres pasos",
+            items=[
+                VisualItem(label="Captura todo", detail="Una sola bandeja"),
+                VisualItem(label="Ordena", detail="Carpetas por proyecto"),
+                VisualItem(label="Revisa", detail="Diez minutos el viernes"),
+            ],
         ),
     )
     return base.model_copy(update=over)

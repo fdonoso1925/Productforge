@@ -8,7 +8,31 @@ no los escribe la IA: `finalize` los pone con las palabras del usuario.
 
 import re
 
+from app.content.rules import _visual_errors
 from app.pages.schemas import PageBrief, PageContent, PageProof
+
+NO_CHART_KINDS = frozenset({"bars", "donut"})  # la página no muestra cifras, ni de ejemplo
+
+
+def media_errors(content: PageContent, *, required: bool = False) -> list[str]:
+    """Infografía del método y fotos: que se puedan dibujar y buscar. `required` en la
+    generación (la IA debe darlas); al editar a mano, solo se valida lo que haya."""
+    errors = _visual_errors(content.solution_visual, "solution_visual", required=required)
+    if content.solution_visual is not None and content.solution_visual.kind in NO_CHART_KINDS:
+        errors.append(
+            "solution_visual no puede ser bars ni donut: la página no muestra cifras. Usa "
+            "process, cycle, pyramid, funnel, matrix, comparison, cards o checklist."
+        )
+    for name in ("hero_photo", "problem_photo"):
+        photo = getattr(content, name)
+        if photo is not None and (
+            not photo.scene.strip() or not 2 <= len([k for k in photo.keywords if k.strip()]) <= 3
+        ):
+            errors.append(f"{name} necesita una escena y 2 o 3 palabras clave en inglés (o null).")
+    if required and content.problem_photo is None:
+        errors.append("Falta problem_photo: la página debe llevar al menos una foto del tema.")
+    return errors
+
 
 RANGES = {
     "pains": (3, 6),

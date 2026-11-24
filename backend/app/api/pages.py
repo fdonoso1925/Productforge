@@ -24,6 +24,7 @@ from app.content.schemas import Market
 from app.db.supabase import NotFound
 from app.deps import ServicesDep
 from app.pages import lovable, similarity
+from app.pages.media import asset_uris
 from app.pages.render import render_page
 from app.pages.schemas import (
     Deliverable,
@@ -350,17 +351,18 @@ def filename_of(page: dict) -> str:
     return f"pagina-{slug or 'ventas'}.html"
 
 
-def html_of(services, page: dict) -> str:
+async def html_of(services, page: dict) -> str:
     content, brief, proofs = page_parts(page)
     template = load_template(Path(services.settings.templates_dir), page["template_id"])
-    return render_page(content, brief, proofs, template, page.get("checkout_url"))
+    images = await asset_uris(services.storage, page.get("assets"))
+    return render_page(content, brief, proofs, template, page.get("checkout_url"), images)
 
 
 @router.get("/{page_id}/html")
 async def preview_html(page_id: UUID, user: User, services: ServicesDep) -> HtmlOut:
     """La página renderizada para la vista previa (se ve aunque no se pueda exportar)."""
     page = await owned_page(services, page_id, user)
-    return HtmlOut(html=html_of(services, page), filename=filename_of(page))
+    return HtmlOut(html=await html_of(services, page), filename=filename_of(page))
 
 
 @router.post("/{page_id}/export", dependencies=[Depends(work_rate_limit)])
@@ -373,7 +375,7 @@ async def export_html(page_id: UUID, user: User, services: ServicesDep) -> HtmlO
             status.HTTP_409_CONFLICT,
             "el texto se parece demasiado a la página modelo: edítalo o vuelve a generarlo",
         )
-    return HtmlOut(html=html_of(services, page), filename=filename_of(page))
+    return HtmlOut(html=await html_of(services, page), filename=filename_of(page))
 
 
 class LovableOut(BaseModel):

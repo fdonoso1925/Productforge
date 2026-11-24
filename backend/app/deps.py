@@ -80,7 +80,14 @@ class Services:
     ad_videos: AdVideoRepo | None = None
 
     def page_deps(self) -> PageDeps:
-        return PageDeps(service=self.page_service, pages=self.sales_pages)  # type: ignore[arg-type]
+        return PageDeps(
+            service=self.page_service,  # type: ignore[arg-type]
+            pages=self.sales_pages,  # type: ignore[arg-type]
+            images=self.ad_images,
+            storage=self.storage,
+            products=self.products,
+            templates_dir=self.settings.templates_dir,
+        )
 
     def ads(self) -> AdDeps:
         return AdDeps(

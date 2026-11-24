@@ -22,6 +22,12 @@ Como escrever, seção por seção:
 - `disclaimer`: aviso breve e honesto (os resultados dependem de aplicar o conteúdo; não se garantem rendimentos nem resultados específicos).
 - `seo_title` (até 60 caracteres) e `seo_description` (até 160).
 
+Imagens e infográfico (a página não pode ser só texto; o sistema desenha e busca, você descreve):
+- `solution_visual`: um infográfico do método, coerente com `mechanism`: `process` (passos em ordem), `cycle` (hábito que se repete), `pyramid` (níveis), `funnel` (etapas que se afunilam), `matrix` (2x2 com `axis_x` e `axis_y`), `comparison` (antes/depois ou jeito antigo vs. novo, com `left_title` e `right_title`), `cards` (3 ou 4 ideias-chave) ou `checklist`. Textos bem curtos. NUNCA `bars` nem `donut`: a página não mostra números.
+- `problem_photo`: uma foto de banco de imagens da situação do público (cena em inglês e 2 ou 3 palavras-chave em inglês, concretas e fotografáveis: um lugar, um objeto, uma pessoa de costas). Em temas sensíveis (saúde, dinheiro, maternidade, corpo), sem pessoas reconhecíveis.
+- `hero_photo`: uma foto do resultado já alcançado (mesma forma). Se o produto vem de um pacote, o sistema também mostra os mockups; a foto soma mesmo assim.
+- O sistema acrescenta sozinho um infográfico com as etapas de `journey` e os mockups do produto: não os descreva.
+
 Regras duras:
 - Nenhum número (prazos, porcentagens, quantidade de pessoas ou vendas) que não esteja em `brief` ou `proofs`.
 - Nada de depoimentos inventados, nomes, logos nem «milhares de pessoas».
