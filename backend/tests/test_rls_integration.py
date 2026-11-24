@@ -257,6 +257,18 @@ def test_backend_only_ad_tables_are_invisible_to_every_user(http, users, ads_of_
     assert len(_rows(http, table, SERVICE_KEY)) >= 1  # la service role sí ve lo que insertó
 
 
+# Una columna que SÍ existe en cada tabla: si no, PostgREST responde 400 («columna inexistente»)
+# antes de llegar a RLS y la prueba no demostraría nada.
+CHANGES = {
+    "ad_batches": {"niche": "cambiado"},
+    "ad_creatives": {"angle": "cambiado"},
+    "ad_results": {"clicks": 999},
+    "ad_proofs": {"text": "cambiado"},
+    "ad_image_cache": {"storage_path": "cambiado"},
+    "ad_provider_usage": {"requests": 999},
+}
+
+
 @pytest.mark.parametrize("table", [*AD_TABLES, "ad_image_cache", "ad_provider_usage"])
 def test_users_cannot_write_ad_tables_directly(http, users, ads_of_a, table) -> None:
     rows = {
@@ -278,7 +290,7 @@ def test_users_cannot_write_ad_tables_directly(http, users, ads_of_a, table) -> 
         params={"user_id": f"eq.{users['a']['id']}"}
         if table in AD_TABLES
         else {"provider": "eq.x"},
-        json={"niche": "cambiado"} if table == "ad_batches" else {"text": "cambiado"},
+        json=CHANGES[table],
     )
     assert update.status_code in (200, 204, 401, 403)
     if update.status_code == 200:
