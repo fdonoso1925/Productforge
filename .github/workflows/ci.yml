@@ -13,7 +13,7 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v5
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.4.0
         with:
           version: "0.10.11"
       - name: Librerías de WeasyPrint y LibreOffice (recálculo de fórmulas XLSX)
@@ -58,7 +58,7 @@ jobs:
       - uses: supabase/setup-cli@v3
         with:
           version: 2.121.0
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.4.0
         with:
           version: "0.10.11"
       - run: supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,realtime
