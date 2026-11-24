@@ -213,16 +213,23 @@ export type MetaBatch = {
   skipped: number;
   objective: "traffic" | "sales" | null;
   daily_budget: number | null;
+  /** cbo = presupuesto en la campaña (Meta lo mueve al ángulo que vende); abo = por conjunto. */
+  budget_mode: BudgetMode | null;
+  adsets: number;
   campaign_id: string | null;
   synced_at: string | null;
   active_ads: number;
   error: string | null;
 };
 
+export type BudgetMode = "cbo" | "abo";
+export const BUDGET_MODES: BudgetMode[] = ["cbo", "abo"]; // el primero es el recomendado
+
 export type MetaPublishInput = {
   link_url: string;
   objective: "traffic" | "sales";
   daily_budget: number;
+  budget_mode: BudgetMode;
   countries: string[];
 };
 

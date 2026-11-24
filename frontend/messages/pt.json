@@ -795,7 +795,7 @@
     },
     "meta": {
       "title": "Enviar para o Meta Ads",
-      "hint": "Cria a campanha, o conjunto e um anúncio por imagem e por vídeo pronto direto na sua conta. Tudo fica pausado: nada é gasto até você ativar no Gerenciador de Anúncios.",
+      "hint": "Cria a campanha, um conjunto por ângulo e um anúncio por imagem e por vídeo pronto direto na sua conta. Tudo fica pausado: nada é gasto até você ativar no Gerenciador de Anúncios.",
       "notConfigured": "A Meta não está conectada (falta: {missing}).",
       "account": "Conta de anúncios: {name} ({currency})",
       "inactive": "A conta de anúncios não está ativa no Meta.",
@@ -822,7 +822,20 @@
       "active": "{count, plural, one {# anúncio já está ativo no Meta.} other {# anúncios já estão ativos no Meta.}}",
       "sync": "Trazer métricas",
       "syncedAt": "Última leitura: {date}",
-      "connectLink": "Conectar em Configurações"
+      "connectLink": "Conectar em Configurações",
+      "budgetMode": {
+        "label": "Como o orçamento é distribuído",
+        "recommended": "Recomendado",
+        "cbo": {
+          "name": "CBO · orçamento da campanha",
+          "hint": "Um conjunto por ângulo e o orçamento diário na campanha: a Meta o leva para o ângulo que consegue vendas mais baratas. O melhor para vender e para a rentabilidade."
+        },
+        "abo": {
+          "name": "ABO · orçamento por conjunto",
+          "hint": "Um conjunto por ângulo e o orçamento diário dividido em partes iguais. Útil para comparar ângulos de forma equilibrada antes de escalar."
+        },
+        "summary": "{mode} · {adsets} conjunto(s) de anúncios"
+      }
     },
     "angleNames": {
       "dolor": "Dor",

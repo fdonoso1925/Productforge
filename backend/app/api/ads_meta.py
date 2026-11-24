@@ -73,6 +73,9 @@ class MetaPublishIn(BaseModel):
     objective: Literal["traffic", "sales"] = "traffic"
     daily_budget: float = Field(gt=0, le=MAX_DAILY_BUDGET)
     countries: list[str] = Field(min_length=1, max_length=25)
+    # CBO por defecto: Meta reparte el presupuesto hacia el ángulo que vende más barato.
+    # ABO: partes iguales por ángulo (para comparar ángulos de forma pareja).
+    budget_mode: Literal["cbo", "abo"] = "cbo"
 
     @field_validator("link_url")
     @classmethod
@@ -101,6 +104,8 @@ class MetaBatchOut(BaseModel):
     skipped: int = 0
     objective: str | None = None
     daily_budget: float | None = None
+    budget_mode: str | None = None
+    adsets: int = 0
     campaign_id: str | None = None
     synced_at: str | None = None
     active_ads: int = 0  # anuncios que alguien ya activó en Ads Manager
@@ -117,6 +122,8 @@ def batch_meta_out(state: dict, *, publishing: bool) -> MetaBatchOut:
         skipped=state.get("skipped", 0),
         objective=state.get("objective"),
         daily_budget=state.get("daily_budget"),
+        budget_mode=state.get("budget_mode") or ("abo" if state.get("adset_id") else None),
+        adsets=len(state.get("adset_ids") or {}) or (1 if state.get("adset_id") else 0),
         campaign_id=state.get("campaign_id"),
         synced_at=state.get("synced_at"),
         active_ads=sum(1 for v in statuses.values() if v == "ACTIVE"),
@@ -173,6 +180,7 @@ async def batch_to_meta(
         or previous.get("link_url") != body.link_url
         or previous.get("daily_budget") != body.daily_budget
         or sorted(previous.get("countries", [])) != body.countries
+        or (previous.get("budget_mode") or "abo") != body.budget_mode
     ):
         raise HTTPException(
             status.HTTP_409_CONFLICT,

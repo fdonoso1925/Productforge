@@ -795,7 +795,7 @@
     },
     "meta": {
       "title": "Subir a Meta Ads",
-      "hint": "Crea la campaña, el conjunto y un anuncio por imagen y por video listo directamente en tu cuenta. Todo queda en pausa: no se gasta nada hasta que lo actives tú en Ads Manager.",
+      "hint": "Crea la campaña, un conjunto por ángulo y un anuncio por imagen y por video listo directamente en tu cuenta. Todo queda en pausa: no se gasta nada hasta que lo actives tú en Ads Manager.",
       "notConfigured": "Meta no está conectado (falta: {missing}).",
       "account": "Cuenta publicitaria: {name} ({currency})",
       "inactive": "La cuenta publicitaria no está activa en Meta.",
@@ -822,7 +822,20 @@
       "active": "{count, plural, one {# anuncio ya está activo en Meta.} other {# anuncios ya están activos en Meta.}}",
       "sync": "Traer métricas",
       "syncedAt": "Última lectura: {date}",
-      "connectLink": "Conectar en Ajustes"
+      "connectLink": "Conectar en Ajustes",
+      "budgetMode": {
+        "label": "Cómo se reparte el presupuesto",
+        "recommended": "Recomendado",
+        "cbo": {
+          "name": "CBO · presupuesto de campaña",
+          "hint": "Un conjunto por ángulo y el presupuesto diario en la campaña: Meta lo mueve hacia el ángulo que consigue ventas más baratas. Lo mejor para vender y para la rentabilidad."
+        },
+        "abo": {
+          "name": "ABO · presupuesto por conjunto",
+          "hint": "Un conjunto por ángulo y el presupuesto diario repartido en partes iguales. Útil para comparar ángulos de forma pareja antes de escalar."
+        },
+        "summary": "{mode} · {adsets} conjunto(s) de anuncios"
+      }
     },
     "angleNames": {
       "dolor": "Dolor",

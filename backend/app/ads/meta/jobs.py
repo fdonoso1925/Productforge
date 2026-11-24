@@ -1,9 +1,14 @@
 """Jobs de Meta: subir un lote como anuncios EN PAUSA y traer sus métricas.
 
-`ad_meta_publish` es reanudable: lo ya creado (campaña, conjunto, imagen, creativo, anuncio) queda
+`ad_meta_publish` es reanudable: lo ya creado (campaña, conjuntos, imagen, creativo, anuncio) queda
 guardado en `ad_batches.meta` / `ad_creatives.meta` / `ad_videos.meta`, así que repetirlo tras un
-fallo completa lo que falta sin duplicar nada. Los videos del lote se suben en el mismo conjunto
-(miniatura → video → espera a que Meta lo procese → creativo de video → anuncio en pausa).
+fallo completa lo que falta sin duplicar nada. Un conjunto de anuncios por ángulo de venta (los
+videos van al conjunto de su ángulo: miniatura → video → espera a que Meta lo procese → creativo de
+video → anuncio en pausa), con el presupuesto según `budget_mode`:
+- `cbo` (por defecto, lo mejor para ventas y rentabilidad): el presupuesto diario va en la campaña y
+  Meta lo mueve hacia el ángulo que consigue compras más baratas.
+- `abo`: el presupuesto diario se reparte en partes iguales entre los conjuntos (prueba pareja).
+Las campañas creadas antes (un solo conjunto, `adset_id`) se completan igual que antes.
 
 `ad_meta_sync` copia el rendimiento diario de cada anuncio de imagen a `ad_results`
 (`source = 'meta'`); las métricas derivadas se siguen calculando de los totales. Las métricas de
@@ -85,6 +90,15 @@ def publishable_video(video: dict) -> bool:
     )
 
 
+def angle_budgets(mode: str, daily_budget: float, angles: list[str]) -> dict[str, float | None]:
+    """Presupuesto diario de cada conjunto: nada en CBO (lo lleva la campaña) y partes iguales
+    del total en ABO."""
+    if mode == "cbo" or not angles:
+        return {a: None for a in angles}
+    share = round(daily_budget / len(angles), 2)
+    return {a: share for a in angles}
+
+
 def publishable(creative: dict) -> bool:
     """Rojo del semáforo de políticas = no se sube; sin imagen compuesta tampoco."""
     return (
@@ -115,29 +129,47 @@ async def run_ad_meta_publish(job: dict, deps: Any) -> None:
 
     brief_name = (batch.get("brief") or {}).get("product_name", "")
     today = datetime.now(UTC).date().isoformat()
+    legacy = bool(state.get("adset_id")) and not state.get("adset_ids")
+    # Campañas anteriores a la opción: un solo conjunto con su presupuesto (ABO).
+    mode = "abo" if legacy else state.get("budget_mode") or "cbo"
+    state["budget_mode"] = mode
+    budget = float(state["daily_budget"])
+    angles = sorted({x.get("angle") or "general" for x in [*creatives, *videos]})
     try:
         # La moneda de la cuenta queda guardada para cruzar el gasto con las ventas de Hotmart.
         state["currency"] = await meta.currency()
         if not state.get("campaign_id"):
             state["campaign_id"] = await meta.create_campaign(
-                f"ProductForge · {brief_name} · {today}", state["objective"]
+                f"ProductForge · {brief_name} · {today} · {mode.upper()}",
+                state["objective"],
+                daily_budget=budget if mode == "cbo" else None,
             )
             await deps.batches.update(batch["id"], meta=state)
-        if not state.get("adset_id"):
-            state["adset_id"] = await meta.create_adset(
-                name=f"{brief_name} · {state['objective']}",
-                campaign_id=state["campaign_id"],
-                objective=state["objective"],
-                daily_budget=float(state["daily_budget"]),
-                countries=list(state["countries"]),
-            )
-            await deps.batches.update(batch["id"], meta=state)
+        if not legacy:
+            adsets: dict[str, str] = dict(state.get("adset_ids") or {})
+            for angle, share in angle_budgets(mode, budget, angles).items():
+                if angle in adsets:
+                    continue
+                adsets[angle] = await meta.create_adset(
+                    name=f"{brief_name} · {angle}",
+                    campaign_id=state["campaign_id"],
+                    objective=state["objective"],
+                    daily_budget=share,
+                    countries=list(state["countries"]),
+                )
+                state["adset_ids"] = adsets
+                await deps.batches.update(batch["id"], meta=state)
     except MetaError as exc:
         await deps.batches.update(batch["id"], meta={**state, "status": "error", "error": str(exc)})
         raise
 
     semaphore = asyncio.Semaphore(PUBLISH_CONCURRENCY)
     errors: list[str] = []
+
+    def adset_for(item: dict) -> str:
+        if legacy:
+            return state["adset_id"]
+        return state["adset_ids"][item.get("angle") or "general"]
 
     async def one(c: dict) -> None:
         ids: dict = dict(c.get("meta") or {})
@@ -161,7 +193,7 @@ async def run_ad_meta_publish(job: dict, deps: Any) -> None:
                     )
                     await deps.creatives.update(c["id"], meta=ids)
                 ids["ad_id"] = await meta.create_ad(
-                    name=name, adset_id=state["adset_id"], creative_id=ids["creative_id"]
+                    name=name, adset_id=adset_for(c), creative_id=ids["creative_id"]
                 )
                 await deps.creatives.update(c["id"], meta=ids)
                 state["uploaded"] += 1
@@ -197,7 +229,7 @@ async def run_ad_meta_publish(job: dict, deps: Any) -> None:
                     )
                     await deps.videos.update(v["id"], meta=ids)
                 ids["ad_id"] = await meta.create_ad(
-                    name=name, adset_id=state["adset_id"], creative_id=ids["creative_id"]
+                    name=name, adset_id=adset_for(v), creative_id=ids["creative_id"]
                 )
                 ids.pop("error", None)
                 await deps.videos.update(v["id"], meta=ids)

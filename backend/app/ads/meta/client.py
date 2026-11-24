@@ -183,19 +183,26 @@ class MetaClient:
         except (StopIteration, KeyError, TypeError) as exc:
             raise MetaError("Meta no devolvió el hash de la imagen") from exc
 
-    async def create_campaign(self, name: str, objective: str) -> str:
-        result = await self._request(
-            "POST",
-            f"{self.account}/campaigns",
-            params={
-                "name": name,
-                "objective": OBJECTIVES[objective],
-                "status": "PAUSED",
-                "special_ad_categories": [],
-                # El presupuesto va en el conjunto de anuncios, no compartido en la campaña.
-                "is_adset_budget_sharing_enabled": False,
-            },
-        )
+    async def create_campaign(
+        self, name: str, objective: str, *, daily_budget: float | None = None
+    ) -> str:
+        """Campaña en PAUSA. Con `daily_budget` es CBO (Advantage+ campaign budget: el presupuesto
+        vive en la campaña y Meta lo reparte hacia los conjuntos que mejor rinden); sin él es ABO
+        (cada conjunto lleva su propio presupuesto)."""
+        params: dict[str, Any] = {
+            "name": name,
+            "objective": OBJECTIVES[objective],
+            "status": "PAUSED",
+            "special_ad_categories": [],
+        }
+        if daily_budget is not None:
+            currency = await self.currency()
+            params["daily_budget"] = str(minor_units(daily_budget, currency))
+            params["bid_strategy"] = "LOWEST_COST_WITHOUT_CAP"
+        else:
+            # ABO: el presupuesto va en cada conjunto, sin compartirlo entre ellos.
+            params["is_adset_budget_sharing_enabled"] = False
+        result = await self._request("POST", f"{self.account}/campaigns", params=params)
         return str(result["id"])
 
     async def create_adset(
@@ -204,19 +211,16 @@ class MetaClient:
         name: str,
         campaign_id: str,
         objective: str,
-        daily_budget: float,
+        daily_budget: float | None,
         countries: list[str],
         age_min: int = 18,
         age_max: int = 65,
     ) -> str:
-        currency = await self.currency()
         params: dict[str, Any] = {
             "name": name,
             "campaign_id": campaign_id,
             "status": "PAUSED",
-            "daily_budget": str(minor_units(daily_budget, currency)),
             "billing_event": "IMPRESSIONS",
-            "bid_strategy": "LOWEST_COST_WITHOUT_CAP",
             "targeting": {
                 "geo_locations": {"countries": countries},
                 "age_min": age_min,
@@ -224,6 +228,10 @@ class MetaClient:
                 "targeting_automation": {"advantage_audience": 0},
             },
         }
+        if daily_budget is not None:  # ABO; en CBO el presupuesto y la puja van en la campaña
+            currency = await self.currency()
+            params["daily_budget"] = str(minor_units(daily_budget, currency))
+            params["bid_strategy"] = "LOWEST_COST_WITHOUT_CAP"
         if objective == "sales":
             if not self.pixel_id:
                 raise MetaError("el objetivo «ventas» necesita META_PIXEL_ID")

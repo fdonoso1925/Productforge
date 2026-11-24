@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ErrorBox } from "@/components/wizard/step-nav";
-import type { MetaBatch, MetaStatus } from "@/lib/ads";
+import { BUDGET_MODES, type BudgetMode, type MetaBatch, type MetaStatus } from "@/lib/ads";
 import { ApiError, api } from "@/lib/api";
 
 const POLL_MS = 3000;
@@ -38,7 +38,13 @@ export function MetaPanel({
   const [state, setState] = useState<MetaBatch | null>(null);
   const [nonce, setNonce] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState({ link: "", objective: "traffic", budget: "5", countries: "" });
+  const [form, setForm] = useState<{
+    link: string;
+    objective: string;
+    budget: string;
+    countries: string;
+    mode: BudgetMode;
+  }>({ link: "", objective: "traffic", budget: "5", countries: "", mode: "cbo" });
 
   useEffect(() => {
     let alive = true;
@@ -134,6 +140,11 @@ export function MetaPanel({
             {t(`status.${state.status}`, { uploaded: state.uploaded, total: state.total, failed: state.failed })}
             {state.skipped > 0 && <span className="text-muted-foreground"> · {t("skipped", { count: state.skipped })}</span>}
           </p>
+          {state.budget_mode && (
+            <p className="text-xs text-muted-foreground">
+              {t("budgetMode.summary", { mode: t(`budgetMode.${state.budget_mode}.name`), adsets: state.adsets })}
+            </p>
+          )}
           {state.error && state.status !== "done" && <p className="text-destructive">{state.error}</p>}
           {state.status === "done" && <p className="text-muted-foreground">{t("paused")}</p>}
           {state.active_ads > 0 && <p className="font-medium text-amber-600">{t("active", { count: state.active_ads })}</p>}
@@ -194,6 +205,36 @@ export function MetaPanel({
                 onChange={(e) => setForm({ ...form, budget: e.target.value })}
               />
             </div>
+            <div className="flex flex-col gap-2 sm:col-span-2">
+              <span className="text-sm font-medium">{t("budgetMode.label")}</span>
+              <div role="radiogroup" aria-label={t("budgetMode.label")} className="grid gap-2 sm:grid-cols-2">
+                {BUDGET_MODES.map((mode) => {
+                  const selected = form.mode === mode;
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={() => setForm({ ...form, mode })}
+                      className={`flex flex-col gap-1 rounded-lg border p-3 text-left text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring ${
+                        selected ? "border-primary ring-2 ring-primary" : "hover:border-foreground/40"
+                      }`}
+                    >
+                      <span className="flex flex-wrap items-center gap-2 font-medium">
+                        {t(`budgetMode.${mode}.name`)}
+                        {mode === "cbo" && (
+                          <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">
+                            {t("budgetMode.recommended")}
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{t(`budgetMode.${mode}.hint`)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <div className="flex flex-col gap-1 sm:col-span-2">
               <Label htmlFor="meta-countries">{t("countries")}</Label>
               <Input
@@ -215,6 +256,7 @@ export function MetaPanel({
                     link_url: form.link.trim(),
                     objective: form.objective as "traffic" | "sales",
                     daily_budget: budget,
+                    budget_mode: form.mode,
                     countries,
                   }),
                 )

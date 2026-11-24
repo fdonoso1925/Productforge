@@ -272,8 +272,8 @@ class FakeMeta:
         assert data[:4] == b"\x89PNG"
         return self._id("hash", filename=filename)
 
-    async def create_campaign(self, name, objective) -> str:
-        return self._id("campaign", name=name, objective=objective)
+    async def create_campaign(self, name, objective, daily_budget=None) -> str:
+        return self._id("campaign", name=name, objective=objective, daily_budget=daily_budget)
 
     async def create_adset(self, **info) -> str:
         return self._id("adset", **info)
@@ -346,8 +346,13 @@ def test_publishing_creates_campaign_adset_and_one_paused_ad_per_creative() -> N
     assert state["status"] == "done"
     assert state["uploaded"] == state["total"] == len(creatives) == 4
     assert state["failed"] == 0 and state["active_ads"] == 0
-    assert len(meta.kinds("campaign")) == 1 and len(meta.kinds("adset")) == 1
+    angles = {c["angle"] for c in creatives}
+    # CBO por defecto: un conjunto por ángulo, el presupuesto en la campaña y no en los conjuntos.
+    assert len(meta.kinds("campaign")) == 1 and len(meta.kinds("adset")) == len(angles)
+    assert meta.kinds("campaign")[0]["daily_budget"] == BODY["daily_budget"]
+    assert all(a["daily_budget"] is None for a in meta.kinds("adset"))
     assert meta.kinds("adset")[0]["countries"] == ["CO", "MX"]
+    assert state["budget_mode"] == "cbo" and state["adsets"] == len(angles)
     assert len(meta.kinds("ad")) == 4
     for c in creatives:
         assert c["meta"]["ad_id"].startswith("ad-")
@@ -474,7 +479,10 @@ def test_a_failed_ad_leaves_the_batch_partial_and_retrying_only_completes_the_re
     w.run_worker()
     state = w.client.get(f"/ads/batches/{batch_id}/meta").json()
     assert state["status"] == "done" and state["uploaded"] == 4
-    assert len(meta.kinds("campaign")) == 1 and len(meta.kinds("adset")) == 1  # nada se duplica
+    angles = {c["angle"] for c in w.creatives.rows.values()}
+    assert len(meta.kinds("campaign")) == 1 and len(meta.kinds("adset")) == len(
+        angles
+    )  # nada se duplica
     assert len(meta.kinds("ad")) == 4 and len(meta.kinds("hash")) == 4
 
 
@@ -636,3 +644,34 @@ def test_meta_variables_are_documented_and_only_the_backend_knows_them() -> None
         if "node_modules" in path.parts or ".next" in path.parts:
             continue
         assert "META_ACCESS_TOKEN" not in path.read_text(encoding="utf-8", errors="ignore"), path
+
+
+def test_abo_splits_the_budget_evenly_between_one_adset_per_angle() -> None:
+    w, batch_id, meta = meta_world()
+    assert publish(w, batch_id, budget_mode="abo", daily_budget=10).status_code == 202
+    w.run_worker()
+    angles = {c["angle"] for c in w.creatives.rows.values()}
+    assert meta.kinds("campaign")[0]["daily_budget"] is None  # ABO: nada en la campaña
+    shares = [a["daily_budget"] for a in meta.kinds("adset")]
+    assert len(shares) == len(angles) and sum(shares) == pytest.approx(10, abs=0.05)
+    # Cada anuncio va al conjunto de su ángulo.
+    state = w.batches.rows[batch_id]["meta"]
+    adset_of_ad = {a["name"]: a["adset_id"] for a in meta.kinds("ad")}
+    for c in w.creatives.rows.values():
+        assert adset_of_ad[c["filename"].removesuffix(".png")] == state["adset_ids"][c["angle"]]
+    # Cambiar de ABO a CBO en una campaña ya creada no se hace a escondidas.
+    assert publish(w, batch_id, daily_budget=10).status_code == 409
+
+
+def test_an_old_single_adset_campaign_is_completed_as_before() -> None:
+    w, batch_id, meta = meta_world()
+    w.batches.rows[batch_id]["meta"] = {
+        **BODY,
+        "countries": ["CO", "MX"],
+        "campaign_id": "campaign-old",
+        "adset_id": "adset-old",
+    }
+    assert publish(w, batch_id, budget_mode="abo").status_code == 202
+    w.run_worker()
+    assert not meta.kinds("campaign") and not meta.kinds("adset")
+    assert {a["adset_id"] for a in meta.kinds("ad")} == {"adset-old"}
