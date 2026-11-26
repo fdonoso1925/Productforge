@@ -57,7 +57,8 @@
     "error": "Algo falló: {message}",
     "home": "Inicio",
     "history": "Historial",
-    "settings": "Ajustes"
+    "settings": "Ajustes",
+    "processing": "Procesando…"
   },
   "markets": {
     "pt-BR": "Portugués (Brasil)",

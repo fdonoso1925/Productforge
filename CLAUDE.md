@@ -217,6 +217,7 @@ Después de `npx supabase db reset`, autoriza tu email:
 - Backend: dependencias fijadas con versión exacta (`uv add --bounds exact`); ruff con reglas `S` (seguridad).
 - Frontend: lee de Supabase directo (RLS protege); todo lo que escribe, cuesta dinero o usa secretos pasa por el backend (`lib/api.ts` con el JWT de Supabase).
 - Textos de la interfaz en `frontend/messages/{es,pt}.json`; nunca hardcodeados.
+- **Indicadores de carga**: `app/[locale]/loading.tsx` se muestra al navegar entre pantallas; los enlaces del menú y del «+» muestran una ruedita mientras abren (`useLinkStatus`). Toda acción contra el backend (lo que no es GET en `lib/api.ts`) pasa por `lib/activity.ts` y enciende la barra superior + «Procesando…» (`components/shell/activity-indicator.tsx`, montado en `AppShell`); las lecturas y los sondeos no lo encienden.
 - Redirecciones internas siempre pasan por `safeNextPath` (`frontend/lib/redirect.ts`).
 - Cada fase cierra con tests en verde + commit.
 

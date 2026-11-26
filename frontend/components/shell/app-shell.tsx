@@ -4,6 +4,8 @@ import { BarChart3, FileText, History, Home, type LucideIcon, Megaphone, Package
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { LocaleSwitch } from "@/components/locale-switch";
+import { useLinkStatus } from "next/link";
+import { ActivityIndicator } from "@/components/shell/activity-indicator";
 import { Link, usePathname } from "@/i18n/navigation";
 import { SignOutButton } from "@/app/[locale]/sign-out-button";
 
@@ -73,6 +75,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <span className="text-base font-bold">{o.title}</span>
               <span className={`text-[13px] ${o.accent ? "" : "text-muted-foreground"}`}>{o.hint}</span>
             </span>
+            <PendingDot />
           </Link>
         </li>
       ))}
@@ -81,6 +84,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      <ActivityIndicator />
       {/* Sidebar (escritorio) */}
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-[220px] flex-col gap-1.5 border-r bg-sidebar px-3.5 py-5 backdrop-blur-xl md:flex">
         <div className="flex items-center gap-2.5 px-2.5 pb-4 font-heading text-xl font-semibold">
@@ -123,6 +127,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             >
               <tab.icon className={`size-[18px] ${tab.active ? "text-lavender" : ""}`} aria-hidden />
               {tab.label}
+              <PendingDot />
             </Link>
           ))}
         </nav>
@@ -189,6 +194,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       )}
     </>
   );
+}
+
+/** Ruedita junto al enlace mientras se abre esa pantalla (va dentro del <Link>). */
+function PendingDot() {
+  const { pending } = useLinkStatus();
+  return pending ? (
+    <span className="ml-auto size-3.5 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden />
+  ) : null;
 }
 
 function TabLink({ tab }: { tab: Tab }) {

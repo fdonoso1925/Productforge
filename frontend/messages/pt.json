@@ -57,7 +57,8 @@
     "error": "Algo deu errado: {message}",
     "home": "Início",
     "history": "Histórico",
-    "settings": "Configurações"
+    "settings": "Configurações",
+    "processing": "Processando…"
   },
   "markets": {
     "pt-BR": "Português (Brasil)",

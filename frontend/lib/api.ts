@@ -50,6 +50,7 @@ import type {
   SalesReference,
   TemplateInfo,
 } from "@/lib/types";
+import { isAction, track } from "@/lib/activity";
 
 export class ApiError extends Error {
   constructor(
@@ -90,7 +91,9 @@ async function token(): Promise<string> {
 }
 
 async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
-  return apiFetch<T>(path, await token(), init);
+  const work = (async () => apiFetch<T>(path, await token(), init))();
+  // Las acciones (todo lo que no es GET) encienden el indicador global «Procesando…».
+  return isAction(init) ? track(work) : work;
 }
 
 export type OutlineRequest = {
