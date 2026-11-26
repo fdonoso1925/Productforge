@@ -101,7 +101,7 @@ async def callback(
             await services.upload_queue.enqueue_unsynced(user_id)  # copia lo que ya existía
             outcome = "connected"
     except DriveError as exc:
-        logger.warning("no se pudo conectar Google Drive: %s", type(exc).__name__)
+        logger.warning("no se pudo conectar Google Drive: %s", exc)  # textos fijos, sin secretos
     except Exception:
         logger.exception("error inesperado conectando Google Drive")
     base = services.settings.frontend_url.rstrip("/")
