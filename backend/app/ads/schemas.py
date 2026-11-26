@@ -54,6 +54,8 @@ class AdBrief(BaseModel):
     audience: str = Field(max_length=500)
     promise: str = Field(max_length=500)
     price_text: str = Field(default="", max_length=60)  # solo precio REAL; vacío = sin precio
+    # Precio normal REAL (se muestra tachado: «de R$ 97 por R$ 47»); vacío = sin comparación.
+    base_price_text: str = Field(default="", max_length=60)
     bonuses: list[str] = Field(default_factory=list, max_length=8)
     real_urgency: str = Field(
         default="", max_length=200
@@ -105,6 +107,8 @@ class ImageCopy(BaseModel):
     bullets: list[str] = Field(default_factory=list)
     cta_text: str = ""
     price_text: str = ""
+    # Lo pone el código (nunca la IA): el precio normal del brief, tachado junto al precio.
+    base_price_text: str = ""
     note: str = ""
     mark: Literal["check", "cross"] = "check"
 

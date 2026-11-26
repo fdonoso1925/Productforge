@@ -40,7 +40,9 @@ def revalidate(
     brands: list[str],
 ) -> tuple[list[str], SimilarityReport]:
     """Reglas de honestidad y parecido con la página modelo, sin IA (generación y edición)."""
-    blank = content.offer.model_copy(update={"price_text": "", "guarantee": "", "urgency": ""})
+    blank = content.offer.model_copy(
+        update={"price_text": "", "base_price": "", "guarantee": "", "urgency": ""}
+    )
     errors = rules.check_content(content.model_copy(update={"offer": blank}), brief, proofs)
     errors += rules.media_errors(content)
     report = similarity.check(

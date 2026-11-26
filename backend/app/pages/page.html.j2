@@ -60,6 +60,12 @@ blockquote { margin: 0; padding: 20px 22px; background: var(--bg); border-radius
 blockquote footer { margin-top: 10px; font-size: 14px; color: var(--muted); font-weight: 700; }
 .offer { border: 3px solid var(--primary); border-radius: calc(var(--radius) + 6px); padding: 30px 24px; background: var(--bg); text-align: center; box-shadow: 0 16px 40px rgba(0,0,0,.12); }
 .price { font: 800 clamp(40px, 9vw, 60px)/1 var(--heading); color: var(--primary); margin: 18px 0; }
+.was { margin-top: 18px; font-size: 20px; color: var(--muted); }
+.was + .price { margin-top: 4px; }
+.was s, .was-s { text-decoration-thickness: 2px; }
+.was-s { font-size: 14px; color: var(--muted); font-weight: 600; margin-right: 4px; }
+.save { display: inline-block; margin: -6px 0 16px; padding: 4px 12px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-weight: 800; font-size: 14px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .included { text-align: left; list-style: none; padding: 0; margin: 20px 0; display: grid; gap: 10px; }
 .included li { padding-left: 30px; position: relative; }
 .included li::before { content: "✓"; position: absolute; left: 0; color: var(--primary); font-weight: 800; }
@@ -191,7 +197,9 @@ footer.legal { padding: 28px 0 40px; font-size: 13px; color: var(--muted); text-
       <h2>{{ c.offer.title }}</h2>
       <p>{{ c.offer.intro }}</p>
       {% if items %}<ul class="included">{% for d in items if d.kind != 'bump' %}<li>{{ d.title }}</li>{% endfor %}</ul>{% endif %}
+      {% if c.offer.price_text and c.offer.base_price %}<div class="was"><span class="sr">{{ L.was }}:</span> <s>{{ c.offer.base_price }}</s></div>{% endif %}
       {% if c.offer.price_text %}<div class="price">{{ c.offer.price_text }}</div>{% endif %}
+      {% if savings %}<div class="save">{{ L.save.format(pct=savings) }}</div>{% endif %}
       {% if c.offer.urgency %}<div class="note urgent">{{ c.offer.urgency }}</div>{% endif %}
       <a class="btn block" href="{{ cta }}">{{ c.offer.cta_text }}</a>
       {% if c.offer.guarantee %}<div class="note"><strong>{{ L.guarantee }}:</strong> {{ c.offer.guarantee }}</div>{% endif %}
@@ -217,6 +225,6 @@ footer.legal { padding: 28px 0 40px; font-size: 13px; color: var(--muted); text-
 
 <footer class="legal"><div class="wrap">{{ c.disclaimer }}</div></footer>
 
-<div class="sticky">{% if c.offer.price_text %}<span class="p">{{ c.offer.price_text }}</span>{% endif %}<a class="btn" href="{{ cta }}">{{ c.hero.cta_text }}</a></div>
+<div class="sticky">{% if c.offer.price_text %}<span class="p">{% if c.offer.base_price %}<s class="was-s">{{ c.offer.base_price }}</s> {% endif %}{{ c.offer.price_text }}</span>{% endif %}<a class="btn" href="{{ cta }}">{{ c.hero.cta_text }}</a></div>
 </body>
 </html>

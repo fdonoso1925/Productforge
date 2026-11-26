@@ -10,6 +10,7 @@ Cada variação tem:
   - bullets: entre 3 e 5 itens de no máximo 7 palavras, só se o template usar lista (veja abaixo); caso contrário, lista vazia.
   - cta_text: no máximo 4 palavras (por exemplo «Quero começar hoje»).
   - price_text: só se `brief.price_text` existir, exatamente como está; senão, vazio.
+  - base_price_text: deixe vazio (o sistema coloca o preço normal riscado). Se `brief.base_price_text` existir, no texto do anúncio você pode contrastá-lo com o preço («de X por Y») usando esses dois valores exatamente como estão; nunca outro número nem um desconto calculado por você.
   - note: só para o template `note`, 1 a 3 frases curtas com voz próxima; senão, vazio.
   - mark: `check` (benefícios) ou `cross` (erros ou coisas a evitar) para o template `checklist`.
 - ad (texto do anúncio no Gerenciador de Anúncios):

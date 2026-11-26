@@ -127,7 +127,7 @@ def check_content(content: PageContent, brief: PageBrief, proofs: list[PageProof
         errors.append(
             "`about` debe quedar vacío: el usuario no dio datos de quién creó el producto."
         )
-    for field in ("price_text", "guarantee", "urgency"):
+    for field in ("price_text", "base_price", "guarantee", "urgency"):
         if getattr(content.offer, field).strip():
             errors.append(f"`offer.{field}` debe quedar vacío: lo completa el sistema.")
 
@@ -161,6 +161,7 @@ def finalize(content: PageContent, brief: PageBrief, proofs: list[PageProof]) ->
     offer = content.offer.model_copy(
         update={
             "price_text": brief.price_text.strip(),
+            "base_price": brief.base_price_text.strip() if brief.price_text.strip() else "",
             "guarantee": brief.guarantee_text.strip(),
             "urgency": brief.real_urgency.strip(),
         }

@@ -358,7 +358,9 @@ def visible_text(draft: CreativeDraft) -> str:
 
 
 def _allowed_by_proofs(fragment: str, proofs: list[AdProof], brief: AdBrief) -> bool:
-    haystack = " ".join([p.text for p in proofs] + [brief.price_text]).lower()
+    haystack = " ".join(
+        [p.text for p in proofs] + [brief.price_text, brief.base_price_text]
+    ).lower()
     return fragment.lower().strip() in haystack
 
 

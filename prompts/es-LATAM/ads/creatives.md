@@ -10,6 +10,7 @@ Cada variación tiene:
   - bullets: entre 3 y 5 ítems de máximo 7 palabras, solo si la plantilla usa lista (ver abajo); si no, lista vacía.
   - cta_text: máximo 4 palabras (por ejemplo «Quiero empezar hoy»).
   - price_text: solo si `brief.price_text` existe, tal cual; si no, vacío.
+  - base_price_text: déjalo vacío (el sistema pone el precio normal tachado). Si `brief.base_price_text` existe, en el texto del anuncio puedes contrastarlo con el precio («de X por Y») usando esas dos cifras tal cual; nunca otra cifra ni un descuento calculado por ti.
   - note: solo para la plantilla `note`, 1 a 3 frases cortas con voz cercana; si no, vacío.
   - mark: `check` (beneficios) o `cross` (errores o cosas que evitar) para la plantilla `checklist`.
 - ad (texto del anuncio en Ads Manager):

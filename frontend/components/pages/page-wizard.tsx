@@ -14,6 +14,8 @@ import { isCheckoutUrl, type PageBriefPreview, type TeardownResult } from "@/lib
 import { createClient } from "@/lib/supabase/client";
 import type { Market, TemplateInfo } from "@/lib/types";
 import { ModelPanel } from "./model-panel";
+import { PriceFields } from "@/components/price/price-fields";
+import { emptyPrice, forMarket, priceTexts, type PriceInput } from "@/lib/price";
 
 const SELECT_CLASS = "h-11 w-full min-w-0 rounded-[14px] border border-border bg-card px-3 text-sm font-semibold";
 
@@ -37,7 +39,8 @@ export function PageWizard({ productId }: { productId?: string }) {
   const [template, setTemplate] = useState("");
   const [manual, setManual] = useState({ niche: "", product_name: "", problem: "", audience: "", promise: "", timeframe: "" });
   const [market, setMarket] = useState<Market>("es-LATAM");
-  const [form, setForm] = useState({ price: "", guarantee: "", urgency: "", about: "", checkout: "" });
+  const [form, setForm] = useState({ guarantee: "", urgency: "", about: "", checkout: "" });
+  const [price, setPrice] = useState<PriceInput>(emptyPrice("es-LATAM"));
   const [proofs, setProofs] = useState<string[]>([]);
   const [model, setModel] = useState<TeardownResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +76,7 @@ export function PageWizard({ productId }: { productId?: string }) {
         setTemplate(p.template_id);
         setProofs(p.proofs.map((x) => x.id));
         setMarket(p.brief.market);
+        setPrice((current) => forMarket(current, p.brief.market));
       })
       .catch((e) => alive && setError(message(e)));
     return () => {
@@ -86,6 +90,7 @@ export function PageWizard({ productId }: { productId?: string }) {
   // Un cambio de mercado descarta el análisis: se hizo en el idioma anterior.
   const changeMarket = (next: Market) => {
     setMarket(next);
+    setPrice((current) => forMarket(current, next));
     setModel(null);
   };
 
@@ -105,7 +110,7 @@ export function PageWizard({ productId }: { productId?: string }) {
         ...(source ? { product_id: source } : { manual: { ...manual, timeframe: manual.timeframe.trim() } }),
         ...(template ? { template_id: template } : {}),
         ...(form.checkout.trim() ? { checkout_url: form.checkout.trim() } : {}),
-        price_text: form.price.trim(),
+        ...priceTexts(price),
         guarantee_text: form.guarantee.trim(),
         real_urgency: form.urgency.trim(),
         about_author: form.about.trim(),
@@ -206,7 +211,7 @@ export function PageWizard({ productId }: { productId?: string }) {
           <p className="text-sm text-muted-foreground">{t("offerHint")}</p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
-          {field("price", t("price"), t("priceHint"))}
+          <PriceFields id="pw-price" value={price} onChange={setPrice} />
           {field("urgency", t("urgency"), t("urgencyHint"))}
         </div>
         {field("guarantee", t("guarantee"), t("guaranteeHint"), true)}

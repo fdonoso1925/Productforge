@@ -19,6 +19,8 @@ export type AdBrief = {
   audience: string;
   promise: string;
   price_text: string;
+  /** Precio normal real, tachado junto al precio («de R$ 97 por R$ 47»); vacío = sin comparación. */
+  base_price_text?: string;
   bonuses: string[];
   real_urgency: string;
 };

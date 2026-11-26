@@ -263,6 +263,9 @@ def compose_png(
     al ángulo del creativo (libro, tablet o pack)."""
     draft = draft_of(creative)
     image: ImageCopy = draft.image
+    # El precio normal tachado lo pone el código, con las palabras del usuario (nunca la IA).
+    base = brief.base_price_text.strip() if image.price_text.strip() else ""
+    image = image.model_copy(update={"base_price_text": base})
     if mockup and renderer.templates[creative["template_id"]].uses_mockup:
         mockup = cached_mockup(mockup_kind(creative), mockup, spine)
     return renderer.render(

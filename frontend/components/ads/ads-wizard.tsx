@@ -28,6 +28,8 @@ import {
 import { ApiError, api, type BriefSource } from "@/lib/api";
 import type { Market, TemplateInfo } from "@/lib/types";
 import { ProofsPanel } from "./proofs-panel";
+import { PriceFields } from "@/components/price/price-fields";
+import { emptyPrice, forMarket, priceTexts, type PriceInput } from "@/lib/price";
 
 export type ProductOption = {
   id: string;
@@ -50,6 +52,7 @@ function emptyManual(market: Market): AdBrief {
     audience: "",
     promise: "",
     price_text: "",
+    base_price_text: "",
     bonuses: [],
     real_urgency: "",
   };
@@ -81,7 +84,10 @@ export function AdsWizard({
   const [productId, setProductId] = useState(startsWithProduct ? (initialProductId as string) : (products[0]?.id ?? ""));
   const [manual, setManual] = useState<AdBrief>(emptyManual(defaultMarket));
   const [bonusText, setBonusText] = useState("");
-  const [price, setPrice] = useState("");
+  // La moneda arranca según el mercado del producto elegido (reales para pt-BR) o el del brief manual.
+  const [price, setPrice] = useState<PriceInput>(() =>
+    emptyPrice(products.find((p) => p.id === productId)?.market ?? defaultMarket),
+  );
   const [urgency, setUrgency] = useState("");
 
   const [avatars, setAvatars] = useState<{ key: string; list: Avatar[] } | null>(null);
@@ -102,10 +108,11 @@ export function AdsWizard({
 
   const product = products.find((p) => p.id === productId) ?? null;
   const body = useMemo<BriefSource>(() => {
+    const texts = priceTexts(price);
     if (source === "product") {
-      return { product_id: productId, price_text: price.trim(), real_urgency: urgency.trim() };
+      return { product_id: productId, ...texts, real_urgency: urgency.trim() };
     }
-    return { brief: { ...manual, price_text: price.trim(), real_urgency: urgency.trim(), bonuses: lines(bonusText) } };
+    return { brief: { ...manual, ...texts, real_urgency: urgency.trim(), bonuses: lines(bonusText) } };
   }, [source, productId, price, urgency, manual, bonusText]);
   const briefKey = JSON.stringify(body);
 
@@ -240,7 +247,16 @@ export function AdsWizard({
           {source === "product" ? (
             <div className="flex flex-col gap-2">
               <Label htmlFor="ad-product">{t("brief.product")}</Label>
-              <select id="ad-product" value={productId} onChange={(e) => setProductId(e.target.value)} className={SELECT_CLASS}>
+              <select
+                id="ad-product"
+                value={productId}
+                onChange={(e) => {
+                  setProductId(e.target.value);
+                  const chosen = products.find((x) => x.id === e.target.value);
+                  if (chosen) setPrice((current) => forMarket(current, chosen.market));
+                }}
+                className={SELECT_CLASS}
+              >
                 {products.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.title ?? p.niche} · {p.market}
@@ -256,7 +272,10 @@ export function AdsWizard({
                 <select
                   id="m-market"
                   value={manual.market}
-                  onChange={(e) => setManual({ ...manual, market: e.target.value as Market })}
+                  onChange={(e) => {
+                    setManual({ ...manual, market: e.target.value as Market });
+                    setPrice((current) => forMarket(current, e.target.value as Market));
+                  }}
                   className={SELECT_CLASS}
                 >
                   <option value="es-LATAM">es-LATAM</option>
@@ -283,11 +302,7 @@ export function AdsWizard({
           )}
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="ad-price">{t("brief.price")}</Label>
-              <Input id="ad-price" value={price} onChange={(e) => setPrice(e.target.value)} maxLength={60} placeholder="USD 12" />
-              <p className="text-xs text-muted-foreground">{t("brief.priceHint")}</p>
-            </div>
+            <PriceFields id="ad-price" value={price} onChange={setPrice} />
             <div className="flex flex-col gap-2">
               <Label htmlFor="ad-urgency">{t("brief.urgency")}</Label>
               <Input id="ad-urgency" value={urgency} onChange={(e) => setUrgency(e.target.value)} maxLength={200} />

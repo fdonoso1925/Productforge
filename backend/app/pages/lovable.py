@@ -72,6 +72,7 @@ LABELS = {
         "disclaimer": "AVISO (pie de página, texto pequeño)",
         "button": "Botón",
         "price": "Precio",
+        "base_price": "Precio normal (tachado)",
         "guarantee": "Garantía",
         "urgency": "Urgencia",
         "main": "Principal",
@@ -107,6 +108,7 @@ LABELS = {
         "disclaimer": "AVISO (rodapé, texto pequeno)",
         "button": "Botão",
         "price": "Preço",
+        "base_price": "Preço normal (riscado)",
         "guarantee": "Garantia",
         "urgency": "Urgência",
         "main": "Principal",
@@ -175,6 +177,8 @@ def build_prompt(
     offer = [f"{L['offer']}\n## {c.offer.title}\n{c.offer.intro}"]
     if c.offer.price_text:
         offer.append(f"{L['price']}: {c.offer.price_text}")
+    if c.offer.price_text and c.offer.base_price:
+        offer.append(f"{L['base_price']}: {c.offer.base_price}")
     if c.offer.urgency:
         offer.append(f"{L['urgency']}: {c.offer.urgency}")
     if c.offer.guarantee:

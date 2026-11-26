@@ -13,11 +13,12 @@ ul.b li { display: flex; align-items: center; font-size: {{ fs.bullet }}px; marg
 .dot { flex: none; width: 38px; height: 38px; border-radius: 19px; background: {{ c.accent }}; margin-right: 18px; position: relative; }
 .dot i { position: absolute; left: 13px; top: 6px; width: 8px; height: 17px; border: solid {{ c.accent_fg }}; border-width: 0 4px 4px 0; transform: rotate(45deg); }
 .price { font-family: '{{ f.heading }}'; font-weight: {{ f.heading_weight }}; font-size: {{ fs.price }}px; margin-top: 24px; color: {{ c.accent_text }}; }
+.price .was { display: block; font-size: 0.48em; opacity: 0.75; text-decoration-thickness: 0.08em; margin-bottom: 4px; }
 .cta { margin-top: 20px; }
 </style>
 {% macro details() %}
   {% if copy.bullets %}<ul class="b">{% for b in copy.bullets %}<li><span class="dot"><i></i></span><span>{{ b }}</span></li>{% endfor %}</ul>{% endif %}
-  {% if copy.price_text %}<div class="price">{{ copy.price_text }}</div>{% endif %}
+  {% if copy.price_text %}<div class="price">{% if copy.base_price_text %}<s class="was">{{ copy.base_price_text }}</s>{% endif %}{{ copy.price_text }}</div>{% endif %}
   {% if copy.cta_text %}<div class="cta">{{ copy.cta_text }}</div>{% endif %}
 {% endmacro %}
 {% macro mockup_block() %}

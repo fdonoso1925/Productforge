@@ -28,6 +28,7 @@ from app.auth import CurrentUser, get_current_user
 from app.content.schemas import Market, Problem
 from app.db.supabase import NotFound
 from app.deps import ServicesDep
+from app.pricing import price_errors
 from app.security import ai_rate_limit, work_rate_limit
 from app.templates_engine.model import list_templates
 
@@ -49,12 +50,17 @@ class BriefIn(BaseModel):
     product_id: UUID | None = None
     brief: AdBrief | None = None
     price_text: str | None = Field(default=None, max_length=60)
+    base_price_text: str | None = Field(default=None, max_length=60)
     real_urgency: str | None = Field(default=None, max_length=200)
 
     @model_validator(mode="after")
     def exactly_one(self) -> "BriefIn":
         if (self.product_id is None) == (self.brief is None):
             raise ValueError("indica un producto (product_id) o un brief manual, no ambos")
+        price = self.brief.price_text if self.brief else self.price_text or ""
+        base = self.brief.base_price_text if self.brief else self.base_price_text or ""
+        if errors := price_errors(price, base):
+            raise ValueError(errors[0])
         return self
 
 
@@ -133,7 +139,9 @@ def unprocessable(*errors: str) -> HTTPException:
     return HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, {"errors": list(errors)})
 
 
-def brief_from_product(product: dict, *, price: str = "", urgency: str = "") -> AdBrief:
+def brief_from_product(
+    product: dict, *, price: str = "", urgency: str = "", base_price: str = ""
+) -> AdBrief:
     """Los hechos del producto. El precio y la urgencia solo entran si el usuario los da: la
     ficha comercial sugiere un rango, que no es un precio real."""
     problem = Problem.model_validate(product["problem"])
@@ -147,6 +155,7 @@ def brief_from_product(product: dict, *, price: str = "", urgency: str = "") -> 
         audience=(product.get("audience_override") or problem.audience)[:500],
         promise=(main.get("promise") or problem.promised_result)[:500],
         price_text=price,
+        base_price_text=base_price,
         bonuses=[b["title"] for b in outline.get("bonuses", []) if b.get("title")][:8],
         real_urgency=urgency,
         reference=product.get("reference") or None,
@@ -159,7 +168,10 @@ async def resolve_brief(services, user: CurrentUser, body: BriefIn) -> tuple[AdB
     assert body.product_id is not None
     product = await owned_product(services, body.product_id, user)
     brief = brief_from_product(
-        product, price=body.price_text or "", urgency=body.real_urgency or ""
+        product,
+        price=body.price_text or "",
+        urgency=body.real_urgency or "",
+        base_price=body.base_price_text or "",
     )
     return brief, product
 

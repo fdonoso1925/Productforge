@@ -1313,5 +1313,22 @@
       "OUTCOME_AWARENESS": "Reconhecimento",
       "OUTCOME_APP_PROMOTION": "Promoção do app"
     }
+  },
+  "price": {
+    "currency": "Moeda",
+    "price": "Preço de venda",
+    "base": "Preço normal (opcional)",
+    "currencies": {
+      "BRL": "Reais (R$)",
+      "USD": "Dólares (US$)"
+    },
+    "previewFrom": "De",
+    "previewTo": "por",
+    "hint": "Só preços reais. O preço normal aparece riscado ao lado do preço de venda nos anúncios com preço e na página de vendas, com a porcentagem de economia. Vazio = não se menciona preço.",
+    "errors": {
+      "baseWithoutPrice": "Para mostrar o preço normal, escreva também o preço de venda.",
+      "baseNotHigher": "O preço normal deve ser maior que o de venda.",
+      "invalid": "Escreva só o número, por exemplo 47 ou 47,90."
+    }
   }
 }

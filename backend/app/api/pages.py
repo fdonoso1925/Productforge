@@ -35,6 +35,7 @@ from app.pages.schemas import (
     SimilarityReport,
 )
 from app.pages.strategy import revalidate
+from app.pricing import price_errors
 from app.security import ai_rate_limit, work_rate_limit
 from app.templates_engine.model import load_template
 from app.web.extract import clean_pasted_text, extract_text
@@ -117,6 +118,7 @@ class PageIn(BaseModel):
     checkout_url: str | None = Field(default=None, max_length=500)
     # Lo que el usuario pone: si lo deja vacío, la página no lo menciona.
     price_text: str = Field(default="", max_length=60)
+    base_price_text: str = Field(default="", max_length=60)
     guarantee_text: str = Field(default="", max_length=300)
     real_urgency: str = Field(default="", max_length=200)
     about_author: str = Field(default="", max_length=600)
@@ -279,9 +281,12 @@ async def create_page(body: PageIn, user: User, services: ServicesDep) -> PageCr
         base = PageBrief(market=body.market, **body.manual.model_dump())
         template_id = body.template_id or "bold-moderno"
     known_template(services, template_id)
+    if errors := price_errors(body.price_text, body.base_price_text):
+        raise unprocessable(*errors)
     brief = base.model_copy(
         update={
             "price_text": body.price_text.strip(),
+            "base_price_text": body.base_price_text.strip(),
             "guarantee_text": body.guarantee_text.strip(),
             "real_urgency": body.real_urgency.strip(),
             "about_author": body.about_author.strip(),

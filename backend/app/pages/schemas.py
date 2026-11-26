@@ -54,6 +54,8 @@ class PageBrief(BaseModel):
     deliverables: list[Deliverable] = Field(default_factory=list, max_length=12)
     # Solo lo que el usuario da; vacío = la página no lo menciona.
     price_text: str = Field(default="", max_length=60)
+    # Precio normal real («de R$ 97 por R$ 47»); vacío = sin comparación.
+    base_price_text: str = Field(default="", max_length=60)
     guarantee_text: str = Field(default="", max_length=300)
     real_urgency: str = Field(default="", max_length=200)
     about_author: str = Field(default="", max_length=600)
@@ -202,6 +204,7 @@ class OfferBlock(BaseModel):
     cta_text: str
     # Los rellena el código con lo que dio el usuario (la IA los deja vacíos).
     price_text: str = ""
+    base_price: str = ""
     guarantee: str = ""
     urgency: str = ""
 

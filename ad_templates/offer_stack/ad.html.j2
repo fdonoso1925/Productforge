@@ -7,12 +7,13 @@ ul.l li { display: flex; align-items: center; margin-top: 18px; font-size: {{ fs
 .pl i { left: 14px; top: 25px; width: 28px; height: 6px; }
 .pl b { left: 25px; top: 14px; width: 6px; height: 28px; }
 .price { margin-top: 34px; font-family: '{{ f.heading }}'; font-weight: {{ f.heading_weight }}; font-size: {{ fs.price }}px; color: {{ c.accent_text }}; }
+.price .was { display: block; font-size: 0.48em; opacity: 0.75; text-decoration-thickness: 0.08em; margin-bottom: 4px; }
 .cta { align-self: flex-start; margin-top: 30px; }
 </style>
 <div class="safe">
   {% if copy.kicker %}<div class="kicker">{{ copy.kicker }}</div>{% endif %}
   <div class="h">{{ copy.headline | hl }}</div>
   <ul class="l">{% for item in copy.bullets %}<li><span class="pl"><i></i><b></b></span><span>{{ item }}</span></li>{% endfor %}</ul>
-  {% if copy.price_text %}<div class="price">{{ copy.price_text }}</div>{% endif %}
+  {% if copy.price_text %}<div class="price">{% if copy.base_price_text %}<s class="was">{{ copy.base_price_text }}</s>{% endif %}{{ copy.price_text }}</div>{% endif %}
   {% if copy.cta_text %}<div class="cta">{{ copy.cta_text }}</div>{% endif %}
 </div>

@@ -51,7 +51,14 @@ def script_texts(script: VideoScript) -> list[tuple[str, str]]:
 def allowed_numbers(brief: AdBrief) -> set[str]:
     """Las cifras que SÍ se pueden mostrar: las que el usuario puso en su brief."""
     facts = " ".join(
-        [brief.price_text, brief.real_urgency, brief.promise, brief.product_name, *brief.bonuses]
+        [
+            brief.price_text,
+            brief.base_price_text,
+            brief.real_urgency,
+            brief.promise,
+            brief.product_name,
+            *brief.bonuses,
+        ]
     )
     return {n.replace(",", ".") for n in DIGITS.findall(facts)}
 

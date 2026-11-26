@@ -17,6 +17,7 @@ from markupsafe import Markup
 from app.content.schemas.formats import Visual, VisualItem
 from app.generators.visuals import render_visual
 from app.pages.schemas import PageBrief, PageContent, PageProof
+from app.pricing import savings_percent
 from app.templates_engine.model import Template
 
 LABELS = {
@@ -33,6 +34,8 @@ LABELS = {
         "guarantee": "Garantía",
         "faq": "Preguntas frecuentes",
         "journey": "Tu camino, paso a paso",
+        "was": "Precio normal",
+        "save": "Ahorras {pct} %",
     },
     "pt-BR": {
         "lang": "pt-BR",
@@ -47,6 +50,8 @@ LABELS = {
         "guarantee": "Garantia",
         "faq": "Perguntas frequentes",
         "journey": "Seu caminho, passo a passo",
+        "was": "Preço normal",
+        "save": "Economize {pct} %",
     },
 }
 
@@ -145,6 +150,7 @@ def render_page(
         proofs=picked,
         cta=safe_link(checkout_url),
         img={k: v for k, v in (images or {}).items() if v.startswith("data:image/")},
+        savings=savings_percent(content.offer.base_price, content.offer.price_text),
         solution_svg=_svg(content.solution_visual, template, brief.market),
         journey_svg=_svg(journey_visual(content, labels["journey"]), template, brief.market),
     )

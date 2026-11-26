@@ -27,6 +27,7 @@ export type PageBrief = {
   why_pay: string;
   deliverables: { kind: DeliverableKind; title: string; promise: string; format: string; contents: string[] }[];
   price_text: string;
+  base_price_text?: string;
   guarantee_text: string;
   real_urgency: string;
   about_author: string;
@@ -97,6 +98,7 @@ export type PageInput = {
   template_id?: string;
   checkout_url?: string;
   price_text: string;
+  base_price_text?: string;
   guarantee_text: string;
   real_urgency: string;
   about_author: string;
@@ -116,7 +118,7 @@ export function isCheckoutUrl(value: string): boolean {
 }
 
 /** Lo que el sistema completa solo (precio, garantía y urgencia salen de lo que dio el usuario). */
-const READ_ONLY = new Set(["offer.price_text", "offer.guarantee", "offer.urgency", "proof.proof_ids"]);
+const READ_ONLY = new Set(["offer.price_text", "offer.base_price", "offer.guarantee", "offer.urgency", "proof.proof_ids"]);
 
 export type TextLeaf = { path: string; value: string; multiline: boolean };
 

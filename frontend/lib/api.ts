@@ -122,6 +122,7 @@ export type BriefSource = {
   product_id?: string;
   brief?: AdBrief;
   price_text?: string;
+  base_price_text?: string;
   real_urgency?: string;
 };
 
